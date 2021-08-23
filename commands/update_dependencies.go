@@ -44,6 +44,11 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		return fmt.Errorf("failed to parse buildpack.toml: %s", err)
 	}
 
+	originalVersions := map[string]string{}
+	for _, d := range config.Metadata.Dependencies {
+		originalVersions[d.Version] = d.Version
+	}
+
 	api := flags.api
 
 	// All internal.Dependencies from the dep-server
@@ -56,7 +61,6 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		dependencies, ok := allDependencies[constraint.ID]
 		if !ok {
 			var err error
-			fmt.Printf("reaching out to %s/v1/dependency?name=%s", api, constraint.ID)
 			dependencies, err = internal.GetAllDependencies(api, constraint.ID)
 			if err != nil {
 				return err
@@ -80,6 +84,13 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		config.Metadata.Dependencies = matchingDependencies
 	}
 
+	newVersions := []string{}
+	for _, d := range config.Metadata.Dependencies {
+		if _, ok := originalVersions[d.Version]; !ok {
+			newVersions = append(newVersions, d.Version)
+		}
+	}
+
 	file, err := os.OpenFile(flags.buildpackFile, os.O_RDWR|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open buildpack config file: %w", err)
@@ -90,6 +101,9 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 	if err != nil {
 		return fmt.Errorf("failed to write buildpack config: %w", err)
 	}
+
+	fmt.Println("Updating buildpack.toml with new versions: ")
+	fmt.Println(newVersions)
 
 	return nil
 }

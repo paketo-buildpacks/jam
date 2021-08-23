@@ -417,6 +417,8 @@ api = "0.2"
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+			Expect(session.Out).To(gbytes.Say("Updating buildpack.toml with new versions: "))
+			Expect(session.Out).To(gbytes.Say("[2.2.5]"))
 
 			buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
 			Expect(err).NotTo(HaveOccurred())
