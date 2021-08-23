@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/paketo-buildpacks/packit/cargo/jam/commands"
+	"github.com/paketo-buildpacks/jam/commands"
 )
 
 func main() {
