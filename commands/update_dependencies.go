@@ -102,8 +102,7 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		return fmt.Errorf("failed to write buildpack config: %w", err)
 	}
 
-	fmt.Println("Updating buildpack.toml with new versions: ")
-	fmt.Println(newVersions)
+	fmt.Println("Updating buildpack.toml with new versions: ", newVersions)
 
 	return nil
 }
