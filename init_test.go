@@ -23,7 +23,7 @@ var path string
 func TestUnitJam(t *testing.T) {
 	SetDefaultEventuallyTimeout(10 * time.Second)
 
-	suite := spec.New("cargo/jam", spec.Report(report.Terminal{}))
+	suite := spec.New("jam", spec.Report(report.Terminal{}))
 	suite("Errors", testErrors)
 	suite("pack", testPack)
 	suite("summarize", testSummarize)
