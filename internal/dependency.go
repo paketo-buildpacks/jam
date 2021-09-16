@@ -141,6 +141,10 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 	for _, stack := range dependency.Stacks {
 		cargoDependency.Stacks = append(cargoDependency.Stacks, stack.ID)
 	}
-	cargoDependency.Licenses = append(cargoDependency.Licenses, dependency.Licenses...)
+
+	for _, l := range dependency.Licenses {
+		cargoDependency.Licenses = append(cargoDependency.Licenses, l)
+	}
+
 	return cargoDependency
 }
