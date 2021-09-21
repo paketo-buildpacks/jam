@@ -26,52 +26,54 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 	context("Markdown", func() {
 		it("returns a list of dependencies", func() {
-			formatter.Markdown([]cargo.Config{
+			formatter.Markdown([]internal.BuildpackMetadata{
 				{
-					Buildpack: cargo.ConfigBuildpack{
-						ID:      "some-buildpack",
-						Name:    "Some Buildpack",
-						Version: "some-version",
-						SHA256:  "sha256:some-buildpack-sha",
-					},
-					Metadata: cargo.ConfigMetadata{
-						Dependencies: []cargo.ConfigMetadataDependency{
-							{
-								ID:           "some-dependency",
-								Stacks:       []string{"some-stack"},
-								Version:      "1.2.3",
-								SHA256:       "one-more-sha",
-								Source:       "some-source",
-								SourceSHA256: "source-sha",
+					Config: cargo.Config{
+						Buildpack: cargo.ConfigBuildpack{
+							ID:      "some-buildpack",
+							Name:    "Some Buildpack",
+							Version: "some-version",
+						},
+						Metadata: cargo.ConfigMetadata{
+							Dependencies: []cargo.ConfigMetadataDependency{
+								{
+									ID:           "some-dependency",
+									Stacks:       []string{"some-stack"},
+									Version:      "1.2.3",
+									SHA256:       "one-more-sha",
+									Source:       "some-source",
+									SourceSHA256: "source-sha",
+								},
+								{
+									ID:      "some-dependency",
+									Stacks:  []string{"other-stack"},
+									Version: "1.2.3",
+									SHA256:  "one-more-sha",
+								},
+								{
+									ID:      "other-dependency",
+									Stacks:  []string{"some-stack", "other-stack"},
+									Version: "2.3.4",
+									SHA256:  "another-sha",
+								},
+								{
+									ID:      "other-dependency",
+									Stacks:  []string{"other-stack"},
+									Version: "2.3.5",
+									SHA256:  "some-sha",
+								},
 							},
-							{
-								ID:      "some-dependency",
-								Stacks:  []string{"other-stack"},
-								Version: "1.2.3",
-								SHA256:  "one-more-sha",
-							},
-							{
-								ID:      "other-dependency",
-								Stacks:  []string{"some-stack", "other-stack"},
-								Version: "2.3.4",
-								SHA256:  "another-sha",
-							},
-							{
-								ID:      "other-dependency",
-								Stacks:  []string{"other-stack"},
-								Version: "2.3.5",
-								SHA256:  "some-sha",
+							DefaultVersions: map[string]string{
+								"some-dependency":  "1.2.x",
+								"other-dependency": "2.3.x",
 							},
 						},
-						DefaultVersions: map[string]string{
-							"some-dependency":  "1.2.x",
-							"other-dependency": "2.3.x",
+						Stacks: []cargo.ConfigStack{
+							{ID: "some-stack"},
+							{ID: "other-stack"},
 						},
 					},
-					Stacks: []cargo.ConfigStack{
-						{ID: "some-stack"},
-						{ID: "other-stack"},
-					},
+					SHA256: "sha256:some-buildpack-sha",
 				},
 			})
 			Expect(buffer.String()).To(Equal(`## Some Buildpack some-version` +
@@ -104,18 +106,20 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 		context("when dependencies and default-versions are empty", func() {
 			it("returns a list of dependencies", func() {
-				formatter.Markdown([]cargo.Config{
+				formatter.Markdown([]internal.BuildpackMetadata{
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Name:    "Some Buildpack",
-							Version: "some-version",
-							SHA256:  "sha256:some-buildpack-sha",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "some-buildpack",
+								Name:    "Some Buildpack",
+								Version: "some-version",
+							},
+							Stacks: []cargo.ConfigStack{
+								{ID: "some-stack"},
+								{ID: "other-stack"},
+							},
 						},
-						Stacks: []cargo.ConfigStack{
-							{ID: "some-stack"},
-							{ID: "other-stack"},
-						},
+						SHA256: "sha256:some-buildpack-sha",
 					},
 				})
 				Expect(buffer.String()).To(Equal(`## Some Buildpack some-version` +
@@ -136,46 +140,48 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 		context("when stacks are empty", func() {
 			it("returns a list of dependencies", func() {
-				formatter.Markdown([]cargo.Config{
+				formatter.Markdown([]internal.BuildpackMetadata{
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Name:    "Some Buildpack",
-							Version: "some-version",
-							SHA256:  "sha256:some-buildpack-sha",
-						},
-						Metadata: cargo.ConfigMetadata{
-							Dependencies: []cargo.ConfigMetadataDependency{
-								{
-									ID:      "some-dependency",
-									Stacks:  []string{"some-stack"},
-									Version: "1.2.3",
-									SHA256:  "one-more-sha",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "some-buildpack",
+								Name:    "Some Buildpack",
+								Version: "some-version",
+							},
+							Metadata: cargo.ConfigMetadata{
+								Dependencies: []cargo.ConfigMetadataDependency{
+									{
+										ID:      "some-dependency",
+										Stacks:  []string{"some-stack"},
+										Version: "1.2.3",
+										SHA256:  "one-more-sha",
+									},
+									{
+										ID:      "some-dependency",
+										Stacks:  []string{"other-stack"},
+										Version: "1.2.3",
+										SHA256:  "one-more-sha",
+									},
+									{
+										ID:      "other-dependency",
+										Stacks:  []string{"some-stack", "other-stack"},
+										Version: "2.3.4",
+										SHA256:  "another-sha",
+									},
+									{
+										ID:      "other-dependency",
+										Stacks:  []string{"other-stack"},
+										Version: "2.3.5",
+										SHA256:  "some-sha",
+									},
 								},
-								{
-									ID:      "some-dependency",
-									Stacks:  []string{"other-stack"},
-									Version: "1.2.3",
-									SHA256:  "one-more-sha",
-								},
-								{
-									ID:      "other-dependency",
-									Stacks:  []string{"some-stack", "other-stack"},
-									Version: "2.3.4",
-									SHA256:  "another-sha",
-								},
-								{
-									ID:      "other-dependency",
-									Stacks:  []string{"other-stack"},
-									Version: "2.3.5",
-									SHA256:  "some-sha",
+								DefaultVersions: map[string]string{
+									"some-dependency":  "1.2.x",
+									"other-dependency": "2.3.x",
 								},
 							},
-							DefaultVersions: map[string]string{
-								"some-dependency":  "1.2.x",
-								"other-dependency": "2.3.x",
-							},
 						},
+						SHA256: "sha256:some-buildpack-sha",
 					},
 				})
 				Expect(buffer.String()).To(Equal(`## Some Buildpack some-version` +
@@ -205,61 +211,69 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 		context("when there are order groupings", func() {
 			it("prints the order groupings", func() {
-				formatter.Markdown([]cargo.Config{
+				formatter.Markdown([]internal.BuildpackMetadata{
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "order-buildpack",
-							Name:    "Order Buildpack",
-							Version: "order-version",
-							SHA256:  "sha256:order-buildpack-sha",
-						},
-						Order: []cargo.ConfigOrder{
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "some-buildpack",
-										Version: "1.2.3",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "order-buildpack",
+								Name:    "Order Buildpack",
+								Version: "order-version",
+							},
+							Order: []cargo.ConfigOrder{
+								{
+									Group: []cargo.ConfigOrderGroup{
+										{
+											ID:      "some-buildpack",
+											Version: "1.2.3",
+										},
+										{
+											ID:       "optional-buildpack",
+											Version:  "2.3.4",
+											Optional: true,
+										},
 									},
-									{
-										ID:       "optional-buildpack",
-										Version:  "2.3.4",
-										Optional: true,
+								},
+								{
+									Group: []cargo.ConfigOrderGroup{
+										{
+											ID:      "some-buildpack",
+											Version: "1.2.3",
+										},
+										{
+											ID:      "other-buildpack",
+											Version: "3.4.5",
+										},
 									},
 								},
 							},
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "some-buildpack",
-										Version: "1.2.3",
-									},
-									{
-										ID:      "other-buildpack",
-										Version: "3.4.5",
-									},
-								},
+						},
+						SHA256: "sha256:order-buildpack-sha",
+					},
+					{
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "some-buildpack",
+								Name:    "Some Buildpack",
+								Version: "1.2.3",
 							},
 						},
 					},
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Name:    "Some Buildpack",
-							Version: "1.2.3",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "optional-buildpack",
+								Name:    "Optional Buildpack",
+								Version: "2.3.4",
+							},
 						},
 					},
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "optional-buildpack",
-							Name:    "Optional Buildpack",
-							Version: "2.3.4",
-						},
-					},
-					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "other-buildpack",
-							Name:    "Other Buildpack",
-							Version: "3.4.5",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "other-buildpack",
+								Name:    "Other Buildpack",
+								Version: "3.4.5",
+							},
 						},
 					},
 				})
@@ -328,43 +342,45 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 	context("JSON", func() {
 		it("returns a list of dependencies", func() {
-			formatter.JSON([]cargo.Config{
+			formatter.JSON([]internal.BuildpackMetadata{
 				{
-					Buildpack: cargo.ConfigBuildpack{
-						ID:      "some-buildpack",
-						Version: "some-version",
-					},
-					Metadata: cargo.ConfigMetadata{
-						Dependencies: []cargo.ConfigMetadataDependency{
-							{
-								ID:      "some-dependency",
-								Stacks:  []string{"some-stack"},
-								Version: "1.2.3",
+					Config: cargo.Config{
+						Buildpack: cargo.ConfigBuildpack{
+							ID:      "some-buildpack",
+							Version: "some-version",
+						},
+						Metadata: cargo.ConfigMetadata{
+							Dependencies: []cargo.ConfigMetadataDependency{
+								{
+									ID:      "some-dependency",
+									Stacks:  []string{"some-stack"},
+									Version: "1.2.3",
+								},
+								{
+									ID:      "some-dependency",
+									Stacks:  []string{"other-stack"},
+									Version: "1.2.3",
+								},
+								{
+									ID:      "other-dependency",
+									Stacks:  []string{"some-stack", "other-stack"},
+									Version: "2.3.4",
+								},
+								{
+									ID:      "other-dependency",
+									Stacks:  []string{"other-stack"},
+									Version: "2.3.5",
+								},
 							},
-							{
-								ID:      "some-dependency",
-								Stacks:  []string{"other-stack"},
-								Version: "1.2.3",
-							},
-							{
-								ID:      "other-dependency",
-								Stacks:  []string{"some-stack", "other-stack"},
-								Version: "2.3.4",
-							},
-							{
-								ID:      "other-dependency",
-								Stacks:  []string{"other-stack"},
-								Version: "2.3.5",
+							DefaultVersions: map[string]string{
+								"some-dependency":  "1.2.x",
+								"other-dependency": "2.3.x",
 							},
 						},
-						DefaultVersions: map[string]string{
-							"some-dependency":  "1.2.x",
-							"other-dependency": "2.3.x",
+						Stacks: []cargo.ConfigStack{
+							{ID: "some-stack"},
+							{ID: "other-stack"},
 						},
-					},
-					Stacks: []cargo.ConfigStack{
-						{ID: "some-stack"},
-						{ID: "other-stack"},
 					},
 				},
 			})
@@ -419,52 +435,56 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 		context("when buildpackage is a meta buildpackage", func() {
 			it("prints the meta buildpackage info and the info of all its children", func() {
-				formatter.JSON([]cargo.Config{
+				formatter.JSON([]internal.BuildpackMetadata{
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Version: "some-version",
-						},
-						Metadata: cargo.ConfigMetadata{
-							Dependencies: []cargo.ConfigMetadataDependency{
-								{
-									ID:      "some-dependency",
-									Stacks:  []string{"some-stack"},
-									Version: "1.2.3",
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "some-buildpack",
+								Version: "some-version",
+							},
+							Metadata: cargo.ConfigMetadata{
+								Dependencies: []cargo.ConfigMetadataDependency{
+									{
+										ID:      "some-dependency",
+										Stacks:  []string{"some-stack"},
+										Version: "1.2.3",
+									},
+								},
+								DefaultVersions: map[string]string{
+									"some-dependency": "1.2.x",
 								},
 							},
-							DefaultVersions: map[string]string{
-								"some-dependency": "1.2.x",
+							Stacks: []cargo.ConfigStack{
+								{ID: "some-stack"},
 							},
-						},
-						Stacks: []cargo.ConfigStack{
-							{ID: "some-stack"},
 						},
 					},
 					{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Version: "some-version",
-						},
-						Order: []cargo.ConfigOrder{
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "some-buildpack",
-										Version: "1.2.3",
-									},
-									{
-										ID:       "optional-buildpack",
-										Version:  "2.3.4",
-										Optional: true,
+						Config: cargo.Config{
+							Buildpack: cargo.ConfigBuildpack{
+								ID:      "some-buildpack",
+								Version: "some-version",
+							},
+							Order: []cargo.ConfigOrder{
+								{
+									Group: []cargo.ConfigOrderGroup{
+										{
+											ID:      "some-buildpack",
+											Version: "1.2.3",
+										},
+										{
+											ID:       "optional-buildpack",
+											Version:  "2.3.4",
+											Optional: true,
+										},
 									},
 								},
-							},
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "other-buildpack",
-										Version: "3.4.5",
+								{
+									Group: []cargo.ConfigOrderGroup{
+										{
+											ID:      "other-buildpack",
+											Version: "3.4.5",
+										},
 									},
 								},
 							},
