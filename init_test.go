@@ -30,6 +30,7 @@ func TestUnitJam(t *testing.T) {
 	suite("update-builder", testUpdateBuilder)
 	suite("update-buildpack", testUpdateBuildpack)
 	suite("update-dependencies", testUpdateDependencies)
+	suite("version", testVersion)
 
 	suite.Before(func(t *testing.T) {
 		var (
@@ -37,7 +38,7 @@ func TestUnitJam(t *testing.T) {
 			err    error
 		)
 
-		path, err = gexec.Build("github.com/paketo-buildpacks/jam")
+		path, err = gexec.Build("github.com/paketo-buildpacks/jam", "-ldflags", `-X github.com/paketo-buildpacks/jam/commands.jamVersion=1.2.3`)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
