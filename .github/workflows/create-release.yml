@@ -43,7 +43,7 @@ jobs:
       with:
         current_version: ${{ steps.reset.outputs.current_version }}
     - name: Package Jam
-      run : ./scripts/package.sh
+      run : ./scripts/package.sh --version ${{ steps.tag.outputs.tag }}
     - name: Create Draft Release
       uses: paketo-buildpacks/github-config/actions/release/create@main
       with:
