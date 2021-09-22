@@ -24,8 +24,8 @@ func testVersion(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 	})
 
-	context("when the format is set to markdown", func() {
-		it("prints out the summary of a buildpack tarball", func() {
+	context("running the version command", func() {
+		it("the version of the jam binary is printed to standard out", func() {
 			command := exec.Command(
 				path, "version",
 			)
