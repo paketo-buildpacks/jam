@@ -229,87 +229,93 @@ version = "2.3.4"
 		it("returns a list of dependencies", func() {
 			configs, err := inspector.Dependencies(buildpackage)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(configs).To(Equal([]cargo.Config{
+			Expect(configs).To(Equal([]internal.BuildpackMetadata{
 				{
-					Buildpack: cargo.ConfigBuildpack{
-						ID:      "some-buildpack",
-						Version: "1.2.3",
-					},
-					Metadata: cargo.ConfigMetadata{
-						Dependencies: []cargo.ConfigMetadataDependency{
-							{
-								ID:      "some-dependency",
-								Stacks:  []string{"some-stack"},
-								Version: "1.2.3",
-							},
-							{
-								ID:      "other-dependency",
-								Stacks:  []string{"other-stack"},
-								Version: "2.3.4",
-							},
+					Config: cargo.Config{
+						Buildpack: cargo.ConfigBuildpack{
+							ID:      "some-buildpack",
+							Version: "1.2.3",
 						},
-						DefaultVersions: map[string]string{
-							"some-dependency":  "1.2.x",
-							"other-dependency": "2.3.x",
-						},
-					},
-					Stacks: []cargo.ConfigStack{
-						{ID: "some-stack"},
-						{ID: "other-stack"},
-					},
-				},
-				{
-					Buildpack: cargo.ConfigBuildpack{
-						ID:      "other-buildpack",
-						Version: "2.3.4",
-					},
-					Metadata: cargo.ConfigMetadata{
-						Dependencies: []cargo.ConfigMetadataDependency{
-							{
-								ID:      "first-dependency",
-								Stacks:  []string{"first-stack"},
-								Version: "4.5.6",
-							},
-							{
-								ID:      "second-dependency",
-								Stacks:  []string{"second-stack"},
-								Version: "5.6.7",
-							},
-						},
-						DefaultVersions: map[string]string{
-							"first-dependency":  "4.5.x",
-							"second-dependency": "5.6.x",
-						},
-					},
-					Stacks: []cargo.ConfigStack{
-						{ID: "first-stack"},
-						{ID: "second-stack"},
-					},
-				},
-				{
-					Buildpack: cargo.ConfigBuildpack{
-						ID:      "meta-buildpack",
-						Version: "3.4.5",
-						SHA256:  "sha256:manifest-sha",
-					},
-					Order: []cargo.ConfigOrder{
-						{
-							Group: []cargo.ConfigOrderGroup{
+						Metadata: cargo.ConfigMetadata{
+							Dependencies: []cargo.ConfigMetadataDependency{
 								{
-									ID:      "some-buildpack",
+									ID:      "some-dependency",
+									Stacks:  []string{"some-stack"},
 									Version: "1.2.3",
 								},
-							},
-						},
-						{
-							Group: []cargo.ConfigOrderGroup{
 								{
-									ID:      "other-buildpack",
+									ID:      "other-dependency",
+									Stacks:  []string{"other-stack"},
 									Version: "2.3.4",
 								},
 							},
+							DefaultVersions: map[string]string{
+								"some-dependency":  "1.2.x",
+								"other-dependency": "2.3.x",
+							},
+						},
+						Stacks: []cargo.ConfigStack{
+							{ID: "some-stack"},
+							{ID: "other-stack"},
 						},
 					},
+				},
+				{
+					Config: cargo.Config{
+						Buildpack: cargo.ConfigBuildpack{
+							ID:      "other-buildpack",
+							Version: "2.3.4",
+						},
+						Metadata: cargo.ConfigMetadata{
+							Dependencies: []cargo.ConfigMetadataDependency{
+								{
+									ID:      "first-dependency",
+									Stacks:  []string{"first-stack"},
+									Version: "4.5.6",
+								},
+								{
+									ID:      "second-dependency",
+									Stacks:  []string{"second-stack"},
+									Version: "5.6.7",
+								},
+							},
+							DefaultVersions: map[string]string{
+								"first-dependency":  "4.5.x",
+								"second-dependency": "5.6.x",
+							},
+						},
+						Stacks: []cargo.ConfigStack{
+							{ID: "first-stack"},
+							{ID: "second-stack"},
+						},
+					},
+				},
+				{
+					Config: cargo.Config{
+						Buildpack: cargo.ConfigBuildpack{
+							ID:      "meta-buildpack",
+							Version: "3.4.5",
+						},
+						Order: []cargo.ConfigOrder{
+							{
+								Group: []cargo.ConfigOrderGroup{
+									{
+										ID:      "some-buildpack",
+										Version: "1.2.3",
+									},
+								},
+							},
+							{
+								Group: []cargo.ConfigOrderGroup{
+									{
+										ID:      "other-buildpack",
+										Version: "2.3.4",
+									},
+								},
+							},
+						},
+					},
+					SHA256: "sha256:manifest-sha",
 				},
 			}))
 		})

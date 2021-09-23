@@ -19,7 +19,12 @@ func NewBuildpackInspector() BuildpackInspector {
 	return BuildpackInspector{}
 }
 
-func (i BuildpackInspector) Dependencies(path string) ([]cargo.Config, error) {
+type BuildpackMetadata struct {
+	Config cargo.Config
+	SHA256 string
+}
+
+func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -65,7 +70,7 @@ func (i BuildpackInspector) Dependencies(path string) ([]cargo.Config, error) {
 		return nil, err
 	}
 
-	var configs []cargo.Config
+	var metadataCollection []BuildpackMetadata
 	for _, layer := range m.Layers {
 		_, err = file.Seek(0, 0)
 		if err != nil {
@@ -94,17 +99,20 @@ func (i BuildpackInspector) Dependencies(path string) ([]cargo.Config, error) {
 			return nil, err
 		}
 
-		if len(config.Order) > 0 {
-			config.Buildpack.SHA256 = buildpackageDigest
+		metadata := BuildpackMetadata{
+			Config: config,
 		}
-		configs = append(configs, config)
+		if len(config.Order) > 0 {
+			metadata.SHA256 = buildpackageDigest
+		}
+		metadataCollection = append(metadataCollection, metadata)
 	}
 
-	if len(configs) == 1 {
-		configs[0].Buildpack.SHA256 = buildpackageDigest
+	if len(metadataCollection) == 1 {
+		metadataCollection[0].SHA256 = buildpackageDigest
 	}
 
-	return configs, nil
+	return metadataCollection, nil
 }
 
 func fetchArchivedFile(tr *tar.Reader, filename string) (io.Reader, error) {
