@@ -99,29 +99,29 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 
 }
 
-func (f Formatter) Markdown(configs []cargo.Config) {
+func (f Formatter) Markdown(entries []BuildpackMetadata) {
 	//Language-family case
-	if len(configs) > 1 {
-		var familyConfig cargo.Config
-		for index, config := range configs {
-			if len(config.Order) > 0 {
-				familyConfig = config
-				configs = append(configs[:index], configs[index+1:]...)
+	if len(entries) > 1 {
+		var familyMetadata BuildpackMetadata
+		for index, entry := range entries {
+			if len(entry.Config.Order) > 0 {
+				familyMetadata = entry
+				entries = append(entries[:index], entries[index+1:]...)
 				break
 			}
 		}
 
 		//Header section
-		fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyConfig.Buildpack.Name, familyConfig.Buildpack.Version, familyConfig.Buildpack.ID)
-		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", familyConfig.Buildpack.SHA256)
+		fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyMetadata.Config.Buildpack.Name, familyMetadata.Config.Buildpack.Version, familyMetadata.Config.Buildpack.ID)
+		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", familyMetadata.SHA256)
 		fmt.Fprintf(f.writer, "#### Included Buildpackages:\n")
 		fmt.Fprintf(f.writer, "| Name | ID | Version |\n|---|---|---|\n")
-		for _, config := range configs {
-			fmt.Fprintf(f.writer, "| %s | %s | %s |\n", config.Buildpack.Name, config.Buildpack.ID, config.Buildpack.Version)
+		for _, entry := range entries {
+			fmt.Fprintf(f.writer, "| %s | %s | %s |\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.ID, entry.Config.Buildpack.Version)
 		}
 		//Sub Header
 		fmt.Fprintf(f.writer, "\n<details>\n<summary>Order Groupings</summary>\n\n")
-		for _, o := range familyConfig.Order {
+		for _, o := range familyMetadata.Config.Order {
 			fmt.Fprintf(f.writer, "| ID | Version | Optional |\n|---|---|---|\n")
 			for _, g := range o.Group {
 				fmt.Fprintf(f.writer, "| %s | %s | %t |\n", g.ID, g.Version, g.Optional)
@@ -130,36 +130,36 @@ func (f Formatter) Markdown(configs []cargo.Config) {
 		}
 		fmt.Fprintf(f.writer, "</details>\n\n---\n")
 
-		for _, config := range configs {
-			fmt.Fprintf(f.writer, "\n<details>\n<summary>%s %s</summary>\n", config.Buildpack.Name, config.Buildpack.Version)
-			fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", config.Buildpack.ID)
-			printImplementation(f.writer, config)
+		for _, entry := range entries {
+			fmt.Fprintf(f.writer, "\n<details>\n<summary>%s %s</summary>\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.Version)
+			fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entry.Config.Buildpack.ID)
+			printImplementation(f.writer, entry.Config)
 			fmt.Fprintf(f.writer, "---\n\n</details>\n")
 		}
 
 	} else { //Implementation case
-		fmt.Fprintf(f.writer, "## %s %s\n", configs[0].Buildpack.Name, configs[0].Buildpack.Version)
-		fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", configs[0].Buildpack.ID)
-		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", configs[0].Buildpack.SHA256)
-		printImplementation(f.writer, configs[0])
+		fmt.Fprintf(f.writer, "## %s %s\n", entries[0].Config.Buildpack.Name, entries[0].Config.Buildpack.Version)
+		fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entries[0].Config.Buildpack.ID)
+		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", entries[0].SHA256)
+		printImplementation(f.writer, entries[0].Config)
 	}
 
 }
 
-func (f Formatter) JSON(configs []cargo.Config) {
+func (f Formatter) JSON(entries []BuildpackMetadata) {
 	var output struct {
 		Buildpackage cargo.Config   `json:"buildpackage"`
 		Children     []cargo.Config `json:"children,omitempty"`
 	}
 
-	output.Buildpackage = configs[0]
+	output.Buildpackage = entries[0].Config
 
-	if len(configs) > 1 {
-		for _, config := range configs {
-			if len(config.Order) > 0 {
-				output.Buildpackage = config
+	if len(entries) > 1 {
+		for _, entry := range entries {
+			if len(entry.Config.Order) > 0 {
+				output.Buildpackage = entry.Config
 			} else {
-				output.Children = append(output.Children, config)
+				output.Children = append(output.Children, entry.Config)
 			}
 		}
 	}
