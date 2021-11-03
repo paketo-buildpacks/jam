@@ -25,15 +25,22 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 			defer file.Close()
 
 			_, err = file.WriteString(`
-				api = "0.2"
+				api = "0.6"
 
 				[buildpack]
-					id = "some-composite-buildpack"
-					name = "Some Composite Buildpack"
-					version = "some-composite-buildpack-version"
+					id = "some-buildpack"
+					name = "Some Buildpack"
+					version = "some-buildpack-version"
+					homepage = "some-buildpack-homepage"
+					description = "some-buildpack-description"
+					keywords = [ "some-buildpack-keyword" ]
+
+				[[buildpack.licenses]]
+					type = "some-buildpack-license-type"
+					uri = "some-buildpack-license-uri"
 
 				[metadata]
-					include-files = ["buildpack.toml"]
+					include-files = [ "buildpack.toml" ]
 
 				[[order]]
 					[[order.group]]
@@ -62,11 +69,20 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 			config, err := internal.ParseBuildpackConfig(path)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(internal.BuildpackConfig{
-				API: "0.2",
+				API: "0.6",
 				Buildpack: map[string]interface{}{
-					"id":      "some-composite-buildpack",
-					"name":    "Some Composite Buildpack",
-					"version": "some-composite-buildpack-version",
+					"id":          "some-buildpack",
+					"name":        "Some Buildpack",
+					"version":     "some-buildpack-version",
+					"homepage":    "some-buildpack-homepage",
+					"description": "some-buildpack-description",
+					"keywords":    []interface{}{"some-buildpack-keyword"},
+					"licenses": []map[string]interface{}{
+						{
+							"type": "some-buildpack-license-type",
+							"uri":  "some-buildpack-license-uri",
+						},
+					},
 				},
 				Metadata: map[string]interface{}{
 					"include-files": []interface{}{"buildpack.toml"},
@@ -141,11 +157,20 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 
 		it("overwrites the buildpack.toml configuration", func() {
 			err := internal.OverwriteBuildpackConfig(path, internal.BuildpackConfig{
-				API: "0.2",
+				API: "0.6",
 				Buildpack: map[string]interface{}{
-					"id":      "some-composite-buildpack",
-					"name":    "Some Composite Buildpack",
-					"version": "some-composite-buildpack-version",
+					"id":          "some-buildpack",
+					"name":        "Some Buildpack",
+					"version":     "some-buildpack-version",
+					"homepage":    "some-buildpack-homepage",
+					"description": "some-buildpack-description",
+					"keywords":    []interface{}{"some-buildpack-keyword"},
+					"licenses": []map[string]interface{}{
+						{
+							"type": "some-buildpack-license-type",
+							"uri":  "some-buildpack-license-uri",
+						},
+					},
 				},
 				Metadata: map[string]interface{}{
 					"include-files": []interface{}{"buildpack.toml"},
@@ -179,12 +204,19 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 			contents, err := os.ReadFile(path)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(MatchTOML(`
-				api = "0.2"
+				api = "0.6"
 
 				[buildpack]
-					id = "some-composite-buildpack"
-					name = "Some Composite Buildpack"
-					version = "some-composite-buildpack-version"
+					id = "some-buildpack"
+					name = "Some Buildpack"
+					version = "some-buildpack-version"
+					homepage = "some-buildpack-homepage"
+					description = "some-buildpack-description"
+					keywords = [ "some-buildpack-keyword" ]
+
+				[[buildpack.licenses]]
+					type = "some-buildpack-license-type"
+					uri = "some-buildpack-license-uri"
 
 				[metadata]
 					include-files = ["buildpack.toml"]
