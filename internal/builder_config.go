@@ -35,6 +35,7 @@ type BuilderConfigOrderGroup struct {
 	Version  string `toml:"version,omitempty"`
 	Optional bool   `toml:"optional,omitempty"`
 }
+
 type BuilderConfigStack struct {
 	ID              string   `toml:"id"`
 	BuildImage      string   `toml:"build-image"`
