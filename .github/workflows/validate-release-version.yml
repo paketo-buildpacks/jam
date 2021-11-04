@@ -1,0 +1,33 @@
+name: Validate Release Version
+
+on:
+  release:
+    types:
+    - published
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+    - name: Parse Event
+      id: event
+      run: |
+        echo "::set-output name=tag::$(jq -r '.release.tag_name' "${GITHUB_EVENT_PATH}" | sed s/^v//)"
+        echo "::set-output name=download_url::$(jq -r '.release.assets[] | select(.name | endswith("linux")) | .url' "${GITHUB_EVENT_PATH}")"
+    - name: Download
+      id: download
+      uses: paketo-buildpacks/github-config/actions/release/download-asset@main
+      with:
+        url: ${{ steps.event.outputs.download_url }}
+        output: "$GITHUB_WORKSPACE/jam"
+        token: ${{ secrets.PAKETO_BOT_GITHUB_TOKEN }}
+    - name: Validate version
+      run: |
+        chmod +x "$GITHUB_WORKSPACE/jam"
+        binVersion=$("$GITHUB_WORKSPACE/jam" version | sed -e "s/^jam //")
+        githubReleaseVersion="${{ steps.event.outputs.tag }}"
+        if [[ "$binVersion" != "$githubReleaseVersion" ]]; then
+          echo "Version built into binary ($binVersion) and github release ($githubReleaseVersion) are not identical"
+          exit 1
+        fi
