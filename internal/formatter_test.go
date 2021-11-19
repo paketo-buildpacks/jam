@@ -80,14 +80,11 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 				"\n\n**ID:** `some-buildpack`\n\n" +
 
-				"**Digest:** `sha256:some-buildpack-sha`" +
-
+				"**Digest:** `sha256:some-buildpack-sha`\n\n" +
+				"#### Supported Stacks:\n" +
+				"- `other-stack`\n" +
+				"- `some-stack`\n" +
 				`
-
-#### Supported Stacks:
-- other-stack
-- some-stack
-
 #### Default Dependency Versions:
 | ID | Version |
 |---|---|
@@ -126,15 +123,12 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 					"\n\n**ID:** `some-buildpack`\n\n" +
 
-					"**Digest:** `sha256:some-buildpack-sha`" +
+					"**Digest:** `sha256:some-buildpack-sha`\n\n" +
 
-					`
-
-#### Supported Stacks:
-- other-stack
-- some-stack
-
-`))
+					"#### Supported Stacks:\n" +
+					"- `other-stack`\n" +
+					"- `some-stack`\n\n",
+				))
 			})
 		})
 

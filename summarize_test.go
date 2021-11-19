@@ -274,10 +274,10 @@ version = "3.4.5"
 
 				"\n\n**ID:** `some-buildpack`\n\n" +
 
-				`#### Supported Stacks:
-- other-stack
-- some-stack
-
+				"#### Supported Stacks:\n" +
+				"- `other-stack`\n" +
+				"- `some-stack`\n" +
+				`
 #### Default Dependency Versions:
 | ID | Version |
 |---|---|
@@ -298,11 +298,10 @@ version = "3.4.5"
 <summary>Other Buildpack 2.3.4</summary>` +
 
 				"\n\n**ID:** `other-buildpack`\n\n" +
-
-				`#### Supported Stacks:
-- first-stack
-- second-stack
-
+				"#### Supported Stacks:\n" +
+				"- `first-stack`\n" +
+				"- `second-stack`\n" +
+				`
 #### Default Dependency Versions:
 | ID | Version |
 |---|---|

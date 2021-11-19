@@ -30,7 +30,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 
 		fmt.Fprintf(writer, "#### Supported Stacks:\n")
 		for _, s := range config.Stacks {
-			fmt.Fprintf(writer, "- %s\n", s.ID)
+			fmt.Fprintf(writer, "- `%s`\n", s.ID)
 		}
 		fmt.Fprintln(writer)
 	}
