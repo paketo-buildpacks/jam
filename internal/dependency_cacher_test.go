@@ -11,8 +11,8 @@ import (
 
 	"github.com/paketo-buildpacks/jam/internal"
 	"github.com/paketo-buildpacks/jam/internal/fakes"
-	"github.com/paketo-buildpacks/packit/cargo"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2/cargo"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

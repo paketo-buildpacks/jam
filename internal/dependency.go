@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/paketo-buildpacks/packit/cargo"
+	"github.com/paketo-buildpacks/packit/v2/cargo"
 )
 
 // Dependency represents the structure of a single entry in the dep-server

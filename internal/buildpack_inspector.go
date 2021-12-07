@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/paketo-buildpacks/packit/cargo"
+	"github.com/paketo-buildpacks/packit/v2/cargo"
 )
 
 type BuildpackInspector struct{}

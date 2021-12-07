@@ -19,7 +19,7 @@ import (
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
-	. "github.com/paketo-buildpacks/packit/matchers"
+	. "github.com/paketo-buildpacks/packit/v2/matchers"
 )
 
 func mustConfigName(t *testing.T, img v1.Image) v1.Hash {
