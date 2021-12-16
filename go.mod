@@ -7,7 +7,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/google/go-containerregistry v0.7.0
 	github.com/onsi/gomega v1.17.0
-	github.com/paketo-buildpacks/packit/v2 v2.0.0
+	github.com/paketo-buildpacks/packit/v2 v2.0.1
 	github.com/pelletier/go-toml v1.9.4
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.2.1
