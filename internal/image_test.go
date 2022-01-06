@@ -102,7 +102,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			context("when the repo name cannot be parsed", func() {
 				it("returns an error", func() {
 					_, err := internal.FindLatestImage(fmt.Sprintf("%s/a:latest", strings.TrimPrefix(server.URL, "http://")))
-					Expect(err).To(MatchError("failed to parse image repository: repository must be between 2 and 255 runes in length: a"))
+					Expect(err).To(MatchError("failed to parse image repository: repository must be between 2 and 255 characters in length: a"))
 				})
 			})
 
@@ -224,7 +224,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 						fmt.Sprintf("%s/some-org/some-repo-run:some-cnb", strings.TrimPrefix(server.URL, "http://")),
 						fmt.Sprintf("%s/a:latest", strings.TrimPrefix(server.URL, "http://")),
 					)
-					Expect(err).To(MatchError("failed to parse build image repository: repository must be between 2 and 255 runes in length: a"))
+					Expect(err).To(MatchError("failed to parse build image repository: repository must be between 2 and 255 characters in length: a"))
 				})
 			})
 
