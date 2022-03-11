@@ -10,5 +10,5 @@ require (
 	github.com/paketo-buildpacks/packit/v2 v2.1.0
 	github.com/pelletier/go-toml v1.9.4
 	github.com/sclevine/spec v1.4.0
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 )
