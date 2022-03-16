@@ -3,10 +3,12 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/buildpacks/pack/pkg/buildpack"
 	"github.com/docker/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -17,6 +19,35 @@ type Image struct {
 	Name    string
 	Path    string
 	Version string
+}
+
+func FindLatestImageOnCNBRegistry(uri, api string) (Image, error) {
+	id, _ := buildpack.ParseIDLocator(uri)
+
+	resp, err := http.Get(fmt.Sprintf("%s/v1/buildpacks/%s", api, id))
+	if err != nil {
+		return Image{}, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return Image{}, fmt.Errorf("unexpected response status: %s", resp.Status)
+	}
+
+	var metadata struct {
+		Latest struct {
+			Version string `json:"version"`
+		} `json:"latest"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&metadata)
+	if err != nil {
+		return Image{}, err
+	}
+
+	return Image{
+		Name:    fmt.Sprintf("urn:cnb:registry:%s", id),
+		Path:    id,
+		Version: metadata.Latest.Version,
+	}, nil
 }
 
 func FindLatestImage(uri string) (Image, error) {

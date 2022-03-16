@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/paketo-buildpacks/jam/internal"
 	"github.com/spf13/cobra"
@@ -11,6 +12,9 @@ import (
 type updateBuildpackFlags struct {
 	buildpackFile string
 	packageFile   string
+	api           string
+
+	noCNBRegistry bool
 }
 
 func updateBuildpack() *cobra.Command {
@@ -24,6 +28,8 @@ func updateBuildpack() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flags.buildpackFile, "buildpack-file", "", "path to the buildpack.toml file (required)")
 	cmd.Flags().StringVar(&flags.packageFile, "package-file", "", "path to the package.toml file (required)")
+	cmd.Flags().StringVar(&flags.api, "api", "https://registry.buildpacks.io/api/", "api for cnb registry (default: https://registry.buildpacks.io/api/)")
+	cmd.Flags().BoolVar(&flags.noCNBRegistry, "no-cnb-registry", false, "buildpacks not available on the CNB registry, so will revert to previous image references behavior")
 
 	err := cmd.MarkFlagRequired("buildpack-file")
 	if err != nil {
@@ -52,16 +58,40 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 	}
 
 	for i, dependency := range pkg.Dependencies {
-		image, err := internal.FindLatestImage(dependency.URI)
-		if err != nil {
-			return err
-		}
+		var (
+			buildpackageID string
+			image          internal.Image
+			err            error
+		)
+		if flags.noCNBRegistry {
+			image, err = internal.FindLatestImage(dependency.URI)
+			if err != nil {
+				return err
+			}
 
-		pkg.Dependencies[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
+			pkg.Dependencies[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
 
-		buildpackageID, err := internal.GetBuildpackageID(dependency.URI)
-		if err != nil {
-			return fmt.Errorf("failed to get buildpackage ID for %s: %w", dependency.URI, err)
+			buildpackageID, err = internal.GetBuildpackageID(dependency.URI)
+			if err != nil {
+				return fmt.Errorf("failed to get buildpackage ID for %s: %w", dependency.URI, err)
+			}
+		} else {
+			uri := dependency.URI
+			if !strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
+				uri, err = internal.GetBuildpackageID(dependency.URI)
+				if err != nil {
+					return fmt.Errorf("failed to get buildpackage ID for %s: %w", dependency.URI, err)
+				}
+			}
+
+			image, err = internal.FindLatestImageOnCNBRegistry(uri, flags.api)
+			if err != nil {
+				return err
+			}
+
+			pkg.Dependencies[i].URI = fmt.Sprintf("%s@%s", image.Name, image.Version)
+
+			buildpackageID = image.Path
 		}
 
 		for j, order := range bp.Order {
