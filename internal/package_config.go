@@ -31,14 +31,16 @@ func (d *PackageConfigDependency) UnmarshalTOML(v interface{}) error {
 	}
 
 	if d.URI != "" {
-		uri, err := url.Parse(d.URI)
-		if err != nil {
-			return err
+		if !strings.HasPrefix(d.URI, "urn:cnb:registry") {
+			uri, err := url.Parse(d.URI)
+			if err != nil {
+				return err
+			}
+
+			uri.Scheme = ""
+
+			d.URI = strings.TrimPrefix(uri.String(), "//")
 		}
-
-		uri.Scheme = ""
-
-		d.URI = strings.TrimPrefix(uri.String(), "//")
 	}
 
 	return nil
@@ -62,7 +64,7 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 
 func OverwritePackageConfig(path string, config PackageConfig) error {
 	for i, dependency := range config.Dependencies {
-		if !strings.HasPrefix(dependency.URI, "docker://") {
+		if !strings.HasPrefix(dependency.URI, "docker://") && !strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
 			config.Dependencies[i].URI = fmt.Sprintf("docker://%s", dependency.URI)
 		}
 	}

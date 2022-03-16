@@ -23,6 +23,105 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		dockerConfig string
 	)
 
+	context("FindLatestImageOnCNBRegistry", func() {
+		it.Before(func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+				switch req.URL.Path {
+				case "/v1/buildpacks/some-ns/some-name":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+  "latest": {
+    "version": "0.1.0",
+    "namespace": "some-ns",
+    "name": "some-name",
+    "description": "",
+    "homepage": "",
+    "licenses": null,
+    "stacks": [
+			"some-stack"
+    ],
+    "id": "a52bd991-0e17-46c0-a413-229b35943765"
+  },
+  "versions": [
+    {
+      "version": "0.1.0",
+			"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.1.0"
+    }
+  ]
+}`)
+
+				case "/v1/buildpacks/paketo-buildpacks/go":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+  "latest": {
+    "version": "0.1.0"
+  }
+}`)
+
+				case "/v1/buildpacks/not/ok":
+					w.WriteHeader(http.StatusTeapot)
+
+				case "/v1/buildpacks/broken/response":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `%`)
+
+				default:
+					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+				}
+			}))
+		})
+
+		it.After(func() {
+			server.Close()
+		})
+
+		it("returns the latest semver tag for the given image uri", func() {
+			image, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", server.URL)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(image).To(Equal(internal.Image{
+				Name:    "urn:cnb:registry:some-ns/some-name",
+				Path:    "some-ns/some-name",
+				Version: "0.1.0",
+			}))
+		})
+
+		context("when the uri is an image refernce that does not conform to the CNB registry", func() {
+			it("returns converts the uri", func() {
+				image, err := internal.FindLatestImageOnCNBRegistry("paketo-buildpacks/go", server.URL)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(image).To(Equal(internal.Image{
+					Name:    "urn:cnb:registry:paketo-buildpacks/go",
+					Path:    "paketo-buildpacks/go",
+					Version: "0.1.0",
+				}))
+			})
+		})
+
+		context("failure cases", func() {
+			context("when the url cannot be parsed", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", "not a valid URL")
+					Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
+				})
+			})
+
+			context("when the get returns a not OK status", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:not/ok", server.URL)
+					Expect(err).To(MatchError(ContainSubstring("unexpected response status: 418 I'm a teapot")))
+				})
+			})
+
+			context("when the response body is broken json", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:broken/response", server.URL)
+					Expect(err).To(MatchError(ContainSubstring("invalid character")))
+				})
+			})
+		})
+	})
+
 	context("FindLatestImage", func() {
 		it.Before(func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -79,6 +178,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		it.After(func() {
 			Expect(os.Unsetenv("DOCKER_CONFIG")).To(Succeed())
 			Expect(os.RemoveAll(dockerConfig)).To(Succeed())
+			server.Close()
 		})
 
 		it("returns the latest non-prerelease semver tag for the given image uri", func() {
@@ -172,6 +272,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		it.After(func() {
 			Expect(os.Unsetenv("DOCKER_CONFIG")).To(Succeed())
 			Expect(os.RemoveAll(dockerConfig)).To(Succeed())
+			server.Close()
 		})
 
 		it("returns the latest semver tag for the given image uri", func() {

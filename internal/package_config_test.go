@@ -36,6 +36,9 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 
 				[[dependencies]]
 				uri = "docker://some-registry/some-repository/other-buildpack-id:0.1.0"
+
+				[[dependencies]]
+				uri = "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"
 			`)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -57,6 +60,7 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 					{URI: "some-registry/some-repository/last-buildpack-id:0.2.0"},
 					{URI: "some-registry/some-repository/some-buildpack-id:0.20.1"},
 					{URI: "some-registry/some-repository/other-buildpack-id:0.1.0"},
+					{URI: "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"},
 				},
 			}))
 		})
@@ -137,6 +141,7 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 					{URI: "some-registry/some-repository/last-buildpack-id:0.2.0"},
 					{URI: "some-registry/some-repository/some-buildpack-id:0.20.1"},
 					{URI: "some-registry/some-repository/other-buildpack-id:0.1.0"},
+					{URI: "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"},
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -155,6 +160,9 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 
 				[[dependencies]]
 				uri = "docker://some-registry/some-repository/other-buildpack-id:0.1.0"
+
+				[[dependencies]]
+				uri = "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"
 			`))
 		})
 
