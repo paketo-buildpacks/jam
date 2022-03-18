@@ -31,33 +31,33 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 				case "/v1/buildpacks/some-ns/some-name":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
-  "latest": {
-    "version": "0.1.0",
-    "namespace": "some-ns",
-    "name": "some-name",
-    "description": "",
-    "homepage": "",
-    "licenses": null,
-    "stacks": [
-			"some-stack"
-    ],
-    "id": "a52bd991-0e17-46c0-a413-229b35943765"
-  },
-  "versions": [
-    {
-      "version": "0.1.0",
-			"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.1.0"
-    }
-  ]
-}`)
+					  "latest": {
+					    "version": "0.1.0",
+					    "namespace": "some-ns",
+					    "name": "some-name",
+					    "description": "",
+					    "homepage": "",
+					    "licenses": null,
+					    "stacks": [
+								"some-stack"
+					    ],
+					    "id": "a52bd991-0e17-46c0-a413-229b35943765"
+					  },
+					  "versions": [
+					    {
+					      "version": "0.1.0",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.1.0"
+					    }
+					  ]
+					}`)
 
 				case "/v1/buildpacks/paketo-buildpacks/go":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
-  "latest": {
-    "version": "0.1.0"
-  }
-}`)
+						"latest": {
+							"version": "0.1.0"
+						}
+					}`)
 
 				case "/v1/buildpacks/not/ok":
 					w.WriteHeader(http.StatusTeapot)

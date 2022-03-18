@@ -62,26 +62,27 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				case "/v1/buildpacks/paketo-buildpacks/go-dist":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
-  "latest": {
-    "version": "0.20.12"
-  }
-}`)
+						"latest": {
+							"version": "0.20.12"
+						}
+					}`)
 
 				case "/v1/buildpacks/paketo-buildpacks/mri":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
-  "latest": {
-    "version": "0.2.0"
-  }
-}`)
+						"latest": {
+							"version": "0.2.0"
+						}
+					}`)
 
 				case "/v1/buildpacks/paketo-buildpacks/node-engine":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
-  "latest": {
-		"version": "0.20.22"
-  }
-}`)
+						"latest": {
+							"version": "0.20.22"
+						}
+					}`)
+
 				case goConfigPath:
 					if req.Method != http.MethodGet {
 						t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
