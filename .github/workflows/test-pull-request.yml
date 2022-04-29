@@ -6,17 +6,23 @@ on:
     - main
 
 jobs:
-  unit:
-    name: Unit Tests
+  tests:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
     - name: Setup Go
       uses: actions/setup-go@v3
       with:
         go-version: 1.18.x
+
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Run Unit Tests
+
+    - name: Setup Docker Multi-Platform Builds
+      run: |
+        docker run --privileged --rm docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
+
+    - name: Run Tests
       run: go test -v -count=1 ./...
 
   upload:

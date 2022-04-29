@@ -1,4 +1,4 @@
-package main_test
+package integration_test
 
 import (
 	"archive/tar"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gexec"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -20,11 +21,13 @@ import (
 
 var path string
 
-func TestUnitJam(t *testing.T) {
-	SetDefaultEventuallyTimeout(10 * time.Second)
+func TestJam(t *testing.T) {
+	format.MaxLength = 0
+	SetDefaultEventuallyTimeout(10 * time.Minute)
 
 	suite := spec.New("jam", spec.Report(report.Terminal{}))
 	suite("Errors", testErrors)
+	suite("create-stack", testCreateStack)
 	suite("pack", testPack)
 	suite("summarize", testSummarize)
 	suite("update-builder", testUpdateBuilder)
@@ -32,22 +35,20 @@ func TestUnitJam(t *testing.T) {
 	suite("update-dependencies", testUpdateDependencies)
 	suite("version", testVersion)
 
-	suite.Before(func(t *testing.T) {
-		var (
-			Expect = NewWithT(t).Expect
-			err    error
-		)
+	var (
+		Expect = NewWithT(t).Expect
+		err    error
+	)
 
-		path, err = gexec.Build("github.com/paketo-buildpacks/jam", "-ldflags", `-X github.com/paketo-buildpacks/jam/commands.jamVersion=1.2.3`)
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	suite.After(func(t *testing.T) {
-		gexec.CleanupBuildArtifacts()
-	})
+	path, err = gexec.Build("github.com/paketo-buildpacks/jam", "-ldflags", `-X github.com/paketo-buildpacks/jam/commands.jamVersion=1.2.3`)
+	Expect(err).NotTo(HaveOccurred())
 
 	suite.Run(t)
+
+	gexec.CleanupBuildArtifacts()
 }
+
+func by(_ string, f func()) { f() }
 
 func ExtractFile(file *os.File, name string) ([]byte, *tar.Header, error) {
 	_, err := file.Seek(0, 0)
