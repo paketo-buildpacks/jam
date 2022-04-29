@@ -1,0 +1,30 @@
+id = "io.paketo.stacks.example"
+
+homepage = "https://github.com/paketo-buildpacks/stacks"
+maintainer = "Paketo Buildpacks"
+
+platforms = ["linux/amd64", "linux/arm64"]
+
+[build]
+  description = "this build stack is for example purposes only"
+  dockerfile = "./build.Dockerfile"
+  gid = 1000
+  uid = 1000
+  shell = "/bin/bash"
+
+  [build.args]
+    packages = "curl git jq openssl"
+
+[run]
+  description = "this run stack is for example purposes only"
+  dockerfile = "./run.Dockerfile"
+  gid = 1000
+  uid = 1001
+  shell = "/bin/bash"
+
+  [run.args]
+    packages = "openssl"
+
+[deprecated]
+  legacy-sbom = true
+  mixins = true

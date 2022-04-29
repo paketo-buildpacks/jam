@@ -4,7 +4,8 @@
 the idea of "packaging" or "packing" a buildpack.
 
 `jam` comes with the following commands:
-* help                : Help about any command
+* create-stack        : create a CNB stack
+* help                : help about any command
 * pack                : package buildpack
 * summarize           : summarize buildpackage
 * update-builder      : update builder

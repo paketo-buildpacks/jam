@@ -1,0 +1,109 @@
+package commands
+
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"time"
+
+	"github.com/paketo-buildpacks/jam/internal/ihop"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
+	"github.com/spf13/cobra"
+)
+
+func init() {
+	rootCmd.AddCommand(createStack())
+}
+
+type createStackFlags struct {
+	config      string
+	buildOutput string
+	runOutput   string
+	secrets     []string
+}
+
+func createStack() *cobra.Command {
+	flags := &createStackFlags{}
+	cmd := &cobra.Command{
+		Use:   "create-stack",
+		Short: "create-stack",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return createStackRun(*flags)
+		},
+	}
+	cmd.Flags().StringVar(&flags.config, "config", "", "path to a stack descriptor file (required)")
+	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path to output the build image OCI archive (required)")
+	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path to output the run image OCI archive (required)")
+	cmd.Flags().StringSliceVar(&flags.secrets, "secret", nil, "secret to be passed to your Dockerfile")
+
+	err := cmd.MarkFlagRequired("config")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark config flag as required")
+	}
+
+	err = cmd.MarkFlagRequired("build-output")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark build-output flag as required")
+	}
+
+	err = cmd.MarkFlagRequired("run-output")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark run-output flag as required")
+	}
+
+	return cmd
+}
+
+func createStackRun(flags createStackFlags) error {
+	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.secrets...)
+	if err != nil {
+		return err
+	}
+
+	_, definition.IncludeExperimentalSBOM = os.LookupEnv("EXPERIMENTAL_ATTACH_RUN_IMAGE_SBOM")
+
+	scratch, err := os.MkdirTemp("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(scratch)
+
+	client, err := ihop.NewClient(scratch)
+	if err != nil {
+		return err
+	}
+
+	builder := ihop.NewBuilder(client, ihop.Cataloger{}, runtime.NumCPU())
+	logger := scribe.NewLogger(os.Stdout)
+	creator := ihop.NewCreator(client, builder, ihop.UserLayerCreator{}, ihop.SBOMLayerCreator{}, time.Now, logger)
+
+	stack, err := creator.Execute(definition)
+	if err != nil {
+		return err
+	}
+
+	logger.Process("Exporting build image to %s", flags.buildOutput)
+	err = client.Export(flags.buildOutput, stack.Build...)
+	if err != nil {
+		return err
+	}
+
+	logger.Process("Exporting run image to %s", flags.runOutput)
+	err = client.Export(flags.runOutput, stack.Run...)
+	if err != nil {
+		return err
+	}
+
+	logger.Process("Cleaning up intermediate image artifacts")
+	err = client.Cleanup(stack.Build...)
+	if err != nil {
+		return err
+	}
+
+	err = client.Cleanup(stack.Run...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

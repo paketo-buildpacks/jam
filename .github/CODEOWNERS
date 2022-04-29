@@ -1,1 +1,6 @@
 * @paketo-buildpacks/tooling-maintainers
+
+/internal/ihop @paketo-buildpacks/stacks-maintainers
+/commands/create_stack.go @paketo-buildpacks/stacks-maintainers
+/integration/create_stack_test.go @paketo-buildpacks/stacks-maintainers
+/integration/testdata/example-stack @paketo-buildpacks/stacks-maintainers

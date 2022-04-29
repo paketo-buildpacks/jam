@@ -1,4 +1,4 @@
-package main_test
+package integration_test
 
 import (
 	"fmt"
@@ -47,7 +47,6 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("when packaging a language family buildpack", func() {
-
 		it.Before(func() {
 			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-language-family-cnb"), buildpackDir)
 			Expect(err).NotTo(HaveOccurred())
