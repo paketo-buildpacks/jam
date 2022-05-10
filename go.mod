@@ -9,7 +9,7 @@ require (
 	github.com/buildpacks/pack v0.26.0
 	github.com/docker/cli v20.10.14+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/docker v20.10.15+incompatible
 	github.com/google/go-containerregistry v0.8.1-0.20220209165246-a44adc326839
 	github.com/moby/buildkit v0.9.3
 	github.com/onsi/gomega v1.19.0
