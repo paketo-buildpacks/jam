@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/anchore/syft v0.46.2
+	github.com/anchore/syft v0.46.3
 	github.com/buildpacks/pack v0.26.0
 	github.com/docker/cli v20.10.16+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
