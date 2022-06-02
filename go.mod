@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/anchore/syft v0.46.1
+	github.com/anchore/syft v0.46.3
 	github.com/buildpacks/pack v0.26.0
 	github.com/docker/cli v20.10.16+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
@@ -29,7 +29,7 @@ require (
 	github.com/anchore/go-rpmdb v0.0.0-20210914181456-a9c52348da63 // indirect
 	github.com/anchore/go-version v1.2.2-0.20200701162849-18adb9c92b9b // indirect
 	github.com/anchore/packageurl-go v0.1.1-0.20220428202044-a072fa3cb6d7 // indirect
-	github.com/anchore/stereoscope v0.0.0-20220406160859-c03a18a6b270 // indirect
+	github.com/anchore/stereoscope v0.0.0-20220518185348-c97a3c6ffc67 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/apex/log v1.9.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e // indirect
-	github.com/mitchellh/mapstructure v1.4.3 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/sys/mount v0.3.2 // indirect
 	github.com/moby/sys/mountinfo v0.6.1 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
@@ -93,7 +93,7 @@ require (
 	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spdx/tools-golang v0.2.0 // indirect
-	github.com/spf13/afero v1.8.0 // indirect
+	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20210609172227-d72af97c0eaf // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
@@ -119,7 +119,7 @@ require (
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/genproto v0.0.0-20220422154200-b37d22cd5731 // indirect
 	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
