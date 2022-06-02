@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	ctx "context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -286,22 +287,52 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 			Expect(img).To(HaveFileWithContent("/some/file", ContainSubstring("some-layer-content")))
 		})
 
+		context("when there are two identical images to be updated", func() {
+			var image2 ihop.Image
+
+			it.Before(func() {
+				contents, err := exec.Command("docker", "tag", fmt.Sprintf("%s:latest", image.Tag), "image2:latest").CombinedOutput()
+				Expect(err).NotTo(HaveOccurred(), string(contents))
+
+				image2 = image
+				image2.Tag = "image2"
+				images = append(images, image2)
+			})
+
+			it("both are updated successfully", func() {
+				_, err := client.Update(image)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = client.Update(image2)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		context("failure cases", func() {
+
 			context("when the image tag cannot be parsed", func() {
 				it("returns an error", func() {
 					_, err := client.Update(ihop.Image{Tag: "not a valid tag"})
-					Expect(err).To(MatchError(ContainSubstring("could not parse reference")))
+					Expect(err).To(MatchError(ContainSubstring("invalid reference format")))
 				})
 			})
 
 			context("when the image layer diff ID is not valid", func() {
+				var img ihop.Image
+				it.Before(func() {
+					img = image
+					img.Layers[0].DiffID = "this is not a diff id"
+				})
+				it.After(func() {
+					daemonImage, err := img.ToDaemonImage()
+					Expect(err).NotTo(HaveOccurred())
+
+					configName, _ := daemonImage.ConfigName()
+					images = append(images, ihop.Image{Tag: configName.String()})
+				})
+
 				it("returns an error", func() {
-					_, err := client.Update(ihop.Image{
-						Tag: "busybox:latest",
-						Layers: []ihop.Layer{
-							{DiffID: "this is not a diff id"},
-						},
-					})
+					_, err := client.Update(img)
 					Expect(err).To(MatchError(ContainSubstring("cannot parse hash")))
 				})
 			})
