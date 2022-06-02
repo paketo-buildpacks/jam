@@ -283,12 +283,19 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 // Update will apply any modifications made to the Image reference onto the
 // actual container image in the Docker daemon.
 func (c Client) Update(image Image) (Image, error) {
-	img, err := image.ToDaemonImage()
+	// Add a random tag to the original image to distinguish it from other
+	// identical images
+	random, err := randomName()
+	if err != nil {
+		return Image{}, err
+	}
+	originalImage := fmt.Sprintf("%s:%s", image.Tag, random)
+	err = c.docker.ImageTag(context.Background(), image.Tag, originalImage)
 	if err != nil {
 		return Image{}, err
 	}
 
-	configName, err := img.ConfigName()
+	img, err := image.ToDaemonImage()
 	if err != nil {
 		return Image{}, err
 	}
@@ -342,7 +349,7 @@ func (c Client) Update(image Image) (Image, error) {
 		return Image{}, err
 	}
 
-	err = c.Cleanup(Image{Tag: configName.String()})
+	err = c.Cleanup(Image{Tag: originalImage})
 	if err != nil {
 		return Image{}, err
 	}
