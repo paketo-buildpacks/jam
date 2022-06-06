@@ -164,7 +164,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 			})
 
 			context("when the platform is invalid", func() {
-				it("can build images", func() {
+				it("returns an error", func() {
 					_, err := client.Build(ihop.DefinitionImage{
 						Dockerfile: filepath.Join(dir, "Dockerfile"),
 						Args:       map[string]string{"test_build_arg": "1"},
