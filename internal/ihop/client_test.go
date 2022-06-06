@@ -164,6 +164,16 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 				})
 			})
 
+			context("when the platform is invalid", func() {
+				it("returns an error", func() {
+					_, err := client.Build(ihop.DefinitionImage{
+						Dockerfile: filepath.Join(dir, "Dockerfile"),
+						Args:       map[string]string{"test_build_arg": "1"},
+					}, "not a valid platform")
+					Expect(err).To(MatchError(ContainSubstring("failed to initiate image build")))
+				})
+			})
+
 			context("when the image build fails", func() {
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM scratch\nRUN \"no such command\""), 0600)

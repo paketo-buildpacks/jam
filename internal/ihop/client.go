@@ -194,7 +194,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 		Platform:   platform,
 	})
 	if err != nil {
-		return Image{}, nil
+		return Image{}, fmt.Errorf("failed to initiate image build: %w", err)
 	}
 	defer resp.Body.Close()
 
