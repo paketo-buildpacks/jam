@@ -36,6 +36,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 							Architecture:  "arm64",
 							Source:        "c-package-source",
 							SourceVersion: "3.1.2-upstream-ubuntu3",
+							Description:   "a package for c\n provides a bunch of c stuff",
 						},
 					},
 					pkg.Package{
@@ -103,7 +104,8 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						"name": "c-package-source",
 						"version": "3.1.2-upstream-ubuntu3",
 						"upstreamVersion": "3.1.2-upstream"
-					}
+					},
+					"summary": "a package for c"
 				}
 			]`))
 		})

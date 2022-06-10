@@ -19,6 +19,7 @@ type LegacySBOMPackage struct {
 	Version string                   `json:"version"`
 	Arch    string                   `json:"arch"`
 	Source  *LegacySBOMPackageSource `json:"source,omitempty"`
+	Summary string                   `json:"summary,omitempty"`
 }
 
 // LegacySBOMPackageSource represents a package source as defined in the legacy
@@ -98,7 +99,7 @@ func (s SBOM) LegacyFormat() (string, error) {
 					Version:         metadata.SourceVersion,
 					UpstreamVersion: upstreamVersion,
 				},
-				// TODO: Summary
+				Summary: strings.SplitN(metadata.Description, "\n", 2)[0],
 			})
 
 		case pkg.ApkMetadata:
