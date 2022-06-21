@@ -234,7 +234,9 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
+								"0.0.10",
 								"0.20.1",
+								"0.20.2",
 								"0.20.12-some-cnb",
 								"0.20.12-other-cnb",
 								"999999-some-cnb",
@@ -275,7 +277,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			server.Close()
 		})
 
-		it("returns the latest semver tag for the given image uri", func() {
+		it("for suffixed stack repos, returns the latest semver tag for the given image uri", func() {
 			image, err := internal.FindLatestBuildImage(
 				fmt.Sprintf("%s/some-org/some-repo-run:some-cnb", strings.TrimPrefix(server.URL, "http://")),
 				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
@@ -285,6 +287,19 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
 				Path:    "some-org/some-repo-build",
 				Version: "0.20.12-some-cnb",
+			}))
+		})
+
+		it("for non-suffixed stack repos, returns the latest semver tag for the given image uri", func() {
+			image, err := internal.FindLatestBuildImage(
+				fmt.Sprintf("%s/some-org/some-repo-run:latest", strings.TrimPrefix(server.URL, "http://")),
+				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10", strings.TrimPrefix(server.URL, "http://")),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(image).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-build",
+				Version: "0.20.2",
 			}))
 		})
 
