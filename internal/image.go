@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/pack/pkg/buildpack"
@@ -104,7 +103,12 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 		return Image{}, fmt.Errorf("expected the run image to be tagged but it was not")
 	}
 
-	suffix := fmt.Sprintf("-%s", tagged.Tag())
+	var suffix string
+	if tagged.Tag() != "latest" {
+		// one image repository is being used for multiple stacks;
+		// tag suffixes are used to distinguish between them
+		suffix = tagged.Tag()
+	}
 
 	buildNamed, err := reference.ParseNormalizedNamed(buildURI)
 	if err != nil {
@@ -128,12 +132,12 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 
 	var versions []*semver.Version
 	for _, tag := range tags {
-		if !strings.HasSuffix(tag, suffix) {
+
+		version, err := semver.StrictNewVersion(tag)
+		if err != nil {
 			continue
 		}
-
-		version, err := semver.StrictNewVersion(strings.TrimSuffix(tag, suffix))
-		if err != nil {
+		if suffix != version.Prerelease() {
 			continue
 		}
 
@@ -145,7 +149,7 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 	return Image{
 		Name:    buildNamed.Name(),
 		Path:    reference.Path(buildNamed),
-		Version: fmt.Sprintf("%s%s", versions[len(versions)-1].String(), suffix),
+		Version: versions[len(versions)-1].String(),
 	}, nil
 }
 
