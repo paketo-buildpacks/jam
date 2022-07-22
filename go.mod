@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/anchore/syft v0.51.0
+	github.com/anchore/syft v0.52.0
 	github.com/buildpacks/pack v0.27.0
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
@@ -100,7 +100,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.15.8 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/knqyf263/go-rpmdb v0.0.0-20220530130908-5101b033fa0d // indirect
+	github.com/knqyf263/go-rpmdb v0.0.0-20220629110411-9a3bd2ebb923 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
@@ -160,18 +160,18 @@ require (
 	golang.org/x/tools v0.1.11 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
-	google.golang.org/grpc v1.46.2 // indirect
+	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/uint128 v1.1.1 // indirect
-	modernc.org/cc/v3 v3.35.22 // indirect
-	modernc.org/ccgo/v3 v3.15.1 // indirect
-	modernc.org/libc v1.14.1 // indirect
+	modernc.org/cc/v3 v3.36.0 // indirect
+	modernc.org/ccgo/v3 v3.16.6 // indirect
+	modernc.org/libc v1.16.7 // indirect
 	modernc.org/mathutil v1.4.1 // indirect
-	modernc.org/memory v1.0.5 // indirect
+	modernc.org/memory v1.1.1 // indirect
 	modernc.org/opt v0.1.1 // indirect
-	modernc.org/sqlite v1.14.5 // indirect
+	modernc.org/sqlite v1.17.3 // indirect
 	modernc.org/strutil v1.1.1 // indirect
 	modernc.org/token v1.0.0 // indirect
 )
