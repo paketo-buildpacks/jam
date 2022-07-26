@@ -66,6 +66,8 @@ type DefinitionImage struct {
 
 	// UID is the cnb user id to be specified in the image.
 	UID int `toml:"uid"`
+
+	unbuffered bool
 }
 
 // DefinitionDeprecated defines the deprecated features of the stack.
@@ -91,7 +93,7 @@ func (i DefinitionImage) Arguments() []string {
 }
 
 // NewDefinitionFromFile parses the stack descriptor from a file location.
-func NewDefinitionFromFile(path string, secrets ...string) (Definition, error) {
+func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Definition, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return Definition{}, err
@@ -174,6 +176,9 @@ func NewDefinitionFromFile(path string, secrets ...string) (Definition, error) {
 
 		definition.Run.Secrets = definition.Build.Secrets
 	}
+
+	definition.Build.unbuffered = unbuffered
+	definition.Run.unbuffered = unbuffered
 
 	return definition, nil
 }

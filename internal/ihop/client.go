@@ -51,6 +51,8 @@ type Image struct {
 	Labels map[string]string
 
 	Layers []Layer
+
+	unbuffered bool
 }
 
 // ToDaemonImage returns the GGCR v1.Image associated with this Image.
@@ -60,7 +62,12 @@ func (i Image) ToDaemonImage() (v1.Image, error) {
 		return nil, err
 	}
 
-	image, err := daemon.Image(ref)
+	option := daemon.WithBufferedOpener()
+	if i.unbuffered {
+		option = daemon.WithUnbufferedOpener()
+	}
+
+	image, err := daemon.Image(ref, option)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +284,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 
 	// fetch and return a reference to the built image
-	return c.get(Image{Tag: tag})
+	return c.get(Image{Tag: tag, unbuffered: def.unbuffered})
 }
 
 // Update will apply any modifications made to the Image reference onto the
@@ -507,6 +514,7 @@ func (c Client) get(img Image) (Image, error) {
 		User:         file.Config.User,
 		OS:           file.OS,
 		Architecture: file.Architecture,
+		unbuffered:   img.unbuffered,
 	}, nil
 }
 

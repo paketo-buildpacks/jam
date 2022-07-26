@@ -20,6 +20,7 @@ type createStackFlags struct {
 	buildOutput string
 	runOutput   string
 	secrets     []string
+	unbuffered  bool
 }
 
 func createStack() *cobra.Command {
@@ -35,6 +36,7 @@ func createStack() *cobra.Command {
 	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path to output the build image OCI archive (required)")
 	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path to output the run image OCI archive (required)")
 	cmd.Flags().StringSliceVar(&flags.secrets, "secret", nil, "secret to be passed to your Dockerfile")
+	cmd.Flags().BoolVar(&flags.unbuffered, "unbuffered", false, "do not buffer image contents into memory for fast access")
 
 	err := cmd.MarkFlagRequired("config")
 	if err != nil {
@@ -55,7 +57,7 @@ func createStack() *cobra.Command {
 }
 
 func createStackRun(flags createStackFlags) error {
-	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.secrets...)
+	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.unbuffered, flags.secrets...)
 	if err != nil {
 		return err
 	}
