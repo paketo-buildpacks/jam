@@ -26,6 +26,19 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
+	tarBuffer := bytes.NewBuffer(nil)
+	tw := tar.NewWriter(tarBuffer)
+
+	// find any existing /etc/ folder and copy the header
+	hdr, _, err := c.find(img, "etc/")
+	if err != nil {
+		return Layer{}, err
+	}
+	err = tw.WriteHeader(hdr)
+	if err != nil {
+		return Layer{}, err
+	}
+
 	// find any existing /etc/group file in the given image so the group can be
 	// appended to its contents
 	hdr, content, err := c.find(img, "etc/group")
@@ -57,9 +70,6 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 	buffer.WriteString(fmt.Sprintf("cnb:x:%d:%d::/home/cnb:%s\n", def.UID, def.GID, def.Shell))
 	hdr.Size = int64(buffer.Len())
 	files[hdr] = buffer
-
-	buffer = bytes.NewBuffer(nil)
-	tw := tar.NewWriter(buffer)
 
 	for hdr, content := range files {
 		err := tw.WriteHeader(&tar.Header{
@@ -94,7 +104,7 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
-	layer, err := tarball.LayerFromReader(buffer)
+	layer, err := tarball.LayerFromReader(tarBuffer)
 	if err != nil {
 		return Layer{}, err
 	}

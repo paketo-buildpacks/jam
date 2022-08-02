@@ -58,7 +58,8 @@ func testUserLayerCreator(t *testing.T, context spec.G, it spec.S) {
 		}
 
 		Expect(files).To(SatisfyAll(
-			HaveLen(3),
+			HaveLen(4),
+			HaveKeyWithValue("etc/", BeNil()),
 			HaveKeyWithValue("etc/group", ContainSubstring("cnb:x:1234:")),
 			HaveKeyWithValue("etc/passwd", ContainSubstring("cnb:x:4567:1234::/home/cnb:/bin/sh")),
 			HaveKeyWithValue("home/cnb", BeNil()),
