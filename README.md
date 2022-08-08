@@ -24,3 +24,17 @@ jam pack \
   --offline \
   --output ./buildpack.tgz
 ```
+
+### Building stack images on linux
+
+In order to build stack images on linux, you will need to first install
+packages to enable emulation of the arm64 instruction set. This is not an issue
+on other operating systems (e.g. OSX) because Docker already runs in a Virtual
+Machine with emulation support enabled.
+
+For example, to enable emulation on Ubuntu 2204 (Jammy), run the following
+command:
+
+```sh
+sudo apt-get install qemu binfmt-support qemu-user-static
+```
