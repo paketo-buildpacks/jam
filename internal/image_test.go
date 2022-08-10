@@ -67,7 +67,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					fmt.Fprintln(w, `%`)
 
 				default:
-					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
 			}))
 		})
@@ -152,7 +152,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusTeapot)
 
 				default:
-					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
 			}))
 
@@ -248,7 +248,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusTeapot)
 
 				default:
-					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
 			}))
 
