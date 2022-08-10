@@ -123,7 +123,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusBadRequest)
 
 				default:
-					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
 			}))
 
@@ -587,7 +587,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusBadRequest)
 
 				default:
-					t.Fatal(fmt.Sprintf("unknown path: %s", req.URL.Path))
+					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
 			}))
 
