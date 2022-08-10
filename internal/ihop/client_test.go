@@ -5,7 +5,6 @@ import (
 	"bytes"
 	ctx "context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,7 +36,7 @@ func testClient(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		dir, err = ioutil.TempDir("", "dockerfile-test")
+		dir, err = os.MkdirTemp("", "dockerfile-test")
 		Expect(err).NotTo(HaveOccurred())
 
 		client, err = ihop.NewClient(dir)
