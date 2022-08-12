@@ -83,6 +83,10 @@ func FindLatestImage(uri string) (Image, error) {
 		versions = append(versions, version)
 	}
 
+	if len(versions) == 0 {
+		return Image{}, fmt.Errorf("could not find any valid tag for %s", repo.Name())
+	}
+
 	sort.Sort(semver.Collection(versions))
 
 	return Image{
@@ -142,6 +146,10 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 		}
 
 		versions = append(versions, version)
+	}
+
+	if len(versions) == 0 {
+		return Image{}, fmt.Errorf("could not find any valid tag for %s", repo.Name())
 	}
 
 	sort.Sort(semver.Collection(versions))
