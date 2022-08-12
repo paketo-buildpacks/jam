@@ -148,6 +148,17 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 							]
 					}`)
 
+				case "/v2/some-org/some-other-repo/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"v0.0.10",
+								"some-weird-tag",
+								"999999",
+								"latest"
+							]
+					}`)
+
 				case "/v2/some-org/error-repo/tags/list":
 					w.WriteHeader(http.StatusTeapot)
 
@@ -213,6 +224,13 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError(ContainSubstring("status code 418")))
 				})
 			})
+
+			context("when no valid tag can be found", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-other-repo:latest", strings.TrimPrefix(server.URL, "http://")))
+					Expect(err).To(MatchError(ContainSubstring("could not find any valid tag")))
+				})
+			})
 		})
 	}, spec.Sequential())
 
@@ -239,6 +257,19 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"0.20.2",
 								"0.20.12-some-cnb",
 								"0.20.12-other-cnb",
+								"999999-some-cnb",
+								"latest"
+							]
+					}`)
+
+				case "/v2/some-org/some-other-repo-build/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"v0.0.10-some-cnb",
+								"v0.20.2",
+								"v0.20.12-some-cnb",
+								"v0.20.12-other-cnb",
 								"999999-some-cnb",
 								"latest"
 							]
@@ -352,6 +383,16 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					)
 					Expect(err).To(MatchError(ContainSubstring("failed to list tags:")))
 					Expect(err).To(MatchError(ContainSubstring("status code 418")))
+				})
+			})
+
+			context("when no valid tag can be found", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestBuildImage(
+						fmt.Sprintf("%s/some-org/some-repo-run:some-cnb", strings.TrimPrefix(server.URL, "http://")),
+						fmt.Sprintf("%s/some-org/some-other-repo-build:latest", strings.TrimPrefix(server.URL, "http://")),
+					)
+					Expect(err).To(MatchError(ContainSubstring("could not find any valid tag")))
 				})
 			})
 		})
