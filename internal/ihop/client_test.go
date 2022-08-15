@@ -2,7 +2,6 @@ package ihop_test
 
 import (
 	"archive/tar"
-	"bytes"
 	ctx "context"
 	"fmt"
 	"os"
@@ -253,47 +252,62 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 			}))
 		})
 
-		it("can append layers", func() {
-			Expect(image.Layers).To(HaveLen(1))
+		context("when there are extra layers", func() {
+			var path string
 
-			buffer := bytes.NewBuffer(nil)
-			tw := tar.NewWriter(buffer)
-			content := []byte("some-layer-content")
-			err := tw.WriteHeader(&tar.Header{
-				Name: "some/file",
-				Mode: 0600,
-				Size: int64(len(content)),
-			})
-			Expect(err).NotTo(HaveOccurred())
+			it.Before(func() {
+				tmp, err := os.CreateTemp("", "")
+				Expect(err).NotTo(HaveOccurred())
+				defer tmp.Close()
 
-			_, err = tw.Write(content)
-			Expect(err).NotTo(HaveOccurred())
+				tw := tar.NewWriter(tmp)
+				content := []byte("some-layer-content")
+				err = tw.WriteHeader(&tar.Header{
+					Name: "some/file",
+					Mode: 0600,
+					Size: int64(len(content)),
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(tw.Close()).To(Succeed())
+				_, err = tw.Write(content)
+				Expect(err).NotTo(HaveOccurred())
 
-			layer, err := tarball.LayerFromReader(buffer)
-			Expect(err).NotTo(HaveOccurred())
+				Expect(tw.Close()).To(Succeed())
 
-			diffID, err := layer.DiffID()
-			Expect(err).NotTo(HaveOccurred())
-
-			image.Layers = append(image.Layers, ihop.Layer{
-				DiffID: diffID.String(),
-				Layer:  layer,
+				path = tmp.Name()
 			})
 
-			image, err := client.Update(image)
-			Expect(err).NotTo(HaveOccurred())
+			it.After(func() {
+				Expect(os.Remove(path)).To(Succeed())
+			})
 
-			images = append(images, image)
+			it("can append layers", func() {
+				Expect(image.Layers).To(HaveLen(1))
 
-			ref, err := name.ParseReference(image.Tag)
-			Expect(err).NotTo(HaveOccurred())
+				layer, err := tarball.LayerFromFile(path)
+				Expect(err).NotTo(HaveOccurred())
 
-			img, err := daemon.Image(ref)
-			Expect(err).NotTo(HaveOccurred())
+				diffID, err := layer.DiffID()
+				Expect(err).NotTo(HaveOccurred())
 
-			Expect(img).To(HaveFileWithContent("/some/file", ContainSubstring("some-layer-content")))
+				image.Layers = append(image.Layers, ihop.Layer{
+					DiffID: diffID.String(),
+					Layer:  layer,
+				})
+
+				image, err := client.Update(image)
+				Expect(err).NotTo(HaveOccurred())
+
+				images = append(images, image)
+
+				ref, err := name.ParseReference(image.Tag)
+				Expect(err).NotTo(HaveOccurred())
+
+				img, err := daemon.Image(ref)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(img).To(HaveFileWithContent("/some/file", ContainSubstring("some-layer-content")))
+			})
 		})
 
 		context("when there are two identical images to be updated", func() {

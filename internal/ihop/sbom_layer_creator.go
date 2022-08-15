@@ -2,8 +2,8 @@ package ihop
 
 import (
 	"archive/tar"
-	"bytes"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
@@ -16,9 +16,14 @@ type SBOMLayerCreator struct{}
 // Create returns a Layer that can be attached to an existing image.
 func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (Layer, error) {
 	digest := strings.TrimPrefix(image.Digest, "sha256:")
-	buffer := bytes.NewBuffer(nil)
-	tw := tar.NewWriter(buffer)
 
+	buffer, err := os.CreateTemp("", "")
+	if err != nil {
+		return Layer{}, err
+	}
+	defer buffer.Close()
+
+	tw := tar.NewWriter(buffer)
 	syftSBOM, err := sbom.SyftFormat()
 	if err != nil {
 		return Layer{}, err
@@ -62,7 +67,7 @@ func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (L
 		return Layer{}, err
 	}
 
-	layer, err := tarball.LayerFromReader(buffer)
+	layer, err := tarball.LayerFromFile(buffer.Name())
 	if err != nil {
 		return Layer{}, err
 	}
