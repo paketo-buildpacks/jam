@@ -26,7 +26,13 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
-	tarBuffer := bytes.NewBuffer(nil)
+	tarBuffer, err := os.CreateTemp("", "")
+	if err != nil {
+		return Layer{}, err
+	}
+	defer tarBuffer.Close()
+
+	defer tarBuffer.Close()
 	tw := tar.NewWriter(tarBuffer)
 
 	// find any existing /etc/ folder and copy the header
@@ -104,7 +110,7 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
-	layer, err := tarball.LayerFromReader(tarBuffer)
+	layer, err := tarball.LayerFromFile(tarBuffer.Name())
 	if err != nil {
 		return Layer{}, err
 	}
