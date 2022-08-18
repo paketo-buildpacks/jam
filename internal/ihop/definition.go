@@ -14,8 +14,17 @@ type Definition struct {
 	// ID is the stack id applied to the built images.
 	ID string `toml:"id"`
 
+	// Name is a human readable name of the stack.
+	Name string `toml:"name"`
+
 	// Homepage is the homepage for the stack.
 	Homepage string `toml:"homepage"`
+
+	// SupportURL is the support homepage for the stack.
+	SupportURL string `toml:"support-url"`
+
+	// BugReportURL is the bug report homepage for the stack.
+	BugReportURL string `toml:"bug-report-url"`
 
 	// Maintainer is the named individual or group responsible for maintaining
 	// the stack.
@@ -114,6 +123,8 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 	// check that all required fields are set
 	for field, v := range map[string]any{
 		"id":               definition.ID,
+		"name":             definition.Name,
+		"homepage":         definition.Homepage,
 		"build.dockerfile": definition.Build.Dockerfile,
 		"build.uid":        definition.Build.UID,
 		"build.gid":        definition.Build.GID,
@@ -149,6 +160,14 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 
 	if definition.Run.Shell == "" {
 		definition.Run.Shell = "/sbin/nologin"
+	}
+
+	if definition.SupportURL == "" {
+		definition.SupportURL = fmt.Sprintf("%s/blob/main/README.md", strings.TrimSuffix(definition.Homepage, "/"))
+	}
+
+	if definition.BugReportURL == "" {
+		definition.BugReportURL = fmt.Sprintf("%s/issues/new", strings.TrimSuffix(definition.Homepage, "/"))
 	}
 
 	// convert the Dockerfile paths given in the stack descriptor to absolute

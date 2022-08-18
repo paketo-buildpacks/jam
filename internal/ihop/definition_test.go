@@ -24,7 +24,11 @@ func testDefinition(t *testing.T, context spec.G, it spec.S) {
 
 			err = os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
 homepage = "some-stack-homepage"
+support-url = "some-stack-support-url"
+bug-report-url = "some-stack-bug-report-url"
+
 maintainer = "some-stack-maintainer"
 
 platforms = ["some-stack-platform"]
@@ -66,10 +70,13 @@ platforms = ["some-stack-platform"]
 			definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(definition).To(Equal(ihop.Definition{
-				ID:         "some-stack-id",
-				Homepage:   "some-stack-homepage",
-				Maintainer: "some-stack-maintainer",
-				Platforms:  []string{"some-stack-platform"},
+				ID:           "some-stack-id",
+				Name:         "some-stack-name",
+				Homepage:     "some-stack-homepage",
+				SupportURL:   "some-stack-support-url",
+				BugReportURL: "some-stack-bug-report-url",
+				Maintainer:   "some-stack-maintainer",
+				Platforms:    []string{"some-stack-platform"},
 				Deprecated: ihop.DefinitionDeprecated{
 					LegacySBOM: true,
 					Mixins:     true,
@@ -102,6 +109,8 @@ platforms = ["some-stack-platform"]
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -120,8 +129,12 @@ id = "some-stack-id"
 					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(definition).To(Equal(ihop.Definition{
-						ID:        "some-stack-id",
-						Platforms: []string{"linux/amd64"},
+						ID:           "some-stack-id",
+						Name:         "some-stack-name",
+						Platforms:    []string{"linux/amd64"},
+						Homepage:     "some-stack-homepage",
+						SupportURL:   "some-stack-homepage/blob/main/README.md",
+						BugReportURL: "some-stack-homepage/issues/new",
 						Build: ihop.DefinitionImage{
 							Dockerfile: filepath.Join(dir, "some-build-dockerfile"),
 							UID:        1234,
@@ -143,6 +156,9 @@ id = "some-stack-id"
 			context("when id is missing", func() {
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+name = "some-stack-name"
+homepage = "some-stack-homepage"
+
 [build]
 	dockerfile = "some-build-dockerfile"
 	uid = 1234
@@ -162,10 +178,62 @@ id = "some-stack-id"
 				})
 			})
 
+			context("when homepage is missing", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id" 
+name = "some-stack-name"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("returns an error", func() {
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
+					Expect(err).To(MatchError("failed to parse stack descriptor: 'homepage' is a required field"))
+				})
+			})
+
+			context("when name is missing", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id" 
+homepage = "some-stack-homepage"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("returns an error", func() {
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
+					Expect(err).To(MatchError("failed to parse stack descriptor: 'name' is a required field"))
+				})
+			})
+
 			context("when build.dockerfile is missing", func() {
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	uid = 1234
@@ -189,6 +257,8 @@ id = "some-stack-id"
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -212,6 +282,8 @@ id = "some-stack-id"
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -236,6 +308,8 @@ id = "some-stack-id"
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -259,6 +333,8 @@ id = "some-stack-id"
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -282,6 +358,8 @@ id = "some-stack-id"
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
 
 [build]
 	dockerfile = "some-build-dockerfile"

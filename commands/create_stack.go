@@ -77,7 +77,7 @@ func createStackRun(flags createStackFlags) error {
 
 	builder := ihop.NewBuilder(client, ihop.Cataloger{}, runtime.NumCPU())
 	logger := scribe.NewLogger(os.Stdout)
-	creator := ihop.NewCreator(client, builder, ihop.UserLayerCreator{}, ihop.SBOMLayerCreator{}, time.Now, logger)
+	creator := ihop.NewCreator(client, builder, ihop.UserLayerCreator{}, ihop.SBOMLayerCreator{}, ihop.OsReleaseLayerCreator{Def: definition}, time.Now, logger)
 
 	stack, err := creator.Execute(definition)
 	if err != nil {

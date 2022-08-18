@@ -44,10 +44,11 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 		buildSBOM, runSBOM ihop.SBOM
 
-		imageClient      *fakes.ImageClient
-		imageBuilder     *fakes.ImageBuilder
-		userLayerCreator *fakes.LayerCreator
-		sbomLayerCreator *fakes.LayerCreator
+		imageClient           *fakes.ImageClient
+		imageBuilder          *fakes.ImageBuilder
+		userLayerCreator      *fakes.LayerCreator
+		sbomLayerCreator      *fakes.LayerCreator
+		osReleaseLayerCreator *fakes.LayerCreator
 
 		creator ihop.Creator
 	)
@@ -225,11 +226,18 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			return layers[sbomLayerCreator.CreateCall.CallCount-1], nil
 		}
 
+		osReleaseLayerCreator = &fakes.LayerCreator{}
+		osReleaseLayerCreator.CreateCall.Stub = func(image ihop.Image, def ihop.DefinitionImage, sbom ihop.SBOM) (ihop.Layer, error) {
+			return ihop.Layer{
+				DiffID: "os-release-layer-id",
+			}, nil
+		}
+
 		clock := func() time.Time {
 			return time.Date(2006, time.January, 2, 15, 4, 5, 0, time.FixedZone("UTC-7", -7*60*60))
 		}
 
-		creator = ihop.NewCreator(imageClient, imageBuilder, userLayerCreator, sbomLayerCreator, clock, scribe.NewLogger(io.Discard))
+		creator = ihop.NewCreator(imageClient, imageBuilder, userLayerCreator, sbomLayerCreator, osReleaseLayerCreator, clock, scribe.NewLogger(io.Discard))
 	})
 
 	it("creates a stack", func() {
@@ -307,6 +315,10 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					Layers: []ihop.Layer{
 						{
 							DiffID: "run-user-layer-id",
+							Layer:  nil,
+						},
+						{
+							DiffID: "os-release-layer-id",
 							Layer:  nil,
 						},
 					},
@@ -410,6 +422,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		))
 		Expect(imageUpdateInvocations[1].Image.Layers).To(Equal([]ihop.Layer{
 			{DiffID: "run-user-layer-id"},
+			{DiffID: "os-release-layer-id"},
 		}))
 		Expect(imageUpdateInvocations[1].Image.User).To(Equal("3456:4567"))
 		Expect(imageUpdateInvocations[1].Image.Env).To(BeEmpty())
@@ -507,6 +520,10 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 								DiffID: "run-user-layer-id",
 								Layer:  nil,
 							},
+							{
+								DiffID: "os-release-layer-id",
+								Layer:  nil,
+							},
 						},
 					},
 					{
@@ -526,6 +543,10 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 						Layers: []ihop.Layer{
 							{
 								DiffID: "run-user-layer-id",
+								Layer:  nil,
+							},
+							{
+								DiffID: "os-release-layer-id",
 								Layer:  nil,
 							},
 						},
@@ -725,6 +746,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Expect(imageUpdateInvocations[1].Image.Labels).To(HaveKeyWithValue("io.buildpacks.base.sbom", "sbom-layer-id"))
 			Expect(imageUpdateInvocations[1].Image.Layers).To(Equal([]ihop.Layer{
 				{DiffID: "run-user-layer-id"},
+				{DiffID: "os-release-layer-id"},
 				{DiffID: "sbom-layer-id"},
 			}))
 
@@ -734,6 +756,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Expect(sbomLayerCreateInvocations[0].Image.Labels).NotTo(HaveKey("io.buildpacks.base.sbom"))
 			Expect(sbomLayerCreateInvocations[0].Image.Layers).To(Equal([]ihop.Layer{
 				{DiffID: "run-user-layer-id"},
+				{DiffID: "os-release-layer-id"},
 			}))
 			Expect(sbomLayerCreateInvocations[0].Def).To(Equal(ihop.DefinitionImage{
 				Description: "some-stack-run-description",

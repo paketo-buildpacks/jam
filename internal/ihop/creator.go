@@ -32,23 +32,25 @@ type Stack struct {
 
 // A Creator can be used to generate a Stack.
 type Creator struct {
-	docker           ImageClient
-	builder          ImageBuilder
-	userLayerCreator LayerCreator
-	sbomLayerCreator LayerCreator
-	now              func() time.Time
-	logger           scribe.Logger
+	docker                ImageClient
+	builder               ImageBuilder
+	userLayerCreator      LayerCreator
+	sbomLayerCreator      LayerCreator
+	osReleaseLayerCreator LayerCreator
+	now                   func() time.Time
+	logger                scribe.Logger
 }
 
 // NewCreator returns a Creator configured with the given arguments.
-func NewCreator(docker ImageClient, builder ImageBuilder, userLayerCreator, sbomLayerCreator LayerCreator, now func() time.Time, logger scribe.Logger) Creator {
+func NewCreator(docker ImageClient, builder ImageBuilder, userLayerCreator, sbomLayerCreator LayerCreator, osReleaseLayerCreator LayerCreator, now func() time.Time, logger scribe.Logger) Creator {
 	return Creator{
-		docker:           docker,
-		builder:          builder,
-		userLayerCreator: userLayerCreator,
-		sbomLayerCreator: sbomLayerCreator,
-		now:              now,
-		logger:           logger,
+		docker:                docker,
+		builder:               builder,
+		userLayerCreator:      userLayerCreator,
+		sbomLayerCreator:      sbomLayerCreator,
+		osReleaseLayerCreator: osReleaseLayerCreator,
+		now:                   now,
+		logger:                logger,
 	}
 }
 
@@ -116,6 +118,14 @@ func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 	if err != nil {
 		return Image{}, Image{}, err
 	}
+
+	// update /etc/os-release" in the run images in the Docker daemon
+	c.logger.Action("Updating /etc/os-release")
+	layer, err := c.osReleaseLayerCreator.Create(run, def.Run, runSBOM)
+	if err != nil {
+		return Image{}, Image{}, err
+	}
+	run.Layers = append(run.Layers, layer)
 
 	// if the EXPERIMENTAL_ATTACH_RUN_IMAGE_SBOM environment variable is set,
 	// attach an SBOM layer to the run image
