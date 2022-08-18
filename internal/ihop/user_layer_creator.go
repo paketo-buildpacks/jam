@@ -3,14 +3,9 @@ package ihop
 import (
 	"archive/tar"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
-	"strings"
-
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
 )
 
 // A UserLayerCreator can be used to construct a layer that includes user and
@@ -31,12 +26,10 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 	defer tarBuffer.Close()
-
-	defer tarBuffer.Close()
 	tw := tar.NewWriter(tarBuffer)
 
 	// find any existing /etc/ folder and copy the header
-	hdr, _, err := c.find(img, "etc/")
+	hdr, _, err := findFile(img, "etc/")
 	if err != nil {
 		return Layer{}, err
 	}
@@ -47,7 +40,7 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 
 	// find any existing /etc/group file in the given image so the group can be
 	// appended to its contents
-	hdr, content, err := c.find(img, "etc/group")
+	hdr, content, err := findFile(img, "etc/group")
 	if err != nil {
 		return Layer{}, err
 	}
@@ -63,7 +56,7 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 
 	// find any existing /etc/passed file in the given image so the user can be
 	// appended to its contents
-	hdr, content, err = c.find(img, "etc/passwd")
+	hdr, content, err = findFile(img, "etc/passwd")
 	if err != nil {
 		return Layer{}, err
 	}
@@ -110,74 +103,5 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
-	layer, err := tarball.LayerFromFile(tarBuffer.Name())
-	if err != nil {
-		return Layer{}, err
-	}
-
-	diffID, err := layer.DiffID()
-	if err != nil {
-		return Layer{}, err
-	}
-
-	return Layer{
-		DiffID: diffID.String(),
-		Layer:  layer,
-	}, nil
-}
-
-func (c UserLayerCreator) find(image v1.Image, path string) (*tar.Header, io.Reader, error) {
-	layers, err := image.Layers()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for i := len(layers) - 1; i >= 0; i-- {
-		layer, err := layers[i].Uncompressed()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		var (
-			found  bool
-			header *tar.Header
-			reader io.Reader
-		)
-
-		tr := tar.NewReader(layer)
-		for {
-			hdr, err := tr.Next()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					break
-				}
-
-				return nil, nil, err
-			}
-
-			if strings.TrimPrefix(hdr.Name, "/") == strings.TrimPrefix(path, "/") {
-				buffer := bytes.NewBuffer(nil)
-				_, err = io.CopyN(buffer, tr, hdr.Size)
-				if err != nil {
-					return nil, nil, err
-				}
-
-				header = hdr
-				reader = buffer
-				found = true
-				break
-			}
-		}
-
-		err = layer.Close()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if found {
-			return header, reader, nil
-		}
-	}
-
-	return nil, nil, nil
+	return tarToLayer(tarBuffer)
 }

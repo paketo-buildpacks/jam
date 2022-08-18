@@ -196,6 +196,10 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 			Expect(image).To(SatisfyAll(
 				HaveFileWithContent("/etc/group", ContainSubstring("cnb:x:1000:")),
 				HaveFileWithContent("/etc/passwd", ContainSubstring("cnb:x:1001:1000::/home/cnb:/bin/bash")),
+				HaveFileWithContent("/etc/os-release", ContainSubstring(`PRETTY_NAME="Example Stack"`)),
+				HaveFileWithContent("/etc/os-release", ContainSubstring(`HOME_URL="https://github.com/paketo-buildpacks/stacks"`)),
+				HaveFileWithContent("/etc/os-release", ContainSubstring(`SUPPORT_URL="https://github.com/paketo-buildpacks/stacks/blob/main/README.md"`)),
+				HaveFileWithContent("/etc/os-release", ContainSubstring(`BUG_REPORT_URL="https://github.com/paketo-buildpacks/stacks/issues/new"`)),
 				HaveDirectory("/home/cnb"),
 			))
 
@@ -231,6 +235,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
 				"      Creating cnb user",
+				"      Updating /etc/os-release",
 				"      Attaching experimental SBOM",
 				"    build: Updating image",
 				"    run: Updating image",
@@ -249,6 +254,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
 				"      Creating cnb user",
+				"      Updating /etc/os-release",
 				"      Attaching experimental SBOM",
 				"    build: Updating image",
 				"    run: Updating image",

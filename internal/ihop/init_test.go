@@ -45,6 +45,7 @@ func TestIHOP(t *testing.T) {
 	suite("SBOM", testSBOM)
 	suite("SBOMLayerCreator", testSBOMLayerCreator)
 	suite("UserLayerCreator", testUserLayerCreator)
+	suite("OsReleaseLayerCreator", testOsReleaseLayerCreator)
 	suite.Run(t)
 
 	_, err = client.ImageRemove(context.Background(), "busybox:latest", types.ImageRemoveOptions{Force: true})

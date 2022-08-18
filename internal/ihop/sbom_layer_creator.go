@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
 )
 
 // A SBOMLayerCreator can be used to construct a layer that includes the
@@ -67,18 +65,5 @@ func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (L
 		return Layer{}, err
 	}
 
-	layer, err := tarball.LayerFromFile(buffer.Name())
-	if err != nil {
-		return Layer{}, err
-	}
-
-	diffID, err := layer.DiffID()
-	if err != nil {
-		return Layer{}, err
-	}
-
-	return Layer{
-		DiffID: diffID.String(),
-		Layer:  layer,
-	}, nil
+	return tarToLayer(buffer)
 }
