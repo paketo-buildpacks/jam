@@ -162,11 +162,11 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 		definition.Run.Shell = "/sbin/nologin"
 	}
 
-	if definition.SupportURL == "" {
+	if definition.SupportURL == "" && strings.Contains(definition.Homepage, "github.com") {
 		definition.SupportURL = fmt.Sprintf("%s/blob/main/README.md", strings.TrimSuffix(definition.Homepage, "/"))
 	}
 
-	if definition.BugReportURL == "" {
+	if definition.BugReportURL == "" && strings.Contains(definition.Homepage, "github.com") {
 		definition.BugReportURL = fmt.Sprintf("%s/issues/new", strings.TrimSuffix(definition.Homepage, "/"))
 	}
 

@@ -110,7 +110,7 @@ platforms = ["some-stack-platform"]
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
 id = "some-stack-id"
 name = "some-stack-name"
-homepage = "some-stack-homepage"
+homepage = "https://github.com/some-stack"
 
 [build]
 	dockerfile = "some-build-dockerfile"
@@ -132,9 +132,9 @@ homepage = "some-stack-homepage"
 						ID:           "some-stack-id",
 						Name:         "some-stack-name",
 						Platforms:    []string{"linux/amd64"},
-						Homepage:     "some-stack-homepage",
-						SupportURL:   "some-stack-homepage/blob/main/README.md",
-						BugReportURL: "some-stack-homepage/issues/new",
+						Homepage:     "https://github.com/some-stack",
+						SupportURL:   "https://github.com/some-stack/blob/main/README.md",
+						BugReportURL: "https://github.com/some-stack/issues/new",
 						Build: ihop.DefinitionImage{
 							Dockerfile: filepath.Join(dir, "some-build-dockerfile"),
 							UID:        1234,
