@@ -4,9 +4,9 @@ import (
 	"archive/tar"
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -87,10 +87,10 @@ func updateOsRelease(content io.Reader, def Definition) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	updatedContent["PRETTY_NAME"] = fmt.Sprintf("%q", def.Name)
-	updatedContent["HOME_URL"] = fmt.Sprintf("%q", def.Homepage)
-	updatedContent["SUPPORT_URL"] = fmt.Sprintf("%q", def.SupportURL)
-	updatedContent["BUG_REPORT_URL"] = fmt.Sprintf("%q", def.BugReportURL)
+	updatedContent["PRETTY_NAME"] = strconv.Quote(def.Name)
+	updatedContent["HOME_URL"] = strconv.Quote(def.Homepage)
+	updatedContent["SUPPORT_URL"] = strconv.Quote(def.SupportURL)
+	updatedContent["BUG_REPORT_URL"] = strconv.Quote(def.BugReportURL)
 
 	buffer := bytes.NewBuffer(nil)
 	for key, value := range updatedContent {
