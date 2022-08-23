@@ -119,13 +119,15 @@ func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 		return Image{}, Image{}, err
 	}
 
-	// update /etc/os-release" in the run images in the Docker daemon
-	c.logger.Action("Updating /etc/os-release")
-	layer, err := c.osReleaseLayerCreator.Create(run, def.Run, runSBOM)
-	if err != nil {
-		return Image{}, Image{}, err
+	if def.containsOsReleasOverwrites() {
+		// update /etc/os-release" in the run images in the Docker daemon
+		c.logger.Action("Updating /etc/os-release")
+		layer, err := c.osReleaseLayerCreator.Create(run, def.Run, runSBOM)
+		if err != nil {
+			return Image{}, Image{}, err
+		}
+		run.Layers = append(run.Layers, layer)
 	}
-	run.Layers = append(run.Layers, layer)
 
 	// if the EXPERIMENTAL_ATTACH_RUN_IMAGE_SBOM environment variable is set,
 	// attach an SBOM layer to the run image

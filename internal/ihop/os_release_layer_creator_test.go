@@ -27,7 +27,7 @@ func testOsReleaseLayerCreator(t *testing.T, context spec.G, it spec.S) {
 			BugReportURL: "some-stack-bug-report-url",
 		}
 		layer, err := creator.Create(
-			ihop.Image{Tag: "ubuntu:latest"},
+			ihop.Image{Tag: "ubuntu:jammy"},
 			ihop.DefinitionImage{},
 			ihop.SBOM{},
 		)

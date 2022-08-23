@@ -44,7 +44,7 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 		return Layer{}, err
 	}
 
-	buffer, err := updateOsRelease(content, o.Def)
+	buffer, err := overwriteOsRelease(content, createOsReleasOverwrites(o.Def))
 	if err != nil {
 		return Layer{}, err
 	}
@@ -72,14 +72,36 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 	return tarToLayer(tarBuffer)
 }
 
-func updateOsRelease(content io.Reader, def Definition) (*bytes.Buffer, error) {
+func createOsReleasOverwrites(def Definition) map[string]string {
+	overwrites := map[string]string{}
+
+	if def.Name != "" {
+		overwrites["PRETTY_NAME"] = strconv.Quote(def.Name)
+	}
+
+	if def.Homepage != "" {
+		overwrites["HOME_URL"] = strconv.Quote(def.Homepage)
+	}
+
+	if def.SupportURL != "" {
+		overwrites["SUPPORT_URL"] = strconv.Quote(def.SupportURL)
+	}
+
+	if def.BugReportURL != "" {
+		overwrites["BUG_REPORT_URL"] = strconv.Quote(def.BugReportURL)
+	}
+
+	return overwrites
+}
+
+func overwriteOsRelease(content io.Reader, overwrites map[string]string) (*bytes.Buffer, error) {
 	scanner := bufio.NewScanner(content)
-	updatedContent := map[string]string{}
+	releaseContent := map[string]string{}
 
 	for scanner.Scan() {
 		before, after, found := strings.Cut(scanner.Text(), "=")
 		if found {
-			updatedContent[before] = after
+			releaseContent[before] = after
 		}
 	}
 	err := scanner.Err()
@@ -87,13 +109,12 @@ func updateOsRelease(content io.Reader, def Definition) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	updatedContent["PRETTY_NAME"] = strconv.Quote(def.Name)
-	updatedContent["HOME_URL"] = strconv.Quote(def.Homepage)
-	updatedContent["SUPPORT_URL"] = strconv.Quote(def.SupportURL)
-	updatedContent["BUG_REPORT_URL"] = strconv.Quote(def.BugReportURL)
+	for key, value := range overwrites {
+		releaseContent[key] = value
+	}
 
 	buffer := bytes.NewBuffer(nil)
-	for key, value := range updatedContent {
+	for key, value := range releaseContent {
 		buffer.WriteString(key)
 		buffer.WriteString("=")
 		buffer.WriteString(value)

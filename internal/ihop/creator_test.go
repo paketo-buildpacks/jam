@@ -432,6 +432,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		it("creates a multi-arch stack", func() {
 			stack, err := creator.Execute(ihop.Definition{
 				ID:        "some-stack-id",
+				Name:      "Some Name",
 				Platforms: []string{"some-platform", "other-platform"},
 				Build: ihop.DefinitionImage{
 					Dockerfile: "test-base-build-dockerfile-path",

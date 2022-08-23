@@ -178,56 +178,6 @@ homepage = "some-stack-homepage"
 				})
 			})
 
-			context("when homepage is missing", func() {
-				it.Before(func() {
-					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
-id = "some-stack-id" 
-name = "some-stack-name"
-
-[build]
-	dockerfile = "some-build-dockerfile"
-	uid = 1234
-	gid = 2345
-
-[run]
-	dockerfile = "some-run-dockerfile"
-	uid = 1234
-	gid = 2345
-`), 0600)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
-					Expect(err).To(MatchError("failed to parse stack descriptor: 'homepage' is a required field"))
-				})
-			})
-
-			context("when name is missing", func() {
-				it.Before(func() {
-					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
-id = "some-stack-id" 
-homepage = "some-stack-homepage"
-
-[build]
-	dockerfile = "some-build-dockerfile"
-	uid = 1234
-	gid = 2345
-
-[run]
-	dockerfile = "some-run-dockerfile"
-	uid = 1234
-	gid = 2345
-`), 0600)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
-					Expect(err).To(MatchError("failed to parse stack descriptor: 'name' is a required field"))
-				})
-			})
-
 			context("when build.dockerfile is missing", func() {
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`

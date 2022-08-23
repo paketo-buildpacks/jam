@@ -123,8 +123,6 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 	// check that all required fields are set
 	for field, v := range map[string]any{
 		"id":               definition.ID,
-		"name":             definition.Name,
-		"homepage":         definition.Homepage,
 		"build.dockerfile": definition.Build.Dockerfile,
 		"build.uid":        definition.Build.UID,
 		"build.gid":        definition.Build.GID,
@@ -200,6 +198,10 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 	definition.Run.unbuffered = unbuffered
 
 	return definition, nil
+}
+
+func (d Definition) containsOsReleasOverwrites() bool {
+	return d.Name != "" || d.Homepage != "" || d.SupportURL != "" || d.BugReportURL != ""
 }
 
 // DefinitionRequiredFieldError defines the error message when a required field
