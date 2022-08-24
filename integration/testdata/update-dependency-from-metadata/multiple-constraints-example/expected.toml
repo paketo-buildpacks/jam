@@ -1,0 +1,64 @@
+api = "0.2"
+
+[buildpack]
+  id = "some-buildpack"
+  name = "Some Buildpack"
+  version = "some-buildpack-version"
+
+[metadata]
+  include-files = ["buildpack.toml"]
+
+  [[metadata.dependencies]]
+    cpe = "another-cpe"
+    deprecation_date = "2022-01-01T00:00:00Z"
+    id = "some-dependency"
+    licenses = ["another-license"]
+    name = "Some Dependency"
+    purl = "another-purl"
+    sha256 = "another-sha"
+    source = "another-source"
+    source_sha256 = "another-source-sha"
+    stacks = ["another-stack"]
+    uri = "another-dep-uri"
+    version = "1.5.6"
+
+  [[metadata.dependencies]]
+    cpe = "one-more-cpe"
+    deprecation_date = "2022-01-01T00:00:00Z"
+    id = "some-dependency"
+    licenses = ["one-more-license"]
+    name = "Some Dependency"
+    purl = "one-more-purl"
+    sha256 = "one-more-sha"
+    source = "one-more-source"
+    source_sha256 = "one-more-source-sha"
+    stacks = ["one-more-stack"]
+    uri = "one-more-dep-uri"
+    version = "2.3.4"
+
+  [[metadata.dependencies]]
+    cpe = "some-cpe"
+    deprecation_date = "2021-01-01T00:00:00Z"
+    id = "some-dependency"
+    licenses = ["some-license"]
+    name = "Some Dependency"
+    purl = "some-purl"
+    sha256 = "some-sha"
+    source = "some-source"
+    source_sha256 = "some-source-sha"
+    stacks = ["some-stack"]
+    uri = "some-dep-uri"
+    version = "2.9.9"
+
+  [[metadata.dependency-constraints]]
+    constraint = "1.*"
+    id = "some-dependency"
+    patches = 1
+
+  [[metadata.dependency-constraints]]
+    constraint = "2.*"
+    id = "some-dependency"
+    patches = 2
+
+[[stacks]]
+  id = "*"

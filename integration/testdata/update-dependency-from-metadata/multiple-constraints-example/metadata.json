@@ -1,0 +1,59 @@
+[
+  {
+    "cpe": "another-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "another-purl",
+    "id": "some-dependency",
+    "licenses": [
+      "another-license"
+    ],
+    "name": "Some Dependency",
+    "sha256": "another-sha",
+    "source": "another-source",
+    "source_sha256": "another-source-sha",
+    "stacks": [
+      "another-stack"
+    ],
+    "target": "ubuntu",
+    "uri": "another-dep-uri",
+    "version": "1.5.6"
+  },
+  {
+    "cpe": "other-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "other-purl",
+    "id": "some-dependency",
+    "licenses": [
+      "other-license"
+    ],
+    "name": "Some Dependency",
+    "sha256": "other-sha",
+    "source": "other-source",
+    "source_sha256": "other-source-sha",
+    "stacks": [
+      "other-stack"
+    ],
+    "target": "ubuntu",
+    "uri": "other-dep-uri",
+    "version": "2.1.2"
+  },
+  {
+    "cpe": "one-more-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "one-more-purl",
+    "id": "some-dependency",
+    "licenses": [
+      "one-more-license"
+    ],
+    "name": "Some Dependency",
+    "sha256": "one-more-sha",
+    "source": "one-more-source",
+    "source_sha256": "one-more-source-sha",
+    "stacks": [
+      "one-more-stack"
+    ],
+    "target": "ubuntu",
+    "uri": "one-more-dep-uri",
+    "version": "2.3.4"
+  }
+]

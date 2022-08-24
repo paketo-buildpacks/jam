@@ -33,6 +33,7 @@ func TestMatchers(t *testing.T) {
 	suite("HaveDirectory", testHaveDirectory)
 	suite("HaveFile", testHaveFile)
 	suite("HaveFileWithContent", testHaveFileWithContent)
+	suite("MatchTomlContent", testMatchTomlContent)
 	suite.Run(t)
 
 	_, err = client.ImageRemove(context.Background(), "alpine:latest", types.ImageRemoveOptions{Force: true})

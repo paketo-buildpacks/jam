@@ -1,0 +1,31 @@
+api = "0.2"
+
+[buildpack]
+  id = "some-buildpack"
+  name = "Some Buildpack"
+  version = "some-buildpack-version"
+
+[metadata]
+  include-files = ["buildpack.toml"]
+
+  [[metadata.dependencies]]
+    cpe = "some-cpe"
+    deprecation_date = "2021-01-01T00:00:00Z"
+    id = "some-dependency"
+    licenses = ["some-license"]
+    name = "Some Dependency"
+    purl = "some-purl"
+    sha256 = "some-sha"
+    source = "some-source"
+    source_sha256 = "some-source-sha"
+    stacks = ["some-stack"]
+    uri = "some-dep-uri"
+    version = "1.2.3"
+
+[[metadata.dependency-constraints]]
+  constraint = "1.*"
+  id = "some-dependency"
+  patches = 2
+
+[[stacks]]
+  id = "*"
