@@ -1,0 +1,21 @@
+[
+  {
+    "cpe": "different-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "different-purl",
+    "id": "different-dependency",
+    "licenses": [
+      "different-license"
+    ],
+    "name": "Different Dependency",
+    "sha256": "different-sha",
+    "source": "different-source",
+    "source_sha256": "different-source-sha",
+    "stacks": [
+      "different-stack"
+    ],
+    "target": "ubuntu",
+    "uri": "different-dep-uri",
+    "version": "1.9.9"
+  }
+]

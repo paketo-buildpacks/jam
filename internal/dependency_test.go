@@ -400,6 +400,316 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("GetCargoDependenciesWithinConstraint", func() {
+		var allCargoDependencies []cargo.ConfigMetadataDependency
+
+		it.Before(func() {
+			allCargoDependencies = []cargo.ConfigMetadataDependency{
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha",
+					Source:       "some-source",
+					SourceSHA256: "some-source-sha",
+					Stacks: []string{
+						"some-stack",
+					},
+					URI:      "some-dep-uri",
+					Version:  "1.0.0",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha",
+					Source:       "some-source",
+					SourceSHA256: "some-source-sha",
+					Stacks: []string{
+						"different-stack",
+					},
+					URI:      "some-dep-uri",
+					Version:  "1.0.0",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha-two",
+					Source:       "some-source-two",
+					SourceSHA256: "some-source-sha-two",
+					Stacks: []string{
+						"some-stack-two",
+					},
+					URI:      "some-dep-uri-two",
+					Version:  "1.1.2",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha-two",
+					Source:       "some-source-two",
+					SourceSHA256: "some-source-sha-two",
+					Stacks: []string{
+						"an-even-different-stack",
+					},
+					URI:      "some-dep-uri-two",
+					Version:  "1.1.2",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha-three",
+					Source:       "some-source-three",
+					SourceSHA256: "some-source-sha-three",
+					Stacks: []string{
+						"some-stack-three",
+					},
+					URI:      "some-dep-uri-three",
+					Version:  "1.5.6",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "some-dep",
+					SHA256:       "some-sha-four",
+					Source:       "some-source-four",
+					SourceSHA256: "some-source-sha-four",
+					Stacks: []string{
+						"some-stack-four",
+					},
+					URI:      "some-dep-uri-four",
+					Version:  "2.3.2",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+				{
+					ID:           "different-dep",
+					SHA256:       "different-dep-sha",
+					Source:       "different-dep-source",
+					SourceSHA256: "different-dep-source-sha",
+					Stacks: []string{
+						"different-dep-stack",
+					},
+					URI:      "different-dep-uri",
+					Version:  "1.9.8",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+				},
+			}
+		})
+
+		context("given a list of cargo dependencies and constraint", func() {
+			it("returns a sorted list of dependencies that match the constraint, including version duplicates that differ by stack", func() {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "1.*",
+					ID:         "some-dep",
+					Patches:    3,
+				}
+
+				dependencies, err := internal.GetCargoDependenciesWithinConstraint(allCargoDependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dependencies).To(Equal([]cargo.ConfigMetadataDependency{
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.0.0",
+						Stacks:       []string{"some-stack"},
+						URI:          "some-dep-uri",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+					},
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.0.0",
+						Stacks:       []string{"different-stack"},
+						URI:          "some-dep-uri",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+					},
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.1.2",
+						Stacks:       []string{"some-stack-two"},
+						URI:          "some-dep-uri-two",
+						SHA256:       "some-sha-two",
+						Source:       "some-source-two",
+						SourceSHA256: "some-source-sha-two",
+					},
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.1.2",
+						Stacks:       []string{"an-even-different-stack"},
+						URI:          "some-dep-uri-two",
+						SHA256:       "some-sha-two",
+						Source:       "some-source-two",
+						SourceSHA256: "some-source-sha-two",
+					},
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.5.6",
+						Stacks:       []string{"some-stack-three"},
+						URI:          "some-dep-uri-three",
+						SHA256:       "some-sha-three",
+						Source:       "some-source-three",
+						SourceSHA256: "some-source-sha-three",
+					},
+				}))
+			})
+		})
+
+		context("given a list of cargo dependencies with invalid stack variant duplicates and constraint", func() {
+			it.Before(func() {
+				allCargoDependencies = []cargo.ConfigMetadataDependency{
+					{
+						ID:           "some-dep",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+						Stacks: []string{
+							"some-stack",
+						},
+						URI:      "some-dep-uri",
+						Version:  "1.0.0",
+						CPE:      "cpe-notation",
+						PURL:     "some-purl",
+						Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					},
+					{
+						ID:           "some-dep",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+						Stacks: []string{
+							"some-stack",
+						},
+						URI:      "some-dep-uri",
+						Version:  "1.0.0",
+						CPE:      "cpe-notation",
+						PURL:     "some-purl",
+						Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					},
+					{
+						ID:           "some-dep",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+						Stacks: []string{
+							"different-stack",
+						},
+						URI:      "some-dep-uri",
+						Version:  "1.0.0",
+						CPE:      "cpe-notation",
+						PURL:     "some-purl",
+						Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					},
+				}
+			})
+			it("returns a sorted list of dependencies that match the constraint, excluding invalid stack variant duplicates", func() {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "1.*",
+					ID:         "some-dep",
+					Patches:    1,
+				}
+
+				dependencies, err := internal.GetCargoDependenciesWithinConstraint(allCargoDependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dependencies).To(Equal([]cargo.ConfigMetadataDependency{
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.0.0",
+						Stacks:       []string{"some-stack"},
+						URI:          "some-dep-uri",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+					},
+					{
+						CPE:          "cpe-notation",
+						PURL:         "some-purl",
+						ID:           "some-dep",
+						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
+						Version:      "1.0.0",
+						Stacks:       []string{"different-stack"},
+						URI:          "some-dep-uri",
+						SHA256:       "some-sha",
+						Source:       "some-source",
+						SourceSHA256: "some-source-sha",
+					},
+				}))
+			})
+		})
+
+		context("failure cases", func() {
+			context("given an invalid constraint", func() {
+				it("returns an error", func() {
+					constraint := cargo.ConfigMetadataDependencyConstraint{
+						Constraint: "abc",
+						ID:         "some-dep",
+						Patches:    3,
+					}
+
+					_, err := internal.GetCargoDependenciesWithinConstraint(allCargoDependencies, constraint)
+					Expect(err).To(MatchError("improper constraint: abc"))
+				})
+			})
+
+			context("given a malformed dependency version", func() {
+				it("returns an error", func() {
+					constraint := cargo.ConfigMetadataDependencyConstraint{
+						Constraint: "1.*",
+						ID:         "some-dep",
+						Patches:    3,
+					}
+					cargoDependencies := []cargo.ConfigMetadataDependency{
+						{
+							ID:           "some-dep",
+							SHA256:       "some-sha",
+							Source:       "some-source",
+							SourceSHA256: "some-source-sha",
+							Stacks: []string{
+								"some-stack",
+							},
+							URI:      "some-dep-uri",
+							Version:  "v1.xx",
+							CPE:      "cpe-notation",
+							PURL:     "some-purl",
+							Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+						},
+					}
+					_, err := internal.GetCargoDependenciesWithinConstraint(cargoDependencies, constraint)
+					Expect(err).To(MatchError("Invalid Semantic Version"))
+				})
+			})
+		})
+	})
+
 	context("FindDependencyName", func() {
 		var cargoConfig cargo.Config
 		it.Before(func() {

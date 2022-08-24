@@ -1,0 +1,42 @@
+[
+  {
+    "cpe": "another-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "another-purl",
+    "id": "some-dependency",
+    "licenses": [
+      "another-license"
+    ],
+    "name": "Some Dependency",
+    "sha256": "another-sha",
+    "source": "another-source",
+    "source_sha256": "another-source-sha",
+    "stacks": [
+      "another-stack"
+    ],
+    "target": "target 1",
+    "uri": "another-dep-uri",
+    "version": "1.9.9"
+  },
+  {
+    "cpe": "another-cpe",
+    "deprecation_date": "2022-01-01T00:00:00Z",
+    "purl": "another-purl",
+    "id": "some-dependency",
+    "licenses": [
+      "another-license"
+    ],
+    "name": "Some Dependency",
+    "sha256": "another-sha",
+    "source": "another-source",
+    "source_sha256": "another-source-sha",
+    "stacks": [
+      "other-stack",
+      "one-more-stack"
+    ],
+    "target": "target 2",
+    "uri": "another-dep-uri",
+    "version": "1.9.9"
+  }
+]
+
