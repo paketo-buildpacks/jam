@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/anchore/syft v0.53.4
+	github.com/anchore/syft v0.54.0
 	github.com/buildpacks/pack v0.27.0
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
@@ -42,7 +42,7 @@ require (
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb // indirect
 	github.com/anchore/go-version v1.2.2-0.20200701162849-18adb9c92b9b // indirect
 	github.com/anchore/packageurl-go v0.1.1-0.20220428202044-a072fa3cb6d7 // indirect
-	github.com/anchore/stereoscope v0.0.0-20220803153229-c55b13fee7e4 // indirect
+	github.com/anchore/stereoscope v0.0.0-20220808115346-84004345484e // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/apex/log v1.9.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.5 // indirect
@@ -172,7 +172,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f // indirect
 	google.golang.org/grpc v1.48.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/uint128 v1.1.1 // indirect
