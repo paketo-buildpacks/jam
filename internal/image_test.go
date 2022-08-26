@@ -400,7 +400,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 	context("GetBuildpackageID", func() {
 		it("returns the buildpackage ID from the io.buildpacks.buildpackage.metadata image label", func() {
-			id, err := internal.GetBuildpackageID("gcr.io/paketo-buildpacks/go")
+			id, err := internal.GetBuildpackageID("index.docker.io/paketobuildpacks/go")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(id).To(Equal("paketo-buildpacks/go"))
 		})
@@ -412,16 +412,19 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError(ContainSubstring("could not parse reference")))
 				})
 			})
+
 			context("image cannot be created from ref", func() {
 				it("returns an error", func() {
-					_, err := internal.GetBuildpackageID("gcr.io/does-not-exist/go:0.5.0")
-					Expect(err).To(MatchError(ContainSubstring("Project 'project:does-not-exist' not found or deleted")))
+					_, err := internal.GetBuildpackageID("index.docker.io/does-not-exist/go:0.5.0")
+					fmt.Println(err)
+					Expect(err).To(MatchError(ContainSubstring("UNAUTHORIZED: authentication required")))
 				})
 			})
+
 			context("image has no buildpackage metadata label", func() {
 				it("returns an error", func() {
-					_, err := internal.GetBuildpackageID("gcr.io/paketo-buildpacks/builder:base")
-					Expect(err).To(MatchError(ContainSubstring("could not get buildpackage id: image gcr.io/paketo-buildpacks/builder:base has no label 'io.buildpacks.buildpackage.metadata'")))
+					_, err := internal.GetBuildpackageID("index.docker.io/paketobuildpacks/builder:base")
+					Expect(err).To(MatchError(ContainSubstring("could not get buildpackage id: image index.docker.io/paketobuildpacks/builder:base has no label 'io.buildpacks.buildpackage.metadata'")))
 				})
 			})
 		})

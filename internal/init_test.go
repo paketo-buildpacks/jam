@@ -11,11 +11,13 @@ import (
 	"time"
 
 	"github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 )
 
 func TestUnitInternal(t *testing.T) {
+	format.MaxLength = 0
 	gomega.SetDefaultEventuallyTimeout(10 * time.Second)
 
 	suite := spec.New("jam/internal", spec.Report(report.Terminal{}))

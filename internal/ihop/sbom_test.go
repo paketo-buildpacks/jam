@@ -147,7 +147,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						}
 					},
 					{
-						"id": "2bb62cfc1178cf27",
+						"id": "372f6b7d6417bbde",
 						"name": "b-package",
 						"version": "",
 						"type": "",
@@ -168,6 +168,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 							"size": 0,
 							"license": "",
 							"vendor": "",
+							"modularityLabel": "",
 							"files": null
 						}
 					},
