@@ -44,7 +44,7 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 		return Layer{}, err
 	}
 
-	buffer, err := overwriteOsRelease(content, createOsReleasOverwrites(o.Def))
+	buffer, err := overwriteOsRelease(content, createOsReleaseOverwrites(o.Def))
 	if err != nil {
 		return Layer{}, err
 	}
@@ -72,7 +72,7 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 	return tarToLayer(tarBuffer)
 }
 
-func createOsReleasOverwrites(def Definition) map[string]string {
+func createOsReleaseOverwrites(def Definition) map[string]string {
 	overwrites := map[string]string{}
 
 	if def.Name != "" {

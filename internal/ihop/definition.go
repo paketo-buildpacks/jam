@@ -200,7 +200,7 @@ func NewDefinitionFromFile(path string, unbuffered bool, secrets ...string) (Def
 	return definition, nil
 }
 
-func (d Definition) containsOsReleasOverwrites() bool {
+func (d Definition) containsOsReleaseOverwrites() bool {
 	return d.Name != "" || d.Homepage != "" || d.SupportURL != "" || d.BugReportURL != ""
 }
 
