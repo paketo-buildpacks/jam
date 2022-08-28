@@ -119,7 +119,7 @@ func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 		return Image{}, Image{}, err
 	}
 
-	if def.containsOsReleasOverwrites() {
+	if def.containsOsReleaseOverwrites() {
 		// update /etc/os-release" in the run images in the Docker daemon
 		c.logger.Action("Updating /etc/os-release")
 		layer, err := c.osReleaseLayerCreator.Create(run, def.Run, runSBOM)
