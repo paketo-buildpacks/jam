@@ -33,6 +33,46 @@ type layerCreateInvocation struct {
 	SBOM  ihop.SBOM
 }
 
+func testProcessArgs(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+	)
+
+	context("packages arg is present", func() {
+		def := ihop.ProcessArgs(ihop.DefinitionImage{
+			Args: map[string]string{
+				"packages": "curl git jq ",
+			},
+		})
+
+		it("adds apt_preferences", func() {
+			Expect(def.Args).To(HaveLen(2))
+			Expect(def.Args).To(HaveKeyWithValue("apt_preferences", `Package: curl git jq
+Pin: release c=multiverse
+Pin-Priority: -1
+
+Package: curl git jq
+Pin: release c=restricted
+Pin-Priority: -1
+`))
+		})
+
+	})
+
+	context("packages arg is not present", func() {
+		def := ihop.ProcessArgs(ihop.DefinitionImage{
+			Args: map[string]string{
+				"something-else": "value",
+			},
+		})
+
+		it("does not modify args", func() {
+			Expect(def.Args).To(HaveLen(1))
+		})
+
+	})
+}
+
 func testCreator(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
@@ -319,8 +359,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Description: "some-stack-build-description",
 			Dockerfile:  "test-base-build-dockerfile-path",
 			Args: map[string]string{
-				"sources":  "test-sources",
-				"packages": "test-build-packages",
+				"sources":         "test-sources",
+				"packages":        "test-build-packages",
+				"apt_preferences": "Package: test-build-packages\nPin: release c=multiverse\nPin-Priority: -1\n\nPackage: test-build-packages\nPin: release c=restricted\nPin-Priority: -1\n",
 			},
 			UID: 1234,
 			GID: 2345,
@@ -330,8 +371,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Description: "some-stack-run-description",
 			Dockerfile:  "test-base-run-dockerfile-path",
 			Args: map[string]string{
-				"sources":  "test-sources",
-				"packages": "test-run-packages",
+				"sources":         "test-sources",
+				"packages":        "test-run-packages",
+				"apt_preferences": "Package: test-run-packages\nPin: release c=multiverse\nPin-Priority: -1\n\nPackage: test-run-packages\nPin: release c=restricted\nPin-Priority: -1\n",
 			},
 			UID: 3456,
 			GID: 4567,
@@ -345,8 +387,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Description: "some-stack-build-description",
 			Dockerfile:  "test-base-build-dockerfile-path",
 			Args: map[string]string{
-				"sources":  "test-sources",
-				"packages": "test-build-packages",
+				"sources":         "test-sources",
+				"packages":        "test-build-packages",
+				"apt_preferences": "Package: test-build-packages\nPin: release c=multiverse\nPin-Priority: -1\n\nPackage: test-build-packages\nPin: release c=restricted\nPin-Priority: -1\n",
 			},
 			UID: 1234,
 			GID: 2345,
@@ -358,8 +401,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Description: "some-stack-run-description",
 			Dockerfile:  "test-base-run-dockerfile-path",
 			Args: map[string]string{
-				"sources":  "test-sources",
-				"packages": "test-run-packages",
+				"sources":         "test-sources",
+				"packages":        "test-run-packages",
+				"apt_preferences": "Package: test-run-packages\nPin: release c=multiverse\nPin-Priority: -1\n\nPackage: test-run-packages\nPin: release c=restricted\nPin-Priority: -1\n",
 			},
 			UID: 3456,
 			GID: 4567,
@@ -739,8 +783,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Description: "some-stack-run-description",
 				Dockerfile:  "test-base-run-dockerfile-path",
 				Args: map[string]string{
-					"sources":  "test-sources",
-					"packages": "test-run-packages",
+					"sources":         "test-sources",
+					"packages":        "test-run-packages",
+					"apt_preferences": "Package: test-run-packages\nPin: release c=multiverse\nPin-Priority: -1\n\nPackage: test-run-packages\nPin: release c=restricted\nPin-Priority: -1\n",
 				},
 				UID: 3456,
 				GID: 4567,

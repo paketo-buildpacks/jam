@@ -40,6 +40,7 @@ func TestIHOP(t *testing.T) {
 	suite("Cataloger", testCataloger)
 	suite("Client", testClient)
 	suite("Creator", testCreator)
+	suite("ProcessArgs", testProcessArgs)
 	suite("Definition", testDefinition)
 	suite("Packages", testPackages)
 	suite("SBOM", testSBOM)

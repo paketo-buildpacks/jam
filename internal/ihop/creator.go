@@ -3,6 +3,7 @@ package ihop
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -72,12 +73,29 @@ func (c Creator) Execute(def Definition) (Stack, error) {
 	return stack, nil
 }
 
+func ProcessArgs(def DefinitionImage) DefinitionImage {
+	packages, ok := def.Args["packages"]
+	if !ok {
+		return def
+	}
+
+	def.Args["apt_preferences"] = fmt.Sprintf(`Package: %[1]s
+Pin: release c=multiverse
+Pin-Priority: -1
+
+Package: %[1]s
+Pin: release c=restricted
+Pin-Priority: -1
+`, strings.TrimSpace(packages))
+	return def
+}
+
 func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 	c.logger.Subprocess("Building base images")
 
 	// invoke the builder to start the build process for the build and run images
-	buildPromise := c.builder.Execute(def.Build, platform)
-	runPromise := c.builder.Execute(def.Run, platform)
+	buildPromise := c.builder.Execute(ProcessArgs(def.Build), platform)
+	runPromise := c.builder.Execute(ProcessArgs(def.Run), platform)
 
 	// wait for the build image to complete building
 	build, buildSBOM, err := buildPromise.Resolve()
