@@ -92,7 +92,7 @@ type Client struct {
 // NewClient returns a Client that has been configured to interact with the
 // local Docker daemon using the environment configuration options.
 func NewClient(dir string) (Client, error) {
-	client, err := docker.NewClientWithOpts(docker.FromEnv)
+	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		return Client{}, err
 	}
@@ -210,7 +210,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	buffer := bytes.NewBuffer(nil)
 	displayChan := make(chan *client.SolveStatus)
 	go func() {
-		_ = progressui.DisplaySolveStatus(context.Background(), "", nil, buffer, displayChan)
+		_, _ = progressui.DisplaySolveStatus(context.Background(), "", nil, buffer, displayChan)
 	}()
 
 	stream := json.NewDecoder(resp.Body)
