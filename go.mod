@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/anchore/syft v0.55.0
+	github.com/anchore/syft v0.56.0
 	github.com/buildpacks/pack v0.27.0
 	github.com/docker/cli v20.10.18+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
@@ -33,6 +33,7 @@ require (
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.5.2 // indirect
+	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/ForestEckhardt/freezer v0.0.11 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
@@ -128,6 +129,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/sassoftware/go-rpmutils v0.2.0 // indirect
 	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
