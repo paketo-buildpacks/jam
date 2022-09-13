@@ -43,7 +43,7 @@ func testClient(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		cli, err := docker.NewClientWithOpts(docker.FromEnv)
+		cli, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, image := range images {
@@ -455,7 +455,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 		it("removes the given images", func() {
 			Expect(client.Cleanup(images...)).To(Succeed())
 
-			cli, err := docker.NewClientWithOpts(docker.FromEnv)
+			cli, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 			Expect(err).NotTo(HaveOccurred())
 
 			for _, image := range images {
