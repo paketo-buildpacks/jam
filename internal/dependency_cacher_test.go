@@ -69,11 +69,11 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 					SHA256:  "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
 				},
 				{
-					ID:      "dep-2",
-					Version: "4.5.6",
-					Stacks:  []string{"some-stack", "some-other-stack"},
-					URI:     "http://dep2-uri",
-					SHA256:  "bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+					ID:       "dep-2",
+					Version:  "4.5.6",
+					Stacks:   []string{"some-stack", "some-other-stack"},
+					URI:      "http://dep2-uri",
+					Checksum: "sha256:bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -86,11 +86,11 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 					SHA256:  "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
 				},
 				{
-					ID:      "dep-2",
-					Version: "4.5.6",
-					Stacks:  []string{"some-stack", "some-other-stack"},
-					URI:     "file:///dependencies/bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
-					SHA256:  "bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+					ID:       "dep-2",
+					Version:  "4.5.6",
+					Stacks:   []string{"some-stack", "some-other-stack"},
+					URI:      "file:///dependencies/bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+					Checksum: "sha256:bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
 				},
 			}))
 

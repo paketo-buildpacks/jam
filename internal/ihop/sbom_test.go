@@ -49,7 +49,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "b-package",
-						Metadata: pkg.RpmdbMetadata{
+						Metadata: pkg.RpmMetadata{
 							Name:      "b-package",
 							Version:   "2.3.1",
 							Arch:      "amd64",
@@ -147,7 +147,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						}
 					},
 					{
-						"id": "372f6b7d6417bbde",
+						"id": "99337f6e42516f6f",
 						"name": "b-package",
 						"version": "",
 						"type": "",

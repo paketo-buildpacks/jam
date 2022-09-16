@@ -109,7 +109,7 @@ func (s SBOM) LegacyFormat() (string, error) {
 				Arch:    metadata.Architecture,
 			})
 
-		case pkg.RpmdbMetadata:
+		case pkg.RpmMetadata:
 			packages = append(packages, LegacySBOMPackage{
 				Name:    metadata.Name,
 				Version: metadata.Version,
