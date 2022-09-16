@@ -94,7 +94,7 @@ func testUpdateDependencies(t *testing.T, context spec.G, it spec.S) {
   {
     "name": "node",
 		"version": "v2.2.5",
-    "sha256": "some-sha",
+		"checksum": "sha512:some-sha",
     "uri": "some-dep-uri",
     "stacks": [
       {
@@ -102,7 +102,7 @@ func testUpdateDependencies(t *testing.T, context spec.G, it spec.S) {
       }
     ],
     "source": "some-source",
-    "source_sha256": "some-source-sha",
+		"source-checksum": "sha512:some-source-sha",
 		"cpe": "node-cpe",
 		"purl": "some-purl",
 		"licenses": ["MIT", "MIT-2"]
@@ -223,9 +223,9 @@ api = "0.2"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	sha256 = "some-sha"
+	checksum = "sha256:some-sha"
 	source = "some-source"
-	source_sha256 = "some-source-sha"
+	source-checksum = "sha256:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "1.3.5"
@@ -236,9 +236,9 @@ api = "0.2"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	sha256 = "some-sha"
+	checksum = "sha256:some-sha"
 	source = "some-source"
-	source_sha256 = "some-source-sha"
+	source-checksum = "sha256:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "2.1.9"
@@ -249,9 +249,9 @@ api = "0.2"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	sha256 = "some-sha"
+	checksum = "sha512:some-sha"
 	source = "some-source"
-	source_sha256 = "some-source-sha"
+	source-checksum = "sha512:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "2.2.5"
@@ -345,9 +345,9 @@ api = "0.2"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	sha256 = "some-sha"
+	checksum = "sha512:some-sha"
 	source = "some-source"
-	source_sha256 = "some-source-sha"
+	source-checksum = "sha512:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "2.2.5"
@@ -439,9 +439,9 @@ api = "0.2"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	sha256 = "some-sha"
+	checksum = "sha512:some-sha"
 	source = "some-source"
-	source_sha256 = "some-source-sha"
+	source-checksum = "sha512:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "2.2.5"
