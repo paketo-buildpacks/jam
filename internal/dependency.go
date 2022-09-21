@@ -19,9 +19,11 @@ import (
 type Dependency struct {
 	DeprecationDate string `json:"deprecation_date,omitempty"`
 	// The ID field should be the `name` from the dep-server
-	ID             string   `json:"name,omitempty"`
-	SHA256         string   `json:"sha256,omitempty"`
-	Source         string   `json:"source,omitempty"`
+	ID string `json:"name,omitempty"`
+	// Deprecated: use Checksum instead.
+	SHA256 string `json:"sha256,omitempty"`
+	Source string `json:"source,omitempty"`
+	// Deprecated: use SourceChecksum instead.
 	SourceSHA256   string   `json:"source_sha256,omitempty"`
 	Stacks         []Stack  `json:"stacks,omitempty"`
 	URI            string   `json:"uri,omitempty"`
@@ -105,7 +107,7 @@ func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDep
 			return nil, err
 		}
 
-		if !c.Check(depVersion) || dependency.ID != constraint.ID {
+		if dependency.ID != constraint.ID || !c.Check(depVersion) {
 			continue
 		}
 
