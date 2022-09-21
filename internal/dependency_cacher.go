@@ -45,18 +45,19 @@ func (dc DependencyCacher) Cache(root string, deps []cargo.ConfigMetadataDepende
 			return nil, fmt.Errorf("failed to download dependency: %s", err)
 		}
 
-		var checksum string
-		var hash string
+		checksum := dep.Checksum
+		_, hash, _ := strings.Cut(dep.Checksum, ":")
 
-		if dep.SHA256 != "" {
+		if checksum == "" {
 			checksum = fmt.Sprintf("sha256:%s", dep.SHA256)
 			hash = dep.SHA256
-			dc.logger.Action("↳  dependencies/%s", dep.SHA256)
-		} else if dep.Checksum != "" {
-			checksum = dep.Checksum
-			hash = strings.SplitN(dep.Checksum, ":", 2)[1]
-			dc.logger.Action("↳  dependencies/%s", hash)
 		}
+
+		if checksum == "sha256:" {
+			return nil, fmt.Errorf("failed to create file for %s: no sha256 or checksum provided", dep.ID)
+		}
+
+		dc.logger.Action("↳  dependencies/%s", hash)
 
 		validatedSource := cargo.NewValidatedReader(source, checksum)
 
