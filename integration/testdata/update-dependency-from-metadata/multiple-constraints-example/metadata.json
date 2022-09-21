@@ -8,9 +8,9 @@
       "another-license"
     ],
     "name": "Some Dependency",
-    "sha256": "another-sha",
+    "checksum": "sha256:another-sha",
     "source": "another-source",
-    "source_sha256": "another-source-sha",
+    "source-checksum": "sha256:another-source-sha",
     "stacks": [
       "another-stack"
     ],
@@ -27,9 +27,9 @@
       "other-license"
     ],
     "name": "Some Dependency",
-    "sha256": "other-sha",
+    "checksum": "sha256:other-sha",
     "source": "other-source",
-    "source_sha256": "other-source-sha",
+    "source-checksum": "sha256:other-source-sha",
     "stacks": [
       "other-stack"
     ],
@@ -46,9 +46,9 @@
       "one-more-license"
     ],
     "name": "Some Dependency",
-    "sha256": "one-more-sha",
+    "checksum": "sha256:one-more-sha",
     "source": "one-more-source",
-    "source_sha256": "one-more-source-sha",
+    "source-checksum": "sha256:one-more-source-sha",
     "stacks": [
       "one-more-stack"
     ],

@@ -1,5 +1,6 @@
 [
   {
+    "checksum": "sha256:different-sha",
     "cpe": "different-cpe",
     "deprecation_date": "2022-01-01T00:00:00Z",
     "purl": "different-purl",
@@ -8,9 +9,8 @@
       "different-license"
     ],
     "name": "Different Dependency",
-    "sha256": "different-sha",
     "source": "different-source",
-    "source_sha256": "different-source-sha",
+    "source-checksum": "sha256:different-source-sha",
     "stacks": [
       "different-stack"
     ],
