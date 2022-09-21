@@ -109,16 +109,6 @@ func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDep
 			continue
 		}
 
-		// Migrate from SHA256 and SourceSHA256 to Checksum and SourceChecksum
-		if dependency.SHA256 != "" {
-			dependency.Checksum = fmt.Sprintf("sha256:%s", dependency.SHA256)
-			dependency.SHA256 = ""
-		}
-		if dependency.SourceSHA256 != "" {
-			dependency.SourceChecksum = fmt.Sprintf("sha256:%s", dependency.SourceSHA256)
-			dependency.SourceSHA256 = ""
-		}
-
 		if matchingDeps, ok := matchingDependenciesMap[dependency.Version]; !ok {
 			versions = append(versions, dependency.Version)
 			matchingDependenciesMap[dependency.Version] = []cargo.ConfigMetadataDependency{dependency}
@@ -210,19 +200,13 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 	cargoDependency.PURL = dependency.PURL
 	cargoDependency.ID = dependency.ID
 	cargoDependency.Name = dependencyName
+	cargoDependency.SHA256 = dependency.SHA256
 	cargoDependency.Source = dependency.Source
+	cargoDependency.SourceSHA256 = dependency.SourceSHA256
 	cargoDependency.URI = dependency.URI
 	cargoDependency.Version = strings.Replace(dependency.Version, "v", "", -1)
 	cargoDependency.Checksum = dependency.Checksum
 	cargoDependency.SourceChecksum = dependency.SourceChecksum
-
-	// Migrate from SHA256 and SourceSHA256 to Checksum and SourceChecksum
-	if dependency.SHA256 != "" {
-		cargoDependency.Checksum = fmt.Sprintf("sha256:%s", dependency.SHA256)
-	}
-	if dependency.SourceSHA256 != "" {
-		cargoDependency.SourceChecksum = fmt.Sprintf("sha256:%s", dependency.SourceSHA256)
-	}
 
 	for _, stack := range dependency.Stacks {
 		cargoDependency.Stacks = append(cargoDependency.Stacks, stack.ID)

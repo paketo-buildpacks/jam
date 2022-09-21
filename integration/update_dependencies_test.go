@@ -219,37 +219,37 @@ api = "0.2"
 
 [[metadata.dependencies]]
 	cpe = "node-cpe"
-	purl = "some-purl"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	checksum = "sha256:some-sha"
+	purl = "some-purl"
+	sha256 = "some-sha"
 	source = "some-source"
-	source-checksum = "sha256:some-source-sha"
+	source_sha256 = "some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "1.3.5"
 
 [[metadata.dependencies]]
 	cpe = "node-cpe"
-	purl = "some-purl"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	checksum = "sha256:some-sha"
+	purl = "some-purl"
+	sha256 = "some-sha"
 	source = "some-source"
-	source-checksum = "sha256:some-source-sha"
+	source_sha256 = "some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
 	uri = "some-dep-uri"
 	version = "2.1.9"
 
 [[metadata.dependencies]]
+	checksum = "sha512:some-sha"
 	cpe = "node-cpe"
-	purl = "some-purl"
 	id = "node"
 	licenses = ["MIT", "MIT-2"]
 	name = "Node Engine"
-	checksum = "sha512:some-sha"
+	purl = "some-purl"
 	source = "some-source"
 	source-checksum = "sha512:some-source-sha"
 	stacks = ["io.buildpacks.stacks.bionic"]
