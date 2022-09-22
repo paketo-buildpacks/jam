@@ -14,7 +14,7 @@ jobs:
       id: event
       run: |
         echo "::set-output name=tag::$(jq -r '.release.tag_name' "${GITHUB_EVENT_PATH}" | sed s/^v//)"
-        echo "::set-output name=download_url::$(jq -r '.release.assets[] | select(.name | endswith("linux")) | .url' "${GITHUB_EVENT_PATH}")"
+        echo "::set-output name=download_url::$(jq -r '.release.assets[] | select(.name | endswith("linux")) | .browser_download_url' "${GITHUB_EVENT_PATH}")"
     - name: Download
       id: download
       uses: paketo-buildpacks/github-config/actions/release/download-asset@main
@@ -31,3 +31,21 @@ jobs:
           echo "Version built into binary ($binVersion) and github release ($githubReleaseVersion) are not identical"
           exit 1
         fi
+  failure:
+    name: Alert on Failure
+    runs-on: ubuntu-latest
+    needs: [ validate ]
+    if: ${{ always() && needs.validate.result == 'failure' }}
+    steps:
+    - name: File Failure Alert Issue
+      uses: paketo-buildpacks/github-config/actions/issue/file@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repo: ${{ github.repository }}
+        label: "failure:release"
+        comment_if_exists: true
+        issue_title: "Failure: Asset Validation Workflow"
+        issue_body: |
+          Release asset validation workflow [failed](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}).
+        comment_body: |
+           Another failure occurred: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
