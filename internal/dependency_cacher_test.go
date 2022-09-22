@@ -173,6 +173,18 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 				})
 			})
 
+			context("when the dependency has neither a SHA256 nor a checksum", func() {
+				it("returns a clear error", func() {
+					_, err := cacher.Cache(tmpDir, []cargo.ConfigMetadataDependency{
+						{
+							URI: "http://error-dep",
+							ID:  "no-checksum-dep",
+						},
+					})
+					Expect(err).To(MatchError("failed to create file for no-checksum-dep: no sha256 or checksum provided"))
+				})
+			})
+
 			context("when the checksum does not match", func() {
 				it("returns an error", func() {
 					_, err := cacher.Cache(tmpDir, []cargo.ConfigMetadataDependency{

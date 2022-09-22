@@ -38,26 +38,30 @@ func (dc DependencyCacher) Cache(root string, deps []cargo.ConfigMetadataDepende
 
 	var dependencies []cargo.ConfigMetadataDependency
 	for _, dep := range deps {
+		dc.logger.Subprocess("%s (%s) [%s]", dep.ID, dep.Version, strings.Join(dep.Stacks, ", "))
+
 		source, err := dc.downloader.Drop("", dep.URI)
 		if err != nil {
 			return nil, fmt.Errorf("failed to download dependency: %s", err)
 		}
 
-		var checksum string
-		if dep.SHA256 != "" {
+		checksum := dep.Checksum
+		_, hash, _ := strings.Cut(dep.Checksum, ":")
+
+		if checksum == "" {
 			checksum = fmt.Sprintf("sha256:%s", dep.SHA256)
-		} else {
-			checksum = dep.Checksum
+			hash = dep.SHA256
 		}
+
+		if checksum == "sha256:" {
+			return nil, fmt.Errorf("failed to create file for %s: no sha256 or checksum provided", dep.ID)
+		}
+
+		dc.logger.Action("↳  dependencies/%s", hash)
 
 		validatedSource := cargo.NewValidatedReader(source, checksum)
 
-		checksumValue := strings.SplitN(checksum, ":", 2)[1]
-
-		dc.logger.Subprocess("%s (%s) [%s]", dep.ID, dep.Version, strings.Join(dep.Stacks, ", "))
-		dc.logger.Action("↳  dependencies/%s", checksumValue)
-
-		destination, err := os.Create(filepath.Join(dir, checksumValue))
+		destination, err := os.Create(filepath.Join(dir, hash))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create destination file: %s", err)
 		}
@@ -77,7 +81,7 @@ func (dc DependencyCacher) Cache(root string, deps []cargo.ConfigMetadataDepende
 			return nil, fmt.Errorf("failed to close dependency source: %s", err)
 		}
 
-		dep.URI = fmt.Sprintf("file:///dependencies/%s", checksumValue)
+		dep.URI = fmt.Sprintf("file:///dependencies/%s", hash)
 		dependencies = append(dependencies, dep)
 	}
 

@@ -1,5 +1,6 @@
 [
   {
+    "checksum": "sha256:another-sha",
     "cpe": "another-cpe",
     "deprecation_date": "2022-01-01T00:00:00Z",
     "purl": "another-purl",
@@ -8,9 +9,8 @@
       "another-license"
     ],
     "name": "Some Dependency",
-    "sha256": "another-sha",
     "source": "another-source",
-    "source_sha256": "another-source-sha",
+    "source-checksum": "sha256:another-source-sha",
     "stacks": [
       "another-stack"
     ],

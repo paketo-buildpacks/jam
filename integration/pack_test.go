@@ -172,19 +172,19 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
+    checksum = "sha256:shasum"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
-    sha256 = "shasum"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
 
   [[metadata.dependencies]]
+    checksum = "sha256:shasum"
     deprecation_date = "2022-04-01T00:00:00Z"
     id = "other-dependency"
     name = "Other Dependency"
-    sha256 = "shasum"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
@@ -240,7 +240,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(config.Metadata.Dependencies).To(HaveLen(2))
 
 				config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
-				config.Metadata.Dependencies[0].SHA256 = "f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+				config.Metadata.Dependencies[0].Checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
 
 				bpTomlWriter, err := os.Create(filepath.Join(buildpackDir, "buildpack.toml"))
 				Expect(err).NotTo(HaveOccurred())
@@ -308,10 +308,10 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
+    checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
-    sha256 = "f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "file:///dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
     version = "1.2.3"
