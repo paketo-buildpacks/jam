@@ -62,13 +62,25 @@ function build::jam(){
   mkdir -p "${ARTIFACTS_DIR}"
 
   pushd "${ROOT_DIR}" > /dev/null || return
-    for os in darwin linux; do
+    for os in darwin linux windows; do
       util::print::info "Building jam on ${os}"
-      GOOS="${os}" GOARCH="amd64" go build -ldflags "-X github.com/paketo-buildpacks/jam/commands.jamVersion=${version}" -o "${ARTIFACTS_DIR}/jam-${os}"  main.go
-      chmod +x "${ARTIFACTS_DIR}/jam-${os}"
+
+      local output
+      output="${ARTIFACTS_DIR}/jam-${os}"
+      if [[ "${os}"  == "windows" ]]; then
+        output="${output}.exe"
+      fi
+
+      GOOS="${os}" \
+      GOARCH="amd64" \
+      CGO_ENABLED=0 \
+        go build \
+          -ldflags "-X github.com/paketo-buildpacks/jam/commands.jamVersion=${version}" \
+          -o "${output}" \
+          main.go
+
+      chmod +x "${output}"
     done
-    util::print::info "Building jam on windows"
-    GOOS="windows" go build -ldflags "-X github.com/paketo-buildpacks/jam/commands.jamVersion=${version}" -o "${ARTIFACTS_DIR}/jam-windows.exe" main.go
   popd > /dev/null || return
 }
 
