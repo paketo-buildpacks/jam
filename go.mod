@@ -14,7 +14,7 @@ require (
 	github.com/moby/buildkit v0.10.4
 	github.com/onsi/gomega v1.20.2
 	github.com/paketo-buildpacks/occam v0.13.2
-	github.com/paketo-buildpacks/packit/v2 v2.5.1
+	github.com/paketo-buildpacks/packit/v2 v2.6.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.5.0
