@@ -105,18 +105,18 @@ func (i DefinitionImage) Arguments() ([]string, error) {
 		case []string:
 			v = strings.Join(valTyped, " ")
 		case []any:
-			typedSlince := make([]string, len(valTyped))
+			typedSlice := make([]string, len(valTyped))
 			for i, e := range valTyped {
 				switch elementTyped := e.(type) {
 				case string:
-					typedSlince[i] = elementTyped
+					typedSlice[i] = elementTyped
 				case int, int64, int32, int16, int8:
-					typedSlince[i] = fmt.Sprintf("%d", elementTyped)
+					typedSlice[i] = fmt.Sprintf("%d", elementTyped)
 				default:
 					return nil, fmt.Errorf("unsupported type %T for the argument element %q.%d", elementTyped, key, i)
 				}
 			}
-			v = strings.Join(typedSlince, " ")
+			v = strings.Join(typedSlice, " ")
 		default:
 			return nil, fmt.Errorf("unsupported type %T for the argument %q", valTyped, key)
 		}
