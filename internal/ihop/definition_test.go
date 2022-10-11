@@ -387,6 +387,36 @@ homepage = "https://github.com/some-stack"
 				})
 			})
 
+			context("when slice contains unsupported types", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id"
+name = "some-stack-name"
+homepage = "https://github.com/some-stack"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+	[build.args]
+		key = [false]
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("returns an error", func() {
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
+					Expect(err).ToNot(HaveOccurred())
+
+					_, err = definition.Build.Arguments()
+					Expect(err).To(MatchError("unsupported type bool for the argument element \"key\".0"))
+				})
+			})
+
 			context("when arg is a map", func() {
 				it.Before(func() {
 					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
