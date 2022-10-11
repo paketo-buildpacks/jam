@@ -87,8 +87,10 @@ func testClient(t *testing.T, context spec.G, it spec.S) {
 			err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(`FROM scratch
 COPY Dockerfile .
 ARG test_build_arg
+ARG test_build_slice_arg
 LABEL testing.key=some-value
-LABEL testing.build.arg.key=$test_build_arg`), 0600)
+LABEL testing.build.arg.key=$test_build_arg
+LABEL testing.build.arg.slice.key=$test_build_slice_arg`), 0600)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -99,7 +101,10 @@ LABEL testing.build.arg.key=$test_build_arg`), 0600)
 		it("can build images", func() {
 			image, err := client.Build(ihop.DefinitionImage{
 				Dockerfile: filepath.Join(dir, "Dockerfile"),
-				Args:       map[string]string{"test_build_arg": "1"},
+				Args: map[string]any{
+					"test_build_arg":       "1",
+					"test_build_slice_arg": []string{"1", "2"},
+				},
 			}, "linux/arm64")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -108,6 +113,7 @@ LABEL testing.build.arg.key=$test_build_arg`), 0600)
 			Expect(image.Tag).To(MatchRegexp(`^paketo\.io/stack/[a-z0-9]{10}$`))
 			Expect(image.Labels).To(HaveKeyWithValue("testing.key", "some-value"))
 			Expect(image.Labels).To(HaveKeyWithValue("testing.build.arg.key", "1"))
+			Expect(image.Labels).To(HaveKeyWithValue("testing.build.arg.slice.key", "1 2"))
 			Expect(image.Layers).To(HaveLen(1))
 			Expect(image.OS).To(Equal("linux"))
 			Expect(image.Architecture).To(Equal("arm64"))
@@ -166,7 +172,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 				it("returns an error", func() {
 					_, err := client.Build(ihop.DefinitionImage{
 						Dockerfile: filepath.Join(dir, "Dockerfile"),
-						Args:       map[string]string{"test_build_arg": "1"},
+						Args:       map[string]any{"test_build_arg": "1"},
 					}, "not a valid platform")
 					Expect(err).To(MatchError(ContainSubstring("failed to initiate image build")))
 				})

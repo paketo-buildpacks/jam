@@ -82,7 +82,7 @@ platforms = ["some-stack-platform"]
 					Mixins:     true,
 				},
 				Build: ihop.DefinitionImage{
-					Args: map[string]string{
+					Args: map[string]any{
 						"some-build-arg-key": "some-build-arg-value",
 					},
 					Description: "some-build-description",
@@ -92,7 +92,7 @@ platforms = ["some-stack-platform"]
 					UID:         1234,
 				},
 				Run: ihop.DefinitionImage{
-					Args: map[string]string{
+					Args: map[string]any{
 						"some-run-arg-key": "some-run-arg-value",
 					},
 					Description: "some-run-description",
@@ -342,6 +342,90 @@ homepage = "some-stack-homepage"
 					"first-secret":  "first-value",
 					"second-secret": "second-value",
 				}))
+			})
+		})
+
+		context("when args are of non string types", func() {
+			context("when args are slices and integers", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id"
+name = "some-stack-name"
+homepage = "https://github.com/some-stack"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+	[build.args]
+		build-arg-slice = [
+			"value1",
+			"value2",
+			3
+		]
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+
+	[run.args]
+		run-arg-int = 1
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("transforms args to string", func() {
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
+					Expect(err).NotTo(HaveOccurred())
+					buildArgs, err := definition.Build.Arguments()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(buildArgs).To(Equal([]string{"build-arg-slice=value1 value2 3"}))
+
+					runArgs, err := definition.Run.Arguments()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(runArgs).To(Equal([]string{"run-arg-int=1"}))
+				})
+			})
+
+			context("when arg is a map", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id"
+name = "some-stack-name"
+homepage = "https://github.com/some-stack"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+	[build.args]
+		build-arg-slice = [
+			"value1",
+			"value2"
+		]
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+
+	[run.args]
+		[run.args.map]
+			key = "value"
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("returns an error", func() {
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
+					Expect(err).ToNot(HaveOccurred())
+
+					buildArgs, err := definition.Build.Arguments()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(buildArgs).To(Equal([]string{"build-arg-slice=value1 value2"}))
+
+					_, err = definition.Run.Arguments()
+					Expect(err).To(MatchError("unsupported type map[string]interface {} for the argument \"map\""))
+				})
 			})
 		})
 

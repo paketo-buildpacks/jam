@@ -189,9 +189,13 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 	tag = fmt.Sprintf("paketo.io/stack/%s", tag)
 
+	buildArgs, err := def.Arguments()
+	if err != nil {
+		return Image{}, err
+	}
 	// send a request to the Docker daemon to build the image
 	resp, err := c.docker.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
-		BuildArgs:  opts.ConvertKVStringsToMapWithNil(def.Arguments()),
+		BuildArgs:  opts.ConvertKVStringsToMapWithNil(buildArgs),
 		Dockerfile: relDockerfile,
 		NoCache:    true,
 		Remove:     true,
