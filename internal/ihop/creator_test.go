@@ -249,7 +249,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Build: ihop.DefinitionImage{
 				Description: "some-stack-build-description",
 				Dockerfile:  "test-base-build-dockerfile-path",
-				Args: map[string]string{
+				Args: map[string]any{
 					"sources":  "test-sources",
 					"packages": "test-build-packages",
 				},
@@ -259,7 +259,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Run: ihop.DefinitionImage{
 				Description: "some-stack-run-description",
 				Dockerfile:  "test-base-run-dockerfile-path",
-				Args: map[string]string{
+				Args: map[string]any{
 					"sources":  "test-sources",
 					"packages": "test-run-packages",
 				},
@@ -330,7 +330,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect(imageBuildInvocations[0].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-build-description",
 			Dockerfile:  "test-base-build-dockerfile-path",
-			Args: map[string]string{
+			Args: map[string]any{
 				"sources":  "test-sources",
 				"packages": "test-build-packages",
 			},
@@ -341,7 +341,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect(imageBuildInvocations[1].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-run-description",
 			Dockerfile:  "test-base-run-dockerfile-path",
-			Args: map[string]string{
+			Args: map[string]any{
 				"sources":  "test-sources",
 				"packages": "test-run-packages",
 			},
@@ -356,7 +356,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect(userLayerCreateInvocations[0].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-build-description",
 			Dockerfile:  "test-base-build-dockerfile-path",
-			Args: map[string]string{
+			Args: map[string]any{
 				"sources":  "test-sources",
 				"packages": "test-build-packages",
 			},
@@ -369,7 +369,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect(userLayerCreateInvocations[1].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-run-description",
 			Dockerfile:  "test-base-run-dockerfile-path",
-			Args: map[string]string{
+			Args: map[string]any{
 				"sources":  "test-sources",
 				"packages": "test-run-packages",
 			},
@@ -588,7 +588,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Build: ihop.DefinitionImage{
 					Description: "some-stack-build-description",
 					Dockerfile:  "test-base-build-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-build-packages",
 					},
@@ -596,7 +596,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Run: ihop.DefinitionImage{
 					Description: "some-stack-run-description",
 					Dockerfile:  "test-base-run-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-run-packages",
 					},
@@ -669,7 +669,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Build: ihop.DefinitionImage{
 					Description: "some-stack-build-description",
 					Dockerfile:  "test-base-build-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-build-packages",
 					},
@@ -677,7 +677,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Run: ihop.DefinitionImage{
 					Description: "some-stack-run-description",
 					Dockerfile:  "test-base-run-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-run-packages",
 					},
@@ -712,7 +712,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Build: ihop.DefinitionImage{
 					Description: "some-stack-build-description",
 					Dockerfile:  "test-base-build-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-build-packages",
 					},
@@ -722,7 +722,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Run: ihop.DefinitionImage{
 					Description: "some-stack-run-description",
 					Dockerfile:  "test-base-run-dockerfile-path",
-					Args: map[string]string{
+					Args: map[string]any{
 						"sources":  "test-sources",
 						"packages": "test-run-packages",
 					},
@@ -762,7 +762,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Expect(sbomLayerCreateInvocations[0].Def).To(Equal(ihop.DefinitionImage{
 				Description: "some-stack-run-description",
 				Dockerfile:  "test-base-run-dockerfile-path",
-				Args: map[string]string{
+				Args: map[string]any{
 					"sources":  "test-sources",
 					"packages": "test-run-packages",
 				},

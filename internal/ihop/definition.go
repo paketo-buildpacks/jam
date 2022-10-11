@@ -54,7 +54,7 @@ type Definition struct {
 type DefinitionImage struct {
 	// Args can be used to pass arguments to the Dockerfile as might be done with
 	// the --build-arg docker CLI flag.
-	Args map[string]string `toml:"args"`
+	Args map[string]any `toml:"args"`
 
 	// Description will be used to fill the io.buildpacks.stack.description image
 	// label.
@@ -92,13 +92,39 @@ type DefinitionDeprecated struct {
 
 // Arguments converts the Args map into a slice of strings of the form
 // key=value.
-func (i DefinitionImage) Arguments() []string {
+func (i DefinitionImage) Arguments() ([]string, error) {
 	var args []string
 	for key, value := range i.Args {
-		args = append(args, fmt.Sprintf("%s=%s", key, value))
+		var v string
+
+		switch valTyped := value.(type) {
+		case string:
+			v = valTyped
+		case int, int64, int32, int16, int8:
+			v = fmt.Sprintf("%d", valTyped)
+		case []string:
+			v = strings.Join(valTyped, " ")
+		case []any:
+			typedSlince := make([]string, len(valTyped))
+			for i, e := range valTyped {
+				switch elementTyped := e.(type) {
+				case string:
+					typedSlince[i] = elementTyped
+				case int, int64, int32, int16, int8:
+					typedSlince[i] = fmt.Sprintf("%d", elementTyped)
+				default:
+					return nil, fmt.Errorf("unsupported type %T for the argument element %q.%d", elementTyped, key, i)
+				}
+			}
+			v = strings.Join(typedSlince, " ")
+		default:
+			return nil, fmt.Errorf("unsupported type %T for the argument %q", valTyped, key)
+		}
+
+		args = append(args, fmt.Sprintf("%s=%s", key, v))
 	}
 
-	return args
+	return args, nil
 }
 
 // NewDefinitionFromFile parses the stack descriptor from a file location.
