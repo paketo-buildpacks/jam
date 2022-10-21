@@ -53,7 +53,13 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 	if len(config.Metadata.Dependencies) > 0 {
 		infoMap := map[depKey][]string{}
 		for _, d := range config.Metadata.Dependencies {
-			key := depKey{d.ID, d.Version, d.SHA256}
+
+			checksum := d.Checksum
+			if checksum == "" {
+				checksum = fmt.Sprintf("sha256:%s", d.SHA256)
+			}
+
+			key := depKey{d.ID, d.Version, checksum}
 			_, ok := infoMap[key]
 			if !ok {
 				sort.Strings(d.Stacks)
@@ -90,7 +96,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return iVal.ID == jVal.ID && iVersion.GreaterThan(jVersion)
 		})
 
-		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | SHA256 |\n|---|---|---|\n")
+		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Checksum |\n|---|---|---|\n")
 		for _, d := range sorted {
 			fmt.Fprintf(writer, "| %s | %s | %s |\n", d.ID, d.Version, d.SHA256)
 		}

@@ -57,10 +57,10 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 									SHA256:  "another-sha",
 								},
 								{
-									ID:      "other-dependency",
-									Stacks:  []string{"other-stack"},
-									Version: "2.3.5",
-									SHA256:  "some-sha",
+									ID:       "other-dependency",
+									Stacks:   []string{"other-stack"},
+									Version:  "2.3.5",
+									Checksum: "sha512:some-sha",
 								},
 							},
 							DefaultVersions: map[string]string{
@@ -92,11 +92,11 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 | some-dependency | 1.2.x |
 
 #### Dependencies:
-| Name | Version | SHA256 |
+| Name | Version | Checksum |
 |---|---|---|
-| other-dependency | 2.3.5 | some-sha |
-| other-dependency | 2.3.4 | another-sha |
-| some-dependency | 1.2.3 | one-more-sha |
+| other-dependency | 2.3.5 | sha512:some-sha |
+| other-dependency | 2.3.4 | sha256:another-sha |
+| some-dependency | 1.2.3 | sha256:one-more-sha |
 
 `))
 		})
@@ -163,10 +163,10 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 										SHA256:  "another-sha",
 									},
 									{
-										ID:      "other-dependency",
-										Stacks:  []string{"other-stack"},
-										Version: "2.3.5",
-										SHA256:  "some-sha",
+										ID:       "other-dependency",
+										Stacks:   []string{"other-stack"},
+										Version:  "2.3.5",
+										Checksum: "sha512:some-sha",
 									},
 								},
 								DefaultVersions: map[string]string{
@@ -193,11 +193,11 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 | some-dependency | 1.2.x |
 
 #### Dependencies:
-| Name | Version | SHA256 |
+| Name | Version | Checksum |
 |---|---|---|
-| other-dependency | 2.3.5 | some-sha |
-| other-dependency | 2.3.4 | another-sha |
-| some-dependency | 1.2.3 | one-more-sha |
+| other-dependency | 2.3.5 | sha512:some-sha |
+| other-dependency | 2.3.4 | sha256:another-sha |
+| some-dependency | 1.2.3 | sha256:one-more-sha |
 
 `))
 			})
