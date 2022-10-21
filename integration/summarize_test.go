@@ -54,7 +54,7 @@ other-dependency = "2.3.x"
 	id = "other-dependency"
 	stacks = ["other-stack"]
 	version = "2.3.4"
-	sha256 = "other-sha"
+	checksum = "sha256:other-sha"
 
 [[stacks]]
 	id = "some-stack"
@@ -109,7 +109,7 @@ second-dependency = "5.6.x"
 	id = "second-dependency"
 	stacks = ["second-stack"]
 	version = "5.6.7"
-	sha256 = "second-sha"
+	checksum = "sha256:second-sha"
 
 [[stacks]]
 	id = "first-stack"
@@ -285,10 +285,10 @@ version = "3.4.5"
 | some-dependency | 1.2.x |
 
 #### Dependencies:
-| Name | Version | SHA256 |
+| Name | Version | Checksum |
 |---|---|---|
-| other-dependency | 2.3.4 | other-sha |
-| some-dependency | 1.2.3 | some-sha |
+| other-dependency | 2.3.4 | sha256:other-sha |
+| some-dependency | 1.2.3 | sha256:some-sha |
 
 ---
 
@@ -309,10 +309,10 @@ version = "3.4.5"
 | second-dependency | 5.6.x |
 
 #### Dependencies:
-| Name | Version | SHA256 |
+| Name | Version | Checksum |
 |---|---|---|
-| first-dependency | 4.5.6 | first-sha |
-| second-dependency | 5.6.7 | second-sha |
+| first-dependency | 4.5.6 | sha256:first-sha |
+| second-dependency | 5.6.7 | sha256:second-sha |
 
 ---
 
@@ -378,7 +378,7 @@ version = "3.4.5"
 										"other-stack"
 									],
 									"version": "2.3.4",
-									"sha256": "other-sha"
+									"checksum": "sha256:other-sha"
 								}
 							]
 						},
@@ -414,7 +414,7 @@ version = "3.4.5"
 										"second-stack"
 									],
 									"version": "5.6.7",
-									"sha256": "second-sha"
+									"checksum": "sha256:second-sha"
 								}
 							]
 						},
