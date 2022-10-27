@@ -12,7 +12,7 @@ require (
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/google/go-containerregistry v0.12.0
 	github.com/moby/buildkit v0.10.5
-	github.com/onsi/gomega v1.22.1
+	github.com/onsi/gomega v1.23.0
 	github.com/paketo-buildpacks/occam v0.13.3
 	github.com/paketo-buildpacks/packit/v2 v2.6.1
 	github.com/pelletier/go-toml v1.9.5
