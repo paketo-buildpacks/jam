@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"math/big"
 	"net"
 	"os"
@@ -41,7 +42,6 @@ import (
 // An Image is a representation of a container image that can be built,
 // updated, or exported to an OCI-archive format.
 type Image struct {
-	Tag          string
 	Digest       string
 	OS           string
 	Architecture string
@@ -52,27 +52,55 @@ type Image struct {
 
 	Layers []Layer
 
-	unbuffered bool
+	Actual v1.Image
+	Path   string
 }
 
-// ToDaemonImage returns the GGCR v1.Image associated with this Image.
-func (i Image) ToDaemonImage() (v1.Image, error) {
-	ref, err := name.ParseReference(i.Tag)
+func FromImage(path string, image v1.Image) (Image, error) {
+	file, err := image.ConfigFile()
 	if err != nil {
-		return nil, err
+		return Image{}, err
 	}
 
-	option := daemon.WithBufferedOpener()
-	if i.unbuffered {
-		option = daemon.WithUnbufferedOpener()
+	labels := file.Config.Labels
+	if labels == nil {
+		labels = make(map[string]string)
 	}
 
-	image, err := daemon.Image(ref, option)
+	ls, err := image.Layers()
 	if err != nil {
-		return nil, err
+		return Image{}, err
 	}
 
-	return image, nil
+	var layers []Layer
+	for _, layer := range ls {
+		diffID, err := layer.DiffID()
+		if err != nil {
+			return Image{}, err
+		}
+
+		layers = append(layers, Layer{
+			DiffID: diffID.String(),
+			Layer:  layer,
+		})
+	}
+
+	digest, err := image.Digest()
+	if err != nil {
+		return Image{}, err
+	}
+
+	return Image{
+		Digest:       digest.String(),
+		Env:          file.Config.Env,
+		Labels:       labels,
+		Layers:       layers,
+		User:         file.Config.User,
+		OS:           file.OS,
+		Architecture: file.Architecture,
+		Actual:       image,
+		Path:         path,
+	}, nil
 }
 
 // A Layer is a representation of a container image layer.
@@ -287,29 +315,65 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 		}
 	}
 
+	defer func() {
+		_, err := c.docker.ImageRemove(context.Background(), tag, types.ImageRemoveOptions{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	ref, err := name.ParseReference(tag)
+	if err != nil {
+		return Image{}, err
+	}
+
+	image, err := daemon.Image(ref)
+	if err != nil {
+		return Image{}, err
+	}
+
+	name, err := randomName()
+	if err != nil {
+		return Image{}, err
+	}
+
+	path := filepath.Join(c.dir, name)
+	index, err := layout.Write(path, empty.Index)
+	if err != nil {
+		return Image{}, fmt.Errorf("failed to write image layout: %w", err)
+	}
+
+	file, err := image.ConfigFile()
+	if err != nil {
+		return Image{}, err
+	}
+
+	err = index.AppendImage(image, layout.WithPlatform(v1.Platform{
+		OS:           file.OS,
+		Architecture: file.Architecture,
+	}))
+	if err != nil {
+		return Image{}, err
+	}
+
+	digest, err := image.Digest()
+	if err != nil {
+		return Image{}, err
+	}
+
+	image, err = index.Image(digest)
+	if err != nil {
+		return Image{}, err
+	}
+
 	// fetch and return a reference to the built image
-	return c.get(Image{Tag: tag, unbuffered: def.unbuffered})
+	return FromImage(string(path), image)
 }
 
 // Update will apply any modifications made to the Image reference onto the
 // actual container image in the Docker daemon.
 func (c Client) Update(image Image) (Image, error) {
-	// Add a random tag to the original image to distinguish it from other
-	// identical images
-	random, err := randomName()
-	if err != nil {
-		return Image{}, err
-	}
-	originalImage := fmt.Sprintf("%s:%s", image.Tag, random)
-	err = c.docker.ImageTag(context.Background(), image.Tag, originalImage)
-	if err != nil {
-		return Image{}, err
-	}
-
-	img, err := image.ToDaemonImage()
-	if err != nil {
-		return Image{}, err
-	}
+	img := image.Actual
 
 	configFile, err := img.ConfigFile()
 	if err != nil {
@@ -331,7 +395,7 @@ func (c Client) Update(image Image) (Image, error) {
 
 		_, err = img.LayerByDiffID(hash)
 		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
+			if strings.Contains(err.Error(), "unknown diffID") {
 				layers = append(layers, layer.Layer)
 				continue
 			}
@@ -350,22 +414,30 @@ func (c Client) Update(image Image) (Image, error) {
 		return Image{}, err
 	}
 
-	tag, err := name.NewTag(image.Tag)
+	path, err := layout.FromPath(image.Path)
+	if err != nil {
+		return Image{}, fmt.Errorf("could not load layout from path %q: %w", image.Path, err)
+	}
+
+	err = path.AppendImage(updatedImage, layout.WithPlatform(v1.Platform{
+		OS:           image.OS,
+		Architecture: image.Architecture,
+	}))
+	if err != nil {
+		return Image{}, fmt.Errorf("could not append image to layout: %w", err)
+	}
+
+	digest, err := updatedImage.Digest()
 	if err != nil {
 		return Image{}, err
 	}
 
-	_, err = daemon.Write(tag, updatedImage)
+	updatedImage, err = path.Image(digest)
 	if err != nil {
 		return Image{}, err
 	}
 
-	err = c.Cleanup(Image{Tag: originalImage})
-	if err != nil {
-		return Image{}, err
-	}
-
-	return c.get(image)
+	return FromImage(image.Path, updatedImage)
 }
 
 // Export creates an OCI-archive tarball at the path location that includes the
@@ -388,12 +460,7 @@ func (c Client) Export(path string, images ...Image) error {
 	}
 
 	for _, image := range images {
-		img, err := image.ToDaemonImage()
-		if err != nil {
-			return err
-		}
-
-		err = index.AppendImage(img, layout.WithPlatform(v1.Platform{
+		err = index.AppendImage(image.Actual, layout.WithPlatform(v1.Platform{
 			OS:           image.OS,
 			Architecture: image.Architecture,
 		}))
@@ -455,71 +522,6 @@ func (c Client) Export(path string, images ...Image) error {
 	}
 
 	return nil
-}
-
-// Cleanup deletes the container images from the Docker daemon that are
-// referenced by the given Images.
-func (c Client) Cleanup(images ...Image) error {
-	for _, image := range images {
-		_, err := c.docker.ImageRemove(context.Background(), image.Tag, types.ImageRemoveOptions{})
-		if err != nil && !docker.IsErrNotFound(err) {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c Client) get(img Image) (Image, error) {
-	image, err := img.ToDaemonImage()
-	if err != nil {
-		return Image{}, err
-	}
-
-	file, err := image.ConfigFile()
-	if err != nil {
-		return Image{}, err
-	}
-
-	labels := file.Config.Labels
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	ls, err := image.Layers()
-	if err != nil {
-		return Image{}, err
-	}
-
-	var layers []Layer
-	for _, layer := range ls {
-		diffID, err := layer.DiffID()
-		if err != nil {
-			return Image{}, err
-		}
-
-		layers = append(layers, Layer{
-			DiffID: diffID.String(),
-			Layer:  layer,
-		})
-	}
-
-	digest, err := image.Digest()
-	if err != nil {
-		return Image{}, err
-	}
-
-	return Image{
-		Digest:       digest.String(),
-		Env:          file.Config.Env,
-		Labels:       labels,
-		Layers:       layers,
-		Tag:          img.Tag,
-		User:         file.Config.User,
-		OS:           file.OS,
-		Architecture: file.Architecture,
-		unbuffered:   img.unbuffered,
-	}, nil
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"

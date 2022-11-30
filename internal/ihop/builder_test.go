@@ -24,7 +24,7 @@ func testBuilder(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		client = &fakes.ImageClient{}
-		client.BuildCall.Returns.Image = ihop.Image{Tag: "some-image-tag"}
+		client.BuildCall.Returns.Image = ihop.Image{Path: "some-image-path"}
 
 		scanner = &fakes.ImageScanner{}
 		scanner.ScanCall.Returns.SBOM = ihop.NewSBOM(sbom.SBOM{
@@ -44,7 +44,7 @@ func testBuilder(t *testing.T, context spec.G, it spec.S) {
 		image, bom, err := promise.Resolve()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(image).To(Equal(ihop.Image{
-			Tag: "some-image-tag",
+			Path: "some-image-path",
 		}))
 		Expect(bom).To(Equal(ihop.NewSBOM(sbom.SBOM{
 			Artifacts: sbom.Artifacts{
@@ -59,7 +59,7 @@ func testBuilder(t *testing.T, context spec.G, it spec.S) {
 		Expect(client.BuildCall.Receives.Platform).To(Equal("some-platform"))
 
 		Expect(scanner.ScanCall.CallCount).To(Equal(1))
-		Expect(scanner.ScanCall.Receives.Tag).To(Equal("some-image-tag"))
+		Expect(scanner.ScanCall.Receives.Path).To(Equal("some-image-path"))
 	})
 
 	context("failure cases", func() {

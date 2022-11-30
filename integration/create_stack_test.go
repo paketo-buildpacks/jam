@@ -261,7 +261,6 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				"",
 				fmt.Sprintf("  Exporting build image to %s", filepath.Join(tmpDir, "build.oci")),
 				fmt.Sprintf("  Exporting run image to %s", filepath.Join(tmpDir, "run.oci")),
-				"  Cleaning up intermediate image artifacts",
 			))
 		})
 	})

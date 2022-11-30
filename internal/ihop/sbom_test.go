@@ -118,7 +118,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 			Expect(output).To(MatchJSON(`{
 				"artifacts": [
 					{
-						"id": "ad6a28f75514e659",
+						"id": "f0dc33bc5d7603be",
 						"name": "a-package",
 						"version": "",
 						"type": "",
@@ -147,7 +147,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						}
 					},
 					{
-						"id": "99337f6e42516f6f",
+						"id": "3967142b5e338b90",
 						"name": "b-package",
 						"version": "",
 						"type": "",
@@ -173,7 +173,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						}
 					},
 					{
-						"id": "e9f5fdd345ca49fd",
+						"id": "3ffc024cc467d6f2",
 						"name": "c-package",
 						"version": "",
 						"type": "",

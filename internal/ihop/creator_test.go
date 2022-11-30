@@ -75,7 +75,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			imageUpdateInvocations = append(imageUpdateInvocations, imageUpdateInvocation{
 				Image: ihop.Image{
 					Digest: image.Digest,
-					Tag:    image.Tag,
 					Layers: image.Layers,
 					User:   image.User,
 					Env:    append([]string{}, image.Env...),
@@ -161,7 +160,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			promise := &fakes.ImageBuildPromise{}
 			promise.ResolveCall.Returns.Image = ihop.Image{
 				Digest: imageDigest(),
-				Tag:    fmt.Sprintf("image-%d", imageBuilder.ExecuteCall.CallCount),
 				Labels: map[string]string{},
 			}
 			promise.ResolveCall.Returns.SBOM = sboms[imageBuilder.ExecuteCall.CallCount-1]
@@ -179,7 +177,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			userLayerCreateInvocations = append(userLayerCreateInvocations, layerCreateInvocation{
 				Image: ihop.Image{
 					Digest: image.Digest,
-					Tag:    image.Tag,
 					Layers: image.Layers,
 					User:   image.User,
 					Env:    append([]string{}, image.Env...),
@@ -209,7 +206,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			sbomLayerCreateInvocations = append(sbomLayerCreateInvocations, layerCreateInvocation{
 				Image: ihop.Image{
 					Digest: image.Digest,
-					Tag:    image.Tag,
 					Layers: image.Layers,
 					User:   image.User,
 					Env:    append([]string{}, image.Env...),
@@ -271,7 +267,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect(stack).To(Equal(ihop.Stack{
 			Build: []ihop.Image{
 				{
-					Tag:    "image-1",
 					Digest: "image-digest-3",
 					User:   "1234:2345",
 					Env: []string{
@@ -299,7 +294,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			},
 			Run: []ihop.Image{
 				{
-					Tag:    "image-2",
 					Digest: "image-digest-4",
 					User:   "3456:4567",
 					Labels: map[string]string{
@@ -352,7 +346,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(userLayerCreator.CreateCall.CallCount).To(Equal(2))
 		Expect(userLayerCreateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
-		Expect(userLayerCreateInvocations[0].Image.Tag).To(Equal("image-1"))
 		Expect(userLayerCreateInvocations[0].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-build-description",
 			Dockerfile:  "test-base-build-dockerfile-path",
@@ -365,7 +358,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		}))
 		Expect(userLayerCreateInvocations[0].SBOM).To(Equal(buildSBOM))
 		Expect(userLayerCreateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
-		Expect(userLayerCreateInvocations[1].Image.Tag).To(Equal("image-2"))
 		Expect(userLayerCreateInvocations[1].Def).To(Equal(ihop.DefinitionImage{
 			Description: "some-stack-run-description",
 			Dockerfile:  "test-base-run-dockerfile-path",
@@ -380,7 +372,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
 		Expect(imageUpdateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
-		Expect(imageUpdateInvocations[0].Image.Tag).To(Equal("image-1"))
 		Expect(imageUpdateInvocations[0].Image.Labels).To(SatisfyAll(
 			HaveKeyWithValue("io.buildpacks.stack.id", "some-stack-id"),
 			HaveKeyWithValue("io.buildpacks.stack.description", "some-stack-build-description"),
@@ -405,7 +396,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			"CNB_STACK_ID=some-stack-id",
 		))
 		Expect(imageUpdateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
-		Expect(imageUpdateInvocations[1].Image.Tag).To(Equal("image-2"))
 		Expect(imageUpdateInvocations[1].Image.Labels).To(SatisfyAll(
 			HaveKeyWithValue("io.buildpacks.stack.id", "some-stack-id"),
 			HaveKeyWithValue("io.buildpacks.stack.description", "some-stack-run-description"),
@@ -449,7 +439,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Expect(stack).To(Equal(ihop.Stack{
 				Build: []ihop.Image{
 					{
-						Tag:    "image-1",
 						Digest: "image-digest-3",
 						User:   "1234:2345",
 						Env: []string{
@@ -475,7 +464,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 					{
-						Tag:    "image-3",
 						Digest: "image-digest-7",
 						User:   "1234:2345",
 						Env: []string{
@@ -503,7 +491,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				},
 				Run: []ihop.Image{
 					{
-						Tag:    "image-2",
 						Digest: "image-digest-4",
 						User:   "3456:4567",
 						Labels: map[string]string{
@@ -528,7 +515,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 					{
-						Tag:    "image-4",
 						Digest: "image-digest-8",
 						User:   "3456:4567",
 						Labels: map[string]string{
@@ -606,7 +592,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
 			Expect(imageUpdateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
-			Expect(imageUpdateInvocations[0].Image.Tag).To(Equal("image-1"))
 			Expect(imageUpdateInvocations[0].Image.Labels).To(HaveKeyWithValue("io.paketo.stack.packages", MatchJSON(`[
  				{
 					"name": "some-build-package",
@@ -630,7 +615,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				}
 			]`)))
 			Expect(imageUpdateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
-			Expect(imageUpdateInvocations[1].Image.Tag).To(Equal("image-2"))
 			Expect(imageUpdateInvocations[1].Image.Labels).To(HaveKeyWithValue("io.paketo.stack.packages", MatchJSON(`[
 				{
 					"name": "some-common-package",
@@ -688,11 +672,9 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
 
 			Expect(imageUpdateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
-			Expect(imageUpdateInvocations[0].Image.Tag).To(Equal("image-1"))
 			Expect(imageUpdateInvocations[0].Image.Labels).To(HaveKeyWithValue("io.buildpacks.stack.mixins", MatchJSON(`["some-common-package","build:some-build-package"]`)))
 
 			Expect(imageUpdateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
-			Expect(imageUpdateInvocations[1].Image.Tag).To(Equal("image-2"))
 			Expect(imageUpdateInvocations[1].Image.Labels).To(HaveKeyWithValue("io.buildpacks.stack.mixins", MatchJSON(`["some-common-package","run:some-run-package"]`)))
 		})
 	})
@@ -737,13 +719,11 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
 			Expect(imageUpdateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
-			Expect(imageUpdateInvocations[0].Image.Tag).To(Equal("image-1"))
 			Expect(imageUpdateInvocations[0].Image.Labels).NotTo(HaveKey("io.buildpacks.base.sbom"))
 			Expect(imageUpdateInvocations[0].Image.Layers).To(Equal([]ihop.Layer{
 				{DiffID: "build-user-layer-id"},
 			}))
 			Expect(imageUpdateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
-			Expect(imageUpdateInvocations[1].Image.Tag).To(Equal("image-2"))
 			Expect(imageUpdateInvocations[1].Image.Labels).To(HaveKeyWithValue("io.buildpacks.base.sbom", "sbom-layer-id"))
 			Expect(imageUpdateInvocations[1].Image.Layers).To(Equal([]ihop.Layer{
 				{DiffID: "run-user-layer-id"},
@@ -753,7 +733,6 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(sbomLayerCreator.CreateCall.CallCount).To(Equal(1))
 			Expect(sbomLayerCreateInvocations[0].Image.Digest).To(Equal("image-digest-2"))
-			Expect(sbomLayerCreateInvocations[0].Image.Tag).To(Equal("image-2"))
 			Expect(sbomLayerCreateInvocations[0].Image.Labels).NotTo(HaveKey("io.buildpacks.base.sbom"))
 			Expect(sbomLayerCreateInvocations[0].Image.Layers).To(Equal([]ihop.Layer{
 				{DiffID: "run-user-layer-id"},

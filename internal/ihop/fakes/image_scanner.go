@@ -11,7 +11,7 @@ type ImageScanner struct {
 		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
-			Tag string
+			Path string
 		}
 		Returns struct {
 			SBOM  ihop.SBOM
@@ -25,7 +25,7 @@ func (f *ImageScanner) Scan(param1 string) (ihop.SBOM, error) {
 	f.ScanCall.mutex.Lock()
 	defer f.ScanCall.mutex.Unlock()
 	f.ScanCall.CallCount++
-	f.ScanCall.Receives.Tag = param1
+	f.ScanCall.Receives.Path = param1
 	if f.ScanCall.Stub != nil {
 		return f.ScanCall.Stub(param1)
 	}

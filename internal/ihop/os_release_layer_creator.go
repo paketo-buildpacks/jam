@@ -16,10 +16,7 @@ type OsReleaseLayerCreator struct {
 }
 
 func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (Layer, error) {
-	img, err := image.ToDaemonImage()
-	if err != nil {
-		return Layer{}, err
-	}
+	img := image.Actual
 
 	tarBuffer, err := os.CreateTemp("", "")
 	if err != nil {

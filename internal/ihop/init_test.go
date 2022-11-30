@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestIHOP(t *testing.T) {
+func TestUnitIHOP(t *testing.T) {
 	format.MaxLength = 0
 	var Expect = NewWithT(t).Expect
 

@@ -416,7 +416,6 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			context("image cannot be created from ref", func() {
 				it("returns an error", func() {
 					_, err := internal.GetBuildpackageID("index.docker.io/does-not-exist/go:0.5.0")
-					fmt.Println(err)
 					Expect(err).To(MatchError(ContainSubstring("UNAUTHORIZED: authentication required")))
 				})
 			})

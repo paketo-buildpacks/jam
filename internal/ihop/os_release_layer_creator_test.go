@@ -3,6 +3,8 @@ package ihop_test
 import (
 	"archive/tar"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/jam/internal/ihop"
@@ -16,7 +18,31 @@ func testOsReleaseLayerCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 
 		creator ihop.OsReleaseLayerCreator
+		client  ihop.Client
+		image   ihop.Image
+		dir     string
 	)
+
+	it.Before(func() {
+		var err error
+		dir, err = os.MkdirTemp("", "dockerfile-test")
+		Expect(err).NotTo(HaveOccurred())
+
+		client, err = ihop.NewClient(dir)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM ubuntu:jammy\nUSER some-user:some-group"), 0600)
+		Expect(err).NotTo(HaveOccurred())
+
+		image, err = client.Build(ihop.DefinitionImage{
+			Dockerfile: filepath.Join(dir, "Dockerfile"),
+		}, "linux/amd64")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	it.After(func() {
+		Expect(os.RemoveAll(dir)).To(Succeed())
+	})
 
 	it("creates a layer with adjusted /etc/os-release", func() {
 		creator.Def = ihop.Definition{
@@ -27,7 +53,7 @@ func testOsReleaseLayerCreator(t *testing.T, context spec.G, it spec.S) {
 			BugReportURL: "some-stack-bug-report-url",
 		}
 		layer, err := creator.Create(
-			ihop.Image{Tag: "ubuntu:jammy"},
+			image,
 			ihop.DefinitionImage{},
 			ihop.SBOM{},
 		)
