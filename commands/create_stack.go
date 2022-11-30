@@ -57,7 +57,13 @@ func createStack() *cobra.Command {
 }
 
 func createStackRun(flags createStackFlags) error {
-	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.unbuffered, flags.secrets...)
+	logger := scribe.NewLogger(os.Stdout)
+
+	if flags.unbuffered {
+		logger.Process("WARNING: The --unbuffered flag is deprecated. You can safely remove it.")
+	}
+
+	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.secrets...)
 	if err != nil {
 		return err
 	}
@@ -76,7 +82,6 @@ func createStackRun(flags createStackFlags) error {
 	}
 
 	builder := ihop.NewBuilder(client, ihop.Cataloger{}, runtime.NumCPU())
-	logger := scribe.NewLogger(os.Stdout)
 	creator := ihop.NewCreator(client, builder, ihop.UserLayerCreator{}, ihop.SBOMLayerCreator{}, ihop.OsReleaseLayerCreator{Def: definition}, time.Now, logger)
 
 	stack, err := creator.Execute(definition)
@@ -92,17 +97,6 @@ func createStackRun(flags createStackFlags) error {
 
 	logger.Process("Exporting run image to %s", flags.runOutput)
 	err = client.Export(flags.runOutput, stack.Run...)
-	if err != nil {
-		return err
-	}
-
-	logger.Process("Cleaning up intermediate image artifacts")
-	err = client.Cleanup(stack.Build...)
-	if err != nil {
-		return err
-	}
-
-	err = client.Cleanup(stack.Run...)
 	if err != nil {
 		return err
 	}

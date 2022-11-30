@@ -16,10 +16,7 @@ type UserLayerCreator struct{}
 func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Layer, error) {
 	files := make(map[*tar.Header]io.Reader)
 
-	img, err := image.ToDaemonImage()
-	if err != nil {
-		return Layer{}, err
-	}
+	img := image.Actual
 
 	tarBuffer, err := os.CreateTemp("", "")
 	if err != nil {

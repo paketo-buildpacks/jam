@@ -7,7 +7,7 @@ import (
 
 type Downloader struct {
 	DropCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			Root string
@@ -22,8 +22,8 @@ type Downloader struct {
 }
 
 func (f *Downloader) Drop(param1 string, param2 string) (io.ReadCloser, error) {
-	f.DropCall.Lock()
-	defer f.DropCall.Unlock()
+	f.DropCall.mutex.Lock()
+	defer f.DropCall.mutex.Unlock()
 	f.DropCall.CallCount++
 	f.DropCall.Receives.Root = param1
 	f.DropCall.Receives.Uri = param2

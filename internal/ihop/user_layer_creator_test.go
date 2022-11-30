@@ -3,6 +3,8 @@ package ihop_test
 import (
 	"archive/tar"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/jam/internal/ihop"
@@ -16,11 +18,35 @@ func testUserLayerCreator(t *testing.T, context spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 
 		creator ihop.UserLayerCreator
+		client  ihop.Client
+		image   ihop.Image
+		dir     string
 	)
+
+	it.Before(func() {
+		var err error
+		dir, err = os.MkdirTemp("", "dockerfile-test")
+		Expect(err).NotTo(HaveOccurred())
+
+		client, err = ihop.NewClient(dir)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM busybox\nUSER some-user:some-group"), 0600)
+		Expect(err).NotTo(HaveOccurred())
+
+		image, err = client.Build(ihop.DefinitionImage{
+			Dockerfile: filepath.Join(dir, "Dockerfile"),
+		}, "linux/amd64")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	it.After(func() {
+		Expect(os.RemoveAll(dir)).To(Succeed())
+	})
 
 	it("creates a layer with user details", func() {
 		layer, err := creator.Create(
-			ihop.Image{Tag: "busybox:latest"},
+			image,
 			ihop.DefinitionImage{
 				UID:   4567,
 				GID:   1234,
@@ -67,14 +93,5 @@ func testUserLayerCreator(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(headers["home/cnb"].Uid).To(Equal(4567))
 		Expect(headers["home/cnb"].Gid).To(Equal(1234))
-	})
-
-	context("failure cases", func() {
-		context("when the image does not exist on the daemon", func() {
-			it("returns an error", func() {
-				_, err := creator.Create(ihop.Image{Tag: "not an image"}, ihop.DefinitionImage{}, ihop.SBOM{})
-				Expect(err).To(MatchError(ContainSubstring("could not parse reference")))
-			})
-		})
 	})
 }

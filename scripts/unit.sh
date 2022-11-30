@@ -50,7 +50,7 @@ function unit::run() {
 
   testout=$(mktemp)
   pushd "${BUILDPACKDIR}" > /dev/null
-    if go test ./... -v -run "Unit|Example" | tee "${testout}"; then
+    if go test ./... -v -count=1 -run "Unit|Example" | tee "${testout}"; then
       util::tools::tests::checkfocus "${testout}"
       util::print::success "** GO Test Succeeded **"
     else

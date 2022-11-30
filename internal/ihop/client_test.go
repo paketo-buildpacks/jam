@@ -2,18 +2,11 @@ package ihop_test
 
 import (
 	"archive/tar"
-	ctx "context"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-	docker "github.com/docker/docker/client"
-	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/paketo-buildpacks/jam/internal/ihop"
@@ -43,16 +36,6 @@ func testClient(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		cli, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
-		Expect(err).NotTo(HaveOccurred())
-
-		for _, image := range images {
-			_, err = cli.ImageRemove(ctx.Background(), image.Tag, types.ImageRemoveOptions{})
-			if !docker.IsErrNotFound(err) {
-				Expect(err).NotTo(HaveOccurred())
-			}
-		}
-
 		Expect(os.RemoveAll(dir)).To(Succeed())
 	})
 
@@ -110,7 +93,6 @@ LABEL testing.build.arg.slice.key=$test_build_slice_arg`), 0600)
 
 			images = append(images, image)
 
-			Expect(image.Tag).To(MatchRegexp(`^paketo\.io/stack/[a-z0-9]{10}$`))
 			Expect(image.Labels).To(HaveKeyWithValue("testing.key", "some-value"))
 			Expect(image.Labels).To(HaveKeyWithValue("testing.build.arg.key", "1"))
 			Expect(image.Labels).To(HaveKeyWithValue("testing.build.arg.slice.key", "1 2"))
@@ -118,13 +100,7 @@ LABEL testing.build.arg.slice.key=$test_build_slice_arg`), 0600)
 			Expect(image.OS).To(Equal("linux"))
 			Expect(image.Architecture).To(Equal("arm64"))
 
-			ref, err := name.ParseReference(image.Tag)
-			Expect(err).NotTo(HaveOccurred())
-
-			img, err := daemon.Image(ref)
-			Expect(err).NotTo(HaveOccurred())
-
-			digest, err := img.Digest()
+			digest, err := image.Actual.Digest()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(image.Digest).To(Equal(digest.String()))
@@ -147,10 +123,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 
 				images = append(images, image)
 
-				contents, err := exec.Command("docker", "run", "--rm", image.Tag, "cat", "/secret").CombinedOutput()
-				Expect(err).NotTo(HaveOccurred(), string(contents))
-
-				Expect(string(contents)).To(Equal("some-secret"))
+				Expect(image.Actual).To(HaveFileWithContent("/secret", ContainSubstring("some-secret")))
 			})
 		})
 
@@ -194,6 +167,33 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 					Expect(err).To(MatchError(ContainSubstring("load remote build context")))
 					Expect(err).To(MatchError(ContainSubstring("RUN \"no such command\"")))
 					Expect(err).To(MatchError(ContainSubstring("executor failed running")))
+				})
+			})
+
+			context("when the layout cannot be written", func() {
+				var tmp string
+
+				it.Before(func() {
+					var err error
+					tmp, err = os.MkdirTemp("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Chmod(tmp, 0000)).To(Succeed())
+
+					client, err = ihop.NewClient(tmp)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it.After(func() {
+					Expect(os.RemoveAll(tmp)).To(Succeed())
+				})
+
+				it("returns an error", func() {
+					_, err := client.Build(ihop.DefinitionImage{
+						Dockerfile: filepath.Join(dir, "Dockerfile"),
+					}, "linux/amd64")
+					Expect(err).To(MatchError(ContainSubstring("failed to write image layout")))
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
 		})
@@ -306,13 +306,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 
 				images = append(images, image)
 
-				ref, err := name.ParseReference(image.Tag)
-				Expect(err).NotTo(HaveOccurred())
-
-				img, err := daemon.Image(ref)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(img).To(HaveFileWithContent("/some/file", ContainSubstring("some-layer-content")))
+				Expect(image.Actual).To(HaveFileWithContent("/some/file", ContainSubstring("some-layer-content")))
 			})
 		})
 
@@ -320,11 +314,7 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 			var image2 ihop.Image
 
 			it.Before(func() {
-				contents, err := exec.Command("docker", "tag", fmt.Sprintf("%s:latest", image.Tag), "image2:latest").CombinedOutput()
-				Expect(err).NotTo(HaveOccurred(), string(contents))
-
 				image2 = image
-				image2.Tag = "image2"
 				images = append(images, image2)
 			})
 
@@ -338,31 +328,29 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 		})
 
 		context("failure cases", func() {
-
-			context("when the image tag cannot be parsed", func() {
-				it("returns an error", func() {
-					_, err := client.Update(ihop.Image{Tag: "not a valid tag"})
-					Expect(err).To(MatchError(ContainSubstring("invalid reference format")))
-				})
-			})
-
 			context("when the image layer diff ID is not valid", func() {
 				var img ihop.Image
+
 				it.Before(func() {
 					img = image
 					img.Layers[0].DiffID = "this is not a diff id"
-				})
-				it.After(func() {
-					daemonImage, err := img.ToDaemonImage()
-					Expect(err).NotTo(HaveOccurred())
-
-					configName, _ := daemonImage.ConfigName()
-					images = append(images, ihop.Image{Tag: configName.String()})
 				})
 
 				it("returns an error", func() {
 					_, err := client.Update(img)
 					Expect(err).To(MatchError(ContainSubstring("cannot parse hash")))
+				})
+			})
+
+			context("when the image cannot be found on its path", func() {
+				it.Before(func() {
+					image.Path = "/this/is/a/made/up/path"
+				})
+
+				it("returns an error", func() {
+					_, err := client.Update(image)
+					Expect(err).To(MatchError(ContainSubstring(`could not load layout from path "/this/is/a/made/up/path"`)))
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 				})
 			})
 		})
@@ -441,81 +429,22 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 		})
 	})
 
-	context("Cleanup", func() {
-		it.Before(func() {
-			err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM scratch\nCOPY Dockerfile .\nUSER some-user:some-group"), 0600)
-			Expect(err).NotTo(HaveOccurred())
-
-			for _, platform := range []string{"linux/amd64", "linux/arm64"} {
-				image, err := client.Build(ihop.DefinitionImage{Dockerfile: filepath.Join(dir, "Dockerfile")}, platform)
-				Expect(err).NotTo(HaveOccurred())
-
-				images = append(images, image)
-			}
-		})
-
-		it.After(func() {
-			images = nil
-		})
-
-		it("removes the given images", func() {
-			Expect(client.Cleanup(images...)).To(Succeed())
-
-			cli, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
-			Expect(err).NotTo(HaveOccurred())
-
-			for _, image := range images {
-				_, _, err := cli.ImageInspectWithRaw(ctx.Background(), image.Tag)
-				Expect(docker.IsErrNotFound(err)).To(BeTrue())
-			}
-		})
-	})
-
 	context("Image", func() {
-		context("ToDaemonImage", func() {
-			var image ihop.Image
+		context("FromImage", func() {
+			var partial ihop.Image
 
 			it.Before(func() {
 				err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("FROM scratch\nCOPY Dockerfile .\nUSER some-user:some-group"), 0600)
 				Expect(err).NotTo(HaveOccurred())
 
-				image, err = client.Build(ihop.DefinitionImage{Dockerfile: filepath.Join(dir, "Dockerfile")}, "linux/amd64")
+				partial, err = client.Build(ihop.DefinitionImage{Dockerfile: filepath.Join(dir, "Dockerfile")}, "linux/amd64")
 				Expect(err).NotTo(HaveOccurred())
-
-				images = append(images, image)
 			})
 
-			it("returns a v1.Image from the docker daemon", func() {
-				img, err := image.ToDaemonImage()
+			it("hydrates an Image from a partially populated one", func() {
+				image, err := ihop.FromImage(partial.Path, partial.Actual)
 				Expect(err).NotTo(HaveOccurred())
-
-				digest, err := img.Digest()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(digest.String()).To(Equal(image.Digest))
-			})
-
-			context("failure cases", func() {
-				context("when the image tag cannot be parsed", func() {
-					it.Before(func() {
-						image.Tag = "not a valid tag"
-					})
-
-					it("returns an error", func() {
-						_, err := image.ToDaemonImage()
-						Expect(err).To(MatchError(ContainSubstring("could not parse reference")))
-					})
-				})
-
-				context("when the image does not exist in the daemon", func() {
-					it.Before(func() {
-						image.Tag = "no-such-image"
-					})
-
-					it("returns an error", func() {
-						_, err := image.ToDaemonImage()
-						Expect(err).To(MatchError(ContainSubstring("No such image")))
-					})
-				})
+				Expect(image).To(Equal(partial))
 			})
 		})
 	})

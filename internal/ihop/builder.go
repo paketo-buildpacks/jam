@@ -2,7 +2,7 @@ package ihop
 
 //go:generate faux --interface ImageScanner --output fakes/image_scanner.go
 type ImageScanner interface {
-	Scan(tag string) (SBOM, error)
+	Scan(path string) (SBOM, error)
 }
 
 //go:generate faux --interface ImageBuildPromise --output fakes/image_build_promise.go
@@ -63,7 +63,7 @@ func (b Builder) build(def DefinitionImage, platform string) (Image, SBOM, error
 		return Image{}, SBOM{}, err
 	}
 
-	sbom, err := b.scanner.Scan(image.Tag)
+	sbom, err := b.scanner.Scan(image.Path)
 	if err != nil {
 		return Image{}, SBOM{}, err
 	}
