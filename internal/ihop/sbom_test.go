@@ -118,7 +118,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 			Expect(output).To(MatchJSON(`{
 				"artifacts": [
 					{
-						"id": "f0dc33bc5d7603be",
+						"id": "af027636bc3daa4c",
 						"name": "a-package",
 						"version": "",
 						"type": "",
@@ -140,14 +140,15 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 							"description": "",
 							"size": 0,
 							"installedSize": 0,
-							"pullDependencies": "",
+							"pullDependencies": null,
+							"provides": null,
 							"pullChecksum": "",
 							"gitCommitOfApkPort": "",
 							"files": null
 						}
 					},
 					{
-						"id": "3967142b5e338b90",
+						"id": "9e1d9a70039b8e49",
 						"name": "b-package",
 						"version": "",
 						"type": "",
@@ -173,7 +174,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 						}
 					},
 					{
-						"id": "3ffc024cc467d6f2",
+						"id": "1d4dc26dfec3e100",
 						"name": "c-package",
 						"version": "",
 						"type": "",
