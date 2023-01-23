@@ -65,7 +65,7 @@ jobs:
         if [ -z "${tag}" ]; then
           tag="${{ steps.semver.outputs.tag }}"
         fi
-        echo "::set-output name=tag::${tag}"
+        echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
     - name: Package Jam
       run: ./scripts/package.sh --version ${{ steps.tag.outputs.tag }}
