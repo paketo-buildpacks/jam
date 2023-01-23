@@ -13,7 +13,7 @@ require (
 	github.com/google/go-containerregistry v0.12.1
 	github.com/moby/buildkit v0.10.6
 	github.com/onsi/gomega v1.25.0
-	github.com/paketo-buildpacks/occam v0.13.3
+	github.com/paketo-buildpacks/occam v0.14.0
 	github.com/paketo-buildpacks/packit/v2 v2.8.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
@@ -141,7 +141,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/sylabs/sif/v2 v2.8.1 // indirect
 	github.com/sylabs/squashfs v0.6.1 // indirect
-	github.com/testcontainers/testcontainers-go v0.14.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.15.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20220315205639-9ed612626da3 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
