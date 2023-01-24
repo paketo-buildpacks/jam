@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
@@ -86,19 +87,26 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			iVal := sorted[i]
 			jVal := sorted[j]
 
-			if iVal.ID < jVal.ID {
-				return true
+			if iVal.ID == jVal.ID {
+				iVersion := semver.MustParse(iVal.Version)
+				jVersion := semver.MustParse(jVal.Version)
+
+				if iVersion.Equal(jVersion) {
+					iStacks := strings.Join(iVal.Stacks, " ")
+					jStacks := strings.Join(jVal.Stacks, " ")
+
+					return iStacks < jStacks
+				}
+
+				return iVersion.GreaterThan(jVersion)
 			}
 
-			iVersion := semver.MustParse(iVal.Version)
-			jVersion := semver.MustParse(jVal.Version)
-
-			return iVal.ID == jVal.ID && iVersion.GreaterThan(jVersion)
+			return iVal.ID < jVal.ID
 		})
 
-		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Checksum |\n|---|---|---|\n")
+		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
 		for _, d := range sorted {
-			fmt.Fprintf(writer, "| %s | %s | %s |\n", d.ID, d.Version, d.SHA256)
+			fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.SHA256)
 		}
 		fmt.Fprintln(writer)
 	}

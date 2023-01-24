@@ -9,6 +9,7 @@ import (
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
 func testFormatter(t *testing.T, context spec.G, it spec.S) {
@@ -48,7 +49,7 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 									ID:      "some-dependency",
 									Stacks:  []string{"other-stack"},
 									Version: "1.2.3",
-									SHA256:  "one-more-sha",
+									SHA256:  "other-sha",
 								},
 								{
 									ID:      "other-dependency",
@@ -76,29 +77,31 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 					SHA256: "sha256:some-buildpack-sha",
 				},
 			})
-			Expect(buffer.String()).To(Equal(`## Some Buildpack some-version` +
-
-				"\n\n**ID:** `some-buildpack`\n\n" +
-
-				"**Digest:** `sha256:some-buildpack-sha`\n\n" +
-				"#### Supported Stacks:\n" +
-				"- `other-stack`\n" +
-				"- `some-stack`\n" +
-				`
-#### Default Dependency Versions:
-| ID | Version |
-|---|---|
-| other-dependency | 2.3.x |
-| some-dependency | 1.2.x |
-
-#### Dependencies:
-| Name | Version | Checksum |
-|---|---|---|
-| other-dependency | 2.3.5 | sha512:some-sha |
-| other-dependency | 2.3.4 | sha256:another-sha |
-| some-dependency | 1.2.3 | sha256:one-more-sha |
-
-`))
+			Expect(buffer).To(ContainLines(
+				"## Some Buildpack some-version",
+				"",
+				"**ID:** `some-buildpack`",
+				"",
+				"**Digest:** `sha256:some-buildpack-sha`",
+				"",
+				"#### Supported Stacks:",
+				"- `other-stack`",
+				"- `some-stack`",
+				"",
+				"#### Default Dependency Versions:",
+				"| ID | Version |",
+				"|---|---|",
+				"| other-dependency | 2.3.x |",
+				"| some-dependency | 1.2.x |",
+				"",
+				"#### Dependencies:",
+				"| Name | Version | Stacks | Checksum |",
+				"|---|---|---|---|",
+				"| other-dependency | 2.3.5 | other-stack | sha512:some-sha |",
+				"| other-dependency | 2.3.4 | other-stack some-stack | sha256:another-sha |",
+				"| some-dependency | 1.2.3 | other-stack | sha256:other-sha |",
+				"| some-dependency | 1.2.3 | some-stack | sha256:one-more-sha |",
+			))
 		})
 
 		context("when dependencies and default-versions are empty", func() {
@@ -154,7 +157,7 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 										ID:      "some-dependency",
 										Stacks:  []string{"other-stack"},
 										Version: "1.2.3",
-										SHA256:  "one-more-sha",
+										SHA256:  "other-sha",
 									},
 									{
 										ID:      "other-dependency",
@@ -178,28 +181,27 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 						SHA256: "sha256:some-buildpack-sha",
 					},
 				})
-				Expect(buffer.String()).To(Equal(`## Some Buildpack some-version` +
-
-					"\n\n**ID:** `some-buildpack`\n\n" +
-
-					"**Digest:** `sha256:some-buildpack-sha`" +
-
-					`
-
-#### Default Dependency Versions:
-| ID | Version |
-|---|---|
-| other-dependency | 2.3.x |
-| some-dependency | 1.2.x |
-
-#### Dependencies:
-| Name | Version | Checksum |
-|---|---|---|
-| other-dependency | 2.3.5 | sha512:some-sha |
-| other-dependency | 2.3.4 | sha256:another-sha |
-| some-dependency | 1.2.3 | sha256:one-more-sha |
-
-`))
+				Expect(buffer).To(ContainLines(
+					"## Some Buildpack some-version",
+					"",
+					"**ID:** `some-buildpack`",
+					"",
+					"**Digest:** `sha256:some-buildpack-sha`",
+					"",
+					"#### Default Dependency Versions:",
+					"| ID | Version |",
+					"|---|---|",
+					"| other-dependency | 2.3.x |",
+					"| some-dependency | 1.2.x |",
+					"",
+					"#### Dependencies:",
+					"| Name | Version | Stacks | Checksum |",
+					"|---|---|---|---|",
+					"| other-dependency | 2.3.5 | other-stack | sha512:some-sha |",
+					"| other-dependency | 2.3.4 | other-stack some-stack | sha256:another-sha |",
+					"| some-dependency | 1.2.3 | other-stack | sha256:other-sha |",
+					"| some-dependency | 1.2.3 | some-stack | sha256:one-more-sha |",
+				))
 			})
 		})
 
