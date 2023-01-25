@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/command/image/build"
+	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
@@ -146,7 +147,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 
 	// associate an authentication provider with the session
-	dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
+	dockerAuthProvider := authprovider.NewDockerAuthProvider(config.LoadDefaultConfigFile(os.Stderr))
 	sess.Allow(dockerAuthProvider)
 
 	// if the DefinitionImage contains secrets, add them to the session using the
