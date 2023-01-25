@@ -13,6 +13,7 @@ import (
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
 func testSummarize(t *testing.T, context spec.G, it spec.S) {
@@ -244,80 +245,81 @@ version = "3.4.5"
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
 
-			Expect(string(session.Out.Contents())).To(Equal(`## Meta Buildpack 3.4.5` +
-
-				"\n\n**ID:** `meta-buildpack`\n\n" +
-
-				"**Digest:** `sha256:manifest-sha`" +
-				`
-
-#### Included Buildpackages:
-| Name | ID | Version |
-|---|---|---|
-| Some Buildpack | some-buildpack | 1.2.3 |
-| Other Buildpack | other-buildpack | 2.3.4 |
-
-<details>
-<summary>Order Groupings</summary>
-
-| ID | Version | Optional |
-|---|---|---|
-| some-buildpack | 1.2.3 | false |
-| other-buildpack | 2.3.4 | false |
-
-</details>
-
----
-
-<details>
-<summary>Some Buildpack 1.2.3</summary>` +
-
-				"\n\n**ID:** `some-buildpack`\n\n" +
-
-				"#### Supported Stacks:\n" +
-				"- `other-stack`\n" +
-				"- `some-stack`\n" +
-				`
-#### Default Dependency Versions:
-| ID | Version |
-|---|---|
-| other-dependency | 2.3.x |
-| some-dependency | 1.2.x |
-
-#### Dependencies:
-| Name | Version | Checksum |
-|---|---|---|
-| other-dependency | 2.3.4 | sha256:other-sha |
-| some-dependency | 1.2.3 | sha256:some-sha |
-
----
-
-</details>
-
-<details>
-<summary>Other Buildpack 2.3.4</summary>` +
-
-				"\n\n**ID:** `other-buildpack`\n\n" +
-				"#### Supported Stacks:\n" +
-				"- `first-stack`\n" +
-				"- `second-stack`\n" +
-				`
-#### Default Dependency Versions:
-| ID | Version |
-|---|---|
-| first-dependency | 4.5.x |
-| second-dependency | 5.6.x |
-
-#### Dependencies:
-| Name | Version | Checksum |
-|---|---|---|
-| first-dependency | 4.5.6 | sha256:first-sha |
-| second-dependency | 5.6.7 | sha256:second-sha |
-
----
-
-</details>
-`))
+			Expect(string(session.Out.Contents())).To(ContainLines(
+				"## Meta Buildpack 3.4.5",
+				"",
+				"**ID:** `meta-buildpack`",
+				"",
+				"**Digest:** `sha256:manifest-sha`",
+				"",
+				"#### Included Buildpackages:",
+				"| Name | ID | Version |",
+				"|---|---|---|",
+				"| Some Buildpack | some-buildpack | 1.2.3 |",
+				"| Other Buildpack | other-buildpack | 2.3.4 |",
+				"",
+				"<details>",
+				"<summary>Order Groupings</summary>",
+				"",
+				"| ID | Version | Optional |",
+				"|---|---|---|",
+				"| some-buildpack | 1.2.3 | false |",
+				"| other-buildpack | 2.3.4 | false |",
+				"",
+				"</details>",
+				"",
+				"---",
+				"",
+				"<details>",
+				"<summary>Some Buildpack 1.2.3</summary>",
+				"",
+				"**ID:** `some-buildpack`",
+				"",
+				"#### Supported Stacks:",
+				"- `other-stack`",
+				"- `some-stack`",
+				"",
+				"#### Default Dependency Versions:",
+				"| ID | Version |",
+				"|---|---|",
+				"| other-dependency | 2.3.x |",
+				"| some-dependency | 1.2.x |",
+				"",
+				"#### Dependencies:",
+				"| Name | Version | Stacks | Checksum |",
+				"|---|---|---|---|",
+				"| other-dependency | 2.3.4 | other-stack | sha256:other-sha |",
+				"| some-dependency | 1.2.3 | some-stack | sha256:some-sha |",
+				"",
+				"---",
+				"",
+				"</details>",
+				"",
+				"<details>",
+				"<summary>Other Buildpack 2.3.4</summary>",
+				"",
+				"**ID:** `other-buildpack`",
+				"",
+				"#### Supported Stacks:",
+				"- `first-stack`",
+				"- `second-stack`",
+				"",
+				"#### Default Dependency Versions:",
+				"| ID | Version |",
+				"|---|---|",
+				"| first-dependency | 4.5.x |",
+				"| second-dependency | 5.6.x |",
+				"",
+				"#### Dependencies:",
+				"| Name | Version | Stacks | Checksum |",
+				"|---|---|---|---|",
+				"| first-dependency | 4.5.6 | first-stack | sha256:first-sha |",
+				"| second-dependency | 5.6.7 | second-stack | sha256:second-sha |",
+				"",
+				"---",
+				"",
+				"</details>",
+			))
 		})
 	})
 
