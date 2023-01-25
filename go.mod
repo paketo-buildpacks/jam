@@ -10,7 +10,7 @@ require (
 	github.com/docker/cli v20.10.23+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v20.10.20+incompatible
-	github.com/google/go-containerregistry v0.12.1
+	github.com/google/go-containerregistry v0.13.0
 	github.com/moby/buildkit v0.10.6
 	github.com/onsi/gomega v1.26.0
 	github.com/paketo-buildpacks/occam v0.14.0
