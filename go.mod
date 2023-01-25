@@ -7,11 +7,11 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/anchore/syft v0.66.1
 	github.com/buildpacks/pack v0.27.0
-	github.com/docker/cli v20.10.23+incompatible
+	github.com/docker/cli v23.0.0-rc.1+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.20+incompatible
+	github.com/docker/docker v23.0.0-rc.1+incompatible
 	github.com/google/go-containerregistry v0.13.0
-	github.com/moby/buildkit v0.10.6
+	github.com/moby/buildkit v0.11.1
 	github.com/onsi/gomega v1.26.0
 	github.com/paketo-buildpacks/occam v0.14.0
 	github.com/paketo-buildpacks/packit/v2 v2.8.0
@@ -67,9 +67,9 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20220327082430-c57b701bfc08 // indirect
 	github.com/containerd/console v1.0.3 // indirect
-	github.com/containerd/containerd v1.6.12 // indirect
+	github.com/containerd/containerd v1.6.14 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.12.1 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.13.0 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
@@ -102,7 +102,7 @@ require (
 	github.com/jinzhu/copier v0.3.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.15.11 // indirect
+	github.com/klauspost/compress v1.15.12 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/knqyf263/go-rpmdb v0.0.0-20221030135625-4082a22221ce // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
@@ -117,7 +117,8 @@ require (
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/moby/sys/signal v0.6.0 // indirect
+	github.com/moby/patternmatcher v0.5.0 // indirect
+	github.com/moby/sys/signal v0.7.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -135,7 +136,7 @@ require (
 	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/spdx/tools-golang v0.3.1-0.20221108182156-8a01147e6342 // indirect
+	github.com/spdx/tools-golang v0.3.1-0.20230104082527-d6f58551be3f // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -143,7 +144,7 @@ require (
 	github.com/sylabs/squashfs v0.6.1 // indirect
 	github.com/testcontainers/testcontainers-go v0.15.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
-	github.com/tonistiigi/fsutil v0.0.0-20220315205639-9ed612626da3 // indirect
+	github.com/tonistiigi/fsutil v0.0.0-20230105215944-fb433841cbfa // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20210615222946-8066bb97264f // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
@@ -159,14 +160,14 @@ require (
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.16.0 // indirect
-	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/term v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
+	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto v0.0.0-20221010155953-15ba04fc1c0e // indirect
