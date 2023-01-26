@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/anchore/syft v0.66.1
 	github.com/buildpacks/pack v0.27.0
-	github.com/docker/cli v23.0.0-rc.1+incompatible
+	github.com/docker/cli v23.0.0-rc.3+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v23.0.0-rc.1+incompatible
 	github.com/google/go-containerregistry v0.13.0
