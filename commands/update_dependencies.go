@@ -21,7 +21,7 @@ func updateDependencies() *cobra.Command {
 	flags := &updateDependenciesFlags{}
 	cmd := &cobra.Command{
 		Use:   "update-dependencies",
-		Short: "updates all depdendencies in a buildpack.toml either with metadata from a file or from an API.",
+		Short: "updates all depdendencies in a buildpack.toml from a metadata JSON file.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return updateDependenciesRun(*flags)
 		},
@@ -93,6 +93,12 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 			}
 		}
 	} else {
+		fmt.Println("Deprecation Warning: The legacy ability to use this command with an API will be removed on March 3, 2023. Please consider migrating to the `--metadata-file` option instead, which will become a required argument.")
+
+		if api == "https://api.deps.paketo.io" {
+			fmt.Println("Deprecation Warning: The api.deps.paketo.io endpoint is being shut down on March 3, 2023.")
+		}
+
 		// All internal.Dependencies from the dep-server
 		allDependencies := map[string][]internal.Dependency{}
 		// All cargo.ConfigMetadataDependencies that match one of the given constraints
