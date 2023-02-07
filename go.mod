@@ -5,16 +5,16 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver/v3 v3.2.0
-	github.com/anchore/syft v0.69.0
+	github.com/anchore/syft v0.70.0
 	github.com/buildpacks/pack v0.27.0
 	github.com/docker/cli v23.0.0+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v23.0.0-rc.1+incompatible
+	github.com/docker/docker v23.0.0+incompatible
 	github.com/google/go-containerregistry v0.13.0
 	github.com/moby/buildkit v0.11.2
 	github.com/onsi/gomega v1.26.0
 	github.com/paketo-buildpacks/occam v0.15.0
-	github.com/paketo-buildpacks/packit/v2 v2.8.0
+	github.com/paketo-buildpacks/packit/v2 v2.8.1
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.6.1
@@ -41,6 +41,7 @@ require (
 	github.com/acobaugh/osrelease v0.1.0 // indirect
 	github.com/anchore/go-logger v0.0.0-20220728155337-03b66a5207d8 // indirect
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb // indirect
+	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/anchore/go-version v1.2.2-0.20200701162849-18adb9c92b9b // indirect
 	github.com/anchore/packageurl-go v0.1.1-0.20230104203445-02e0a6721501 // indirect
 	github.com/anchore/stereoscope v0.0.0-20221208011002-c5ff155d72f1 // indirect
@@ -136,7 +137,7 @@ require (
 	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/spdx/tools-golang v0.4.0 // indirect
+	github.com/spdx/tools-golang v0.5.0-rc1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
