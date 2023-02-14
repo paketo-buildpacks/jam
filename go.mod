@@ -11,7 +11,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v23.0.0+incompatible
 	github.com/google/go-containerregistry v0.13.0
-	github.com/moby/buildkit v0.11.2
+	github.com/moby/buildkit v0.11.3
 	github.com/onsi/gomega v1.26.0
 	github.com/paketo-buildpacks/occam v0.15.0
 	github.com/paketo-buildpacks/packit/v2 v2.8.1
@@ -68,7 +68,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20221002210726-e883f69e0206 // indirect
 	github.com/containerd/console v1.0.3 // indirect
-	github.com/containerd/containerd v1.6.16-0.20230124210447-1709cfe273d9 // indirect
+	github.com/containerd/containerd v1.6.16 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.13.0 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
