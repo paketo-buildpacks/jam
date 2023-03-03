@@ -1,10 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -147,31 +143,6 @@ func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDep
 	}
 
 	return returnSet, nil
-}
-
-// GetDependencies returns all dependencies from a given API endpoint
-func GetAllDependencies(api, dependencyID string) ([]Dependency, error) {
-	url := fmt.Sprintf("%s/v1/dependency?name=%s", api, dependencyID)
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query url %s: %w", url, err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to query url %s with: status code %d", url, resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	var dependencies []Dependency
-	err = json.Unmarshal(b, &dependencies)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %w", err)
-	}
-
-	return dependencies, nil
 }
 
 // FindDependencyName returns the name of a Dependency in a cargo.Config that

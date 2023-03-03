@@ -32,7 +32,6 @@ func TestJam(t *testing.T) {
 	suite("summarize", testSummarize)
 	suite("update-builder", testUpdateBuilder)
 	suite("update-buildpack", testUpdateBuildpack)
-	suite("update-dependencies", testUpdateDependencies)
 	suite("update-dependencies-from-metadata", testUpdateDependenciesFromMetadata)
 	suite("version", testVersion)
 
