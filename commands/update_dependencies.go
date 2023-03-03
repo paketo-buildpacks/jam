@@ -13,7 +13,6 @@ import (
 
 type updateDependenciesFlags struct {
 	buildpackFile string
-	api           string
 	metadataFile  string
 }
 
@@ -27,12 +26,15 @@ func updateDependencies() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flags.buildpackFile, "buildpack-file", "", "path to the buildpack.toml file (required)")
-	cmd.Flags().StringVar(&flags.api, "api", "https://api.deps.paketo.io", "api to query for dependencies")
-	cmd.Flags().StringVar(&flags.metadataFile, "metadata-file", "", "takes precedence over the API argument, metadata.json file with all entries to be added to the buildpack.toml")
+	cmd.Flags().StringVar(&flags.metadataFile, "metadata-file", "", "metadata.json file with all entries to be added to the buildpack.toml (required)")
 
 	err := cmd.MarkFlagRequired("buildpack-file")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark buildpack-file flag as required")
+	}
+	err = cmd.MarkFlagRequired("metadata-file")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark metadata-file flag as required")
 	}
 	return cmd
 }
@@ -53,91 +55,45 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		originalVersions[d.Version] = d.Version
 	}
 
-	api := flags.api
+	var matchingDependencies []cargo.ConfigMetadataDependency
 
-	// if a metadata file is provided, use that as the version and metadata
-	// source
-	if flags.metadataFile != "" {
-		var matchingDependencies []cargo.ConfigMetadataDependency
+	metadataFile, err := os.Open(flags.metadataFile)
+	if err != nil {
+		return fmt.Errorf("failed to open metadata.json file: %w", err)
+	}
 
-		metadataFile, err := os.Open(flags.metadataFile)
+	newVersions := []cargo.ConfigMetadataDependency{}
+	err = json.NewDecoder(metadataFile).Decode(&newVersions)
+	if err != nil {
+		return fmt.Errorf("failed decode metadata.json: %w", err)
+	}
+	err = metadataFile.Close()
+	if err != nil {
+		//untested
+		return fmt.Errorf("failed close metadata.json: %w", err)
+	}
+
+	// combine buildpack.toml versions and new versions
+	allDependencies := append(config.Metadata.Dependencies, newVersions...)
+
+	for _, constraint := range config.Metadata.DependencyConstraints {
+		// Filter allDependencies for only those that match the constraint
+		// mds is a just the right number of deps for the constraint
+		mds, err := internal.GetCargoDependenciesWithinConstraint(allDependencies, constraint)
 		if err != nil {
-			return fmt.Errorf("failed to open metadata.json file: %w", err)
+			return err
 		}
 
-		newVersions := []cargo.ConfigMetadataDependency{}
-		err = json.NewDecoder(metadataFile).Decode(&newVersions)
-		if err != nil {
-			return fmt.Errorf("failed decode metadata.json: %w", err)
-		}
-		err = metadataFile.Close()
-		if err != nil {
-			//untested
-			return fmt.Errorf("failed close metadata.json: %w", err)
-		}
-
-		// combine buildpack.toml versions and new versions
-		allDependencies := append(config.Metadata.Dependencies, newVersions...)
-
-		for _, constraint := range config.Metadata.DependencyConstraints {
-			// Filter allDependencies for only those that match the constraint
-			// mds is a just the right number of deps for the constraint
-			mds, err := internal.GetCargoDependenciesWithinConstraint(allDependencies, constraint)
-			if err != nil {
-				return err
-			}
-
-			matchingDependencies = append(matchingDependencies, mds...)
-			if len(matchingDependencies) > 0 {
-				config.Metadata.Dependencies = matchingDependencies
-			}
-		}
-	} else {
-		fmt.Println("Deprecation Warning: The legacy ability to use this command with an API will be removed on March 3, 2023. Please consider migrating to the `--metadata-file` option instead, which will become a required argument.")
-
-		if api == "https://api.deps.paketo.io" {
-			fmt.Println("Deprecation Warning: The api.deps.paketo.io endpoint is being shut down on March 3, 2023.")
-		}
-
-		// All internal.Dependencies from the dep-server
-		allDependencies := map[string][]internal.Dependency{}
-		// All cargo.ConfigMetadataDependencies that match one of the given constraints
-		var matchingDependencies []cargo.ConfigMetadataDependency
-
-		for _, constraint := range config.Metadata.DependencyConstraints {
-			// Only query the API once per unique dependency
-			dependencies, ok := allDependencies[constraint.ID]
-			if !ok {
-				var err error
-				dependencies, err = internal.GetAllDependencies(api, constraint.ID)
-				if err != nil {
-					return err
-				}
-				allDependencies[constraint.ID] = dependencies
-			}
-
-			// Manually lookup the existent dependency name from the buildpack.toml since this
-			// isn't specified via the dep-server
-			dependencyName := internal.FindDependencyName(constraint.ID, config)
-
-			// Filter allDependencies for only those that match the constraint
-			// mds is a just the right number of deps for the constraint
-			mds, err := internal.GetDependenciesWithinConstraint(dependencies, constraint, dependencyName)
-			if err != nil {
-				return err
-			}
-			matchingDependencies = append(matchingDependencies, mds...)
-		}
-
+		matchingDependencies = append(matchingDependencies, mds...)
 		if len(matchingDependencies) > 0 {
 			config.Metadata.Dependencies = matchingDependencies
 		}
 	}
 
-	newVersions := map[string]string{}
+	newVersionsFound := map[string]string{}
 	for _, d := range config.Metadata.Dependencies {
 		if _, ok := originalVersions[d.Version]; !ok {
-			newVersions[d.Version] = ""
+			newVersionsFound[d.Version] = ""
 		}
 	}
 
@@ -152,7 +108,7 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		return fmt.Errorf("failed to write buildpack config: %w", err)
 	}
 
-	fmt.Println("Updating buildpack.toml with new versions: ", reflect.ValueOf(newVersions).MapKeys())
+	fmt.Println("Updating buildpack.toml with new versions: ", reflect.ValueOf(newVersionsFound).MapKeys())
 
 	return nil
 }
