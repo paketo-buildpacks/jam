@@ -44,6 +44,9 @@ platforms = ["some-stack-platform"]
 	[build.args]
 		some-build-arg-key = "some-build-arg-value"
 
+	[build.platforms."linux/arm64"]
+	    some-build-platform-arg-key = "some-build-platform-arg-value"
+
 [run]
 	dockerfile = "some-run-dockerfile"
 	description = "some-run-description"
@@ -54,6 +57,9 @@ platforms = ["some-stack-platform"]
 	
 	[run.args]
 		some-run-arg-key = "some-run-arg-value"
+
+	[run.platforms."linux/arm64"]
+	    some-run-platform-arg-key = "some-run-platform-arg-value"
 
 [deprecated]
 	legacy-sbom = true
@@ -85,6 +91,11 @@ platforms = ["some-stack-platform"]
 					Args: map[string]any{
 						"some-build-arg-key": "some-build-arg-value",
 					},
+					Platforms: map[string]map[string]any{
+						"linux/arm64": {
+							"some-build-platform-arg-key": "some-build-platform-arg-value",
+						},
+					},
 					Description: "some-build-description",
 					Dockerfile:  filepath.Join(dir, "some-build-dockerfile"),
 					GID:         4321,
@@ -94,6 +105,11 @@ platforms = ["some-stack-platform"]
 				Run: ihop.DefinitionImage{
 					Args: map[string]any{
 						"some-run-arg-key": "some-run-arg-value",
+					},
+					Platforms: map[string]map[string]any{
+						"linux/arm64": {
+							"some-run-platform-arg-key": "some-run-platform-arg-value",
+						},
 					},
 					Description: "some-run-description",
 					Dockerfile:  filepath.Join(dir, "some-run-dockerfile"),
@@ -377,13 +393,73 @@ homepage = "https://github.com/some-stack"
 				it("transforms args to string", func() {
 					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
 					Expect(err).NotTo(HaveOccurred())
-					buildArgs, err := definition.Build.Arguments()
+					buildArgs, err := definition.Build.Arguments("linux/amd64")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(buildArgs).To(Equal([]string{"build-arg-slice=value1 value2 3"}))
 
-					runArgs, err := definition.Run.Arguments()
+					runArgs, err := definition.Run.Arguments("linux/amd64")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(runArgs).To(Equal([]string{"run-arg-int=1"}))
+				})
+			})
+
+			context("when args have platform-specific overrides", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id"
+name = "some-stack-name"
+homepage = "https://github.com/some-stack"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+
+	[build.args]
+		build-arg-slice = [
+			"value1",
+			"value2",
+			3
+		]
+
+	[build.platforms."linux/arm64"]
+	    build-arg-slice = [
+			"valueA",
+			"valueB",
+			42
+		]
+
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+
+	[run.args]
+		run-arg-int = 1
+
+	[run.platforms."linux/arm64"]
+	    run-arg-int = 2
+`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				it("returns platform-specific variant", func() {
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					Expect(err).NotTo(HaveOccurred())
+
+					buildArgs, err := definition.Build.Arguments("linux/amd64")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(buildArgs).To(Equal([]string{"build-arg-slice=value1 value2 3"}))
+					buildArgsArm64, err := definition.Build.Arguments("linux/arm64")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(buildArgsArm64).To(Equal([]string{"build-arg-slice=valueA valueB 42"}))
+
+					runArgs, err := definition.Run.Arguments("linux/amd64")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(runArgs).To(Equal([]string{"run-arg-int=1"}))
+					runArgsArm64, err := definition.Run.Arguments("linux/arm64")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(runArgsArm64).To(Equal([]string{"run-arg-int=2"}))
 				})
 			})
 
@@ -412,7 +488,7 @@ homepage = "https://github.com/some-stack"
 					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
 					Expect(err).ToNot(HaveOccurred())
 
-					_, err = definition.Build.Arguments()
+					_, err = definition.Build.Arguments("linux/amd64")
 					Expect(err).To(MatchError("unsupported type bool for the argument element \"key\".0"))
 				})
 			})
@@ -449,11 +525,11 @@ homepage = "https://github.com/some-stack"
 					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
 					Expect(err).ToNot(HaveOccurred())
 
-					buildArgs, err := definition.Build.Arguments()
+					buildArgs, err := definition.Build.Arguments("linux/amd64")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(buildArgs).To(Equal([]string{"build-arg-slice=value1 value2"}))
 
-					_, err = definition.Run.Arguments()
+					_, err = definition.Run.Arguments("linux/amd64")
 					Expect(err).To(MatchError("unsupported type map[string]interface {} for the argument \"map\""))
 				})
 			})
