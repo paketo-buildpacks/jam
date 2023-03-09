@@ -6,8 +6,8 @@ import (
 
 	"github.com/anchore/syft/syft/linux"
 	"github.com/anchore/syft/syft/sbom"
-	"github.com/paketo-buildpacks/jam/internal/ihop"
-	"github.com/paketo-buildpacks/jam/internal/ihop/fakes"
+	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
+	"github.com/paketo-buildpacks/jam/v2/internal/ihop/fakes"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

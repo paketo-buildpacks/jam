@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paketo-buildpacks/jam/internal"
+	"github.com/paketo-buildpacks/jam/v2/internal"
 	"github.com/spf13/cobra"
 )
 

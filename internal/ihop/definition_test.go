@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/paketo-buildpacks/jam/internal/ihop"
+	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

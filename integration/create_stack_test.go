@@ -16,7 +16,7 @@ import (
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
-	. "github.com/paketo-buildpacks/jam/integration/matchers"
+	. "github.com/paketo-buildpacks/jam/v2/integration/matchers"
 	. "github.com/paketo-buildpacks/packit/v2/matchers"
 )
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega/types"
-	"github.com/paketo-buildpacks/jam/integration/matchers"
+	"github.com/paketo-buildpacks/jam/v2/integration/matchers"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

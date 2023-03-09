@@ -75,7 +75,7 @@ function build::jam(){
       GOARCH="amd64" \
       CGO_ENABLED=0 \
         go build \
-          -ldflags "-X github.com/paketo-buildpacks/jam/commands.jamVersion=${version}" \
+          -ldflags "-X github.com/paketo-buildpacks/jam/v2/commands.jamVersion=${version}" \
           -o "${output}" \
           main.go
 
