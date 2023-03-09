@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/paketo-buildpacks/jam/internal/ihop"
+	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
 )
 
 type ImageClient struct {

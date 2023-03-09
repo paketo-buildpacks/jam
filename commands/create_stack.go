@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/paketo-buildpacks/jam/internal/ihop"
+	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/spf13/cobra"
 )

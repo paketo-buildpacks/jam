@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paketo-buildpacks/jam/internal"
+	"github.com/paketo-buildpacks/jam/v2/internal"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

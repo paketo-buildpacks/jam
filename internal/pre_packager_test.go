@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/paketo-buildpacks/jam/internal"
-	"github.com/paketo-buildpacks/jam/internal/fakes"
+	"github.com/paketo-buildpacks/jam/v2/internal"
+	"github.com/paketo-buildpacks/jam/v2/internal/fakes"
 	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"

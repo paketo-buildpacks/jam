@@ -40,7 +40,7 @@ func TestJam(t *testing.T) {
 		err    error
 	)
 
-	path, err = gexec.Build("github.com/paketo-buildpacks/jam", "-ldflags", `-X github.com/paketo-buildpacks/jam/commands.jamVersion=1.2.3`)
+	path, err = gexec.Build("github.com/paketo-buildpacks/jam/v2", "-ldflags", `-X github.com/paketo-buildpacks/jam/v2/commands.jamVersion=1.2.3`)
 	Expect(err).NotTo(HaveOccurred())
 
 	suite.Run(t)

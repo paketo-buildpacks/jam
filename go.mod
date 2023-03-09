@@ -1,4 +1,4 @@
-module github.com/paketo-buildpacks/jam
+module github.com/paketo-buildpacks/jam/v2
 
 go 1.18
 

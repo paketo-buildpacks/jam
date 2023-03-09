@@ -3,7 +3,7 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/paketo-buildpacks/jam/internal"
+	"github.com/paketo-buildpacks/jam/v2/internal"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/sclevine/spec"
 
