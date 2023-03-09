@@ -56,6 +56,10 @@ type DefinitionImage struct {
 	// the --build-arg docker CLI flag.
 	Args map[string]any `toml:"args"`
 
+	// Platforms is a map of additional platform specific arguments where the key
+	// is the platform name. Platform args of the same name override Args.
+	Platforms map[string]map[string]any `toml:"platforms"`
+
 	// Description will be used to fill the io.buildpacks.stack.description image
 	// label.
 	Description string `toml:"description"`
@@ -90,9 +94,9 @@ type DefinitionDeprecated struct {
 
 // Arguments converts the Args map into a slice of strings of the form
 // key=value.
-func (i DefinitionImage) Arguments() ([]string, error) {
+func (i DefinitionImage) Arguments(platform string) ([]string, error) {
 	var args []string
-	for key, value := range i.Args {
+	for key, value := range i.mergeArgs(platform) {
 		var v string
 
 		switch valTyped := value.(type) {
@@ -123,6 +127,23 @@ func (i DefinitionImage) Arguments() ([]string, error) {
 	}
 
 	return args, nil
+}
+
+// mergeArgs merges Args and Platform Args if any exist for the platform with Platform Args overriding Args
+func (d DefinitionImage) mergeArgs(platform string) map[string]any {
+	allArgs := make(map[string]any)
+
+	for key, value := range d.Args {
+		allArgs[key] = value
+	}
+
+	if platformArgs, ok := d.Platforms[platform]; ok {
+		for key, value := range platformArgs {
+			allArgs[key] = value
+		}
+	}
+
+	return allArgs
 }
 
 // NewDefinitionFromFile parses the stack descriptor from a file location.

@@ -218,7 +218,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 	tag = fmt.Sprintf("paketo.io/stack/%s", tag)
 
-	buildArgs, err := def.Arguments()
+	buildArgs, err := def.Arguments(platform)
 	if err != nil {
 		return Image{}, err
 	}
