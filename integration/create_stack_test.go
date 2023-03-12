@@ -87,6 +87,17 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				Architecture: "arm64",
 			}))
 
+			imageArm, err := index.Image(indexManifest.Manifests[1].Digest)
+			Expect(err).NotTo(HaveOccurred())
+
+			fileArm, err := imageArm.ConfigFile()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fileArm.Config.Labels).To(SatisfyAll(
+				// just check that the platform is different
+				HaveKeyWithValue("platform", "arm64"),
+			))
+
 			image, err := index.Image(indexManifest.Manifests[0].Digest)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -104,6 +115,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring(`"openssl"`)),
 				HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring(`"build:git"`)),
 				HaveKeyWithValue("io.paketo.stack.packages", ContainSubstring(`"openssl"`)),
+				HaveKeyWithValue("platform", "amd64"),
 			))
 
 			Expect(file.Config.Labels).NotTo(HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring("run:")))
