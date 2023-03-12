@@ -50,6 +50,10 @@ type Definition struct {
 	IncludeExperimentalSBOM bool `toml:"-"`
 }
 
+type DefinitionImagePlatforms struct {
+	Args map[string]any `toml:"args"`
+}
+
 // DefinitionImage defines the definition of a build or run stack image.
 type DefinitionImage struct {
 	// Args can be used to pass arguments to the Dockerfile as might be done with
@@ -58,7 +62,7 @@ type DefinitionImage struct {
 
 	// Platforms is a map of additional platform specific arguments where the key
 	// is the platform name. Platform args of the same name override Args.
-	Platforms map[string]map[string]any `toml:"platforms"`
+	Platforms map[string]DefinitionImagePlatforms `toml:"platforms"`
 
 	// Description will be used to fill the io.buildpacks.stack.description image
 	// label.
@@ -137,8 +141,8 @@ func (d DefinitionImage) mergeArgs(platform string) map[string]any {
 		allArgs[key] = value
 	}
 
-	if platformArgs, ok := d.Platforms[platform]; ok {
-		for key, value := range platformArgs {
+	if platform, ok := d.Platforms[platform]; ok {
+		for key, value := range platform.Args {
 			allArgs[key] = value
 		}
 	}
