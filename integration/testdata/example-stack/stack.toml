@@ -16,6 +16,12 @@ platforms = ["linux/amd64", "linux/arm64"]
   [build.args]
     packages = "curl git jq openssl"
 
+	[build.platforms."linux/amd64".args]
+	    platform = "amd64"
+
+	[build.platforms."linux/arm64".args]
+	    platform = "arm64"
+
 [run]
   description = "this run stack is for example purposes only"
   dockerfile = "./run.Dockerfile"
@@ -25,6 +31,12 @@ platforms = ["linux/amd64", "linux/arm64"]
 
   [run.args]
     packages = "openssl"
+
+	[run.platforms."linux/amd64".args]
+	    platform = "amd64"
+
+	[run.platforms."linux/arm64".args]
+	    platform = "arm64"
 
 [deprecated]
   legacy-sbom = true
