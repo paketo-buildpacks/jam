@@ -44,7 +44,7 @@ platforms = ["some-stack-platform"]
 	[build.args]
 		some-build-arg-key = "some-build-arg-value"
 
-	[build.platforms."linux/arm64"]
+	[build.platforms."linux/arm64".args]
 	    some-build-platform-arg-key = "some-build-platform-arg-value"
 
 [run]
@@ -58,7 +58,7 @@ platforms = ["some-stack-platform"]
 	[run.args]
 		some-run-arg-key = "some-run-arg-value"
 
-	[run.platforms."linux/arm64"]
+	[run.platforms."linux/arm64".args]
 	    some-run-platform-arg-key = "some-run-platform-arg-value"
 
 [deprecated]
@@ -91,9 +91,11 @@ platforms = ["some-stack-platform"]
 					Args: map[string]any{
 						"some-build-arg-key": "some-build-arg-value",
 					},
-					Platforms: map[string]map[string]any{
+					Platforms: map[string]ihop.DefinitionImagePlatforms{
 						"linux/arm64": {
-							"some-build-platform-arg-key": "some-build-platform-arg-value",
+							Args: map[string]any{
+								"some-build-platform-arg-key": "some-build-platform-arg-value",
+							},
 						},
 					},
 					Description: "some-build-description",
@@ -106,9 +108,11 @@ platforms = ["some-stack-platform"]
 					Args: map[string]any{
 						"some-run-arg-key": "some-run-arg-value",
 					},
-					Platforms: map[string]map[string]any{
+					Platforms: map[string]ihop.DefinitionImagePlatforms{
 						"linux/arm64": {
-							"some-run-platform-arg-key": "some-run-platform-arg-value",
+							Args: map[string]any{
+								"some-run-platform-arg-key": "some-run-platform-arg-value",
+							},
 						},
 					},
 					Description: "some-run-description",
@@ -422,7 +426,7 @@ homepage = "https://github.com/some-stack"
 			3
 		]
 
-	[build.platforms."linux/arm64"]
+	[build.platforms."linux/arm64".args]
 	    build-arg-slice = [
 			"valueA",
 			"valueB",
@@ -437,7 +441,7 @@ homepage = "https://github.com/some-stack"
 	[run.args]
 		run-arg-int = 1
 
-	[run.platforms."linux/arm64"]
+	[run.platforms."linux/arm64".args]
 	    run-arg-int = 2
 `), 0600)
 					Expect(err).NotTo(HaveOccurred())
