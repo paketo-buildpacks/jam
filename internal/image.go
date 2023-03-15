@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/pack/pkg/buildpack"
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/docker/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -22,15 +24,43 @@ type Image struct {
 
 func FindLatestImageOnCNBRegistry(uri, api string) (Image, error) {
 	id, _ := buildpack.ParseIDLocator(uri)
+	var resp *http.Response
+	var err error
 
-	resp, err := http.Get(fmt.Sprintf("%s/v1/buildpacks/%s", api, id))
+	retryTimeLimit, err := time.ParseDuration("3m")
 	if err != nil {
 		return Image{}, err
 	}
+	exponentialBackoff := backoff.NewExponentialBackOff()
+	exponentialBackoff.MaxElapsedTime = retryTimeLimit
 
-	if resp.StatusCode != http.StatusOK {
-		return Image{}, fmt.Errorf("unexpected response status: %s", resp.Status)
+	// Use exponential backoff to retry failed requests when they fail with http.StatusTooManyRequests
+	err = backoff.RetryNotify(func() error {
+		resp, err = http.Get(fmt.Sprintf("%s/v1/buildpacks/%s", api, id))
+		if err != nil {
+			return &backoff.PermanentError{Err: err}
+		}
+
+		// only retry when the CNB registry status code is http.StatusTooManyRequests (429)
+		if resp.StatusCode != http.StatusOK {
+			err = fmt.Errorf("unexpected response status: %s", resp.Status)
+			if resp.StatusCode == http.StatusTooManyRequests {
+				return err
+			}
+			return &backoff.PermanentError{Err: err}
+		}
+		return nil
+	},
+		exponentialBackoff,
+		func(err error, t time.Duration) {
+			fmt.Println(err)
+			fmt.Printf("Retrying in %s\n", t)
+		},
+	)
+	if err != nil {
+		return Image{}, err
 	}
+	defer resp.Body.Close()
 
 	var metadata struct {
 		Latest struct {

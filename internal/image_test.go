@@ -21,6 +21,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 		server       *httptest.Server
 		dockerConfig string
+		count        int
 	)
 
 	context("FindLatestImageOnCNBRegistry", func() {
@@ -59,6 +60,19 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 						}
 					}`)
 
+				case "/v1/buildpacks/retry-endpoint":
+					if count < 1 {
+						w.WriteHeader(http.StatusTooManyRequests)
+						count++
+					} else {
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprintln(w, `{
+						"latest": {
+							"version": "0.1.0"
+							}
+						}`)
+					}
+
 				case "/v1/buildpacks/not/ok":
 					w.WriteHeader(http.StatusTeapot)
 
@@ -93,6 +107,18 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 				Expect(image).To(Equal(internal.Image{
 					Name:    "urn:cnb:registry:paketo-buildpacks/go",
 					Path:    "paketo-buildpacks/go",
+					Version: "0.1.0",
+				}))
+			})
+		})
+
+		context("when the request fails the first time", func() {
+			it("retries the request", func() {
+				image, err := internal.FindLatestImageOnCNBRegistry("retry-endpoint", server.URL)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(image).To(Equal(internal.Image{
+					Name:    "urn:cnb:registry:retry-endpoint",
+					Path:    "retry-endpoint",
 					Version: "0.1.0",
 				}))
 			})
