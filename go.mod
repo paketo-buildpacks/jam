@@ -15,7 +15,7 @@ require (
 	github.com/moby/buildkit v0.11.4
 	github.com/onsi/gomega v1.27.4
 	github.com/paketo-buildpacks/occam v0.15.1
-	github.com/paketo-buildpacks/packit/v2 v2.8.2
+	github.com/paketo-buildpacks/packit/v2 v2.9.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.6.1
@@ -80,7 +80,7 @@ require (
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/facebookincubator/nvdtools v0.1.5 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-restruct/restruct v1.2.0-alpha // indirect
