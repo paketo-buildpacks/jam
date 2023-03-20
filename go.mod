@@ -14,7 +14,7 @@ require (
 	github.com/google/go-containerregistry v0.14.0
 	github.com/moby/buildkit v0.11.4
 	github.com/onsi/gomega v1.27.4
-	github.com/paketo-buildpacks/occam v0.15.1
+	github.com/paketo-buildpacks/occam v0.16.0
 	github.com/paketo-buildpacks/packit/v2 v2.9.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
@@ -73,6 +73,7 @@ require (
 	github.com/containerd/continuity v0.3.1-0.20230206214859-2a963a2f56e8 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
+	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -143,7 +144,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/sylabs/sif/v2 v2.10.0 // indirect
 	github.com/sylabs/squashfs v0.6.1 // indirect
-	github.com/testcontainers/testcontainers-go v0.17.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.19.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20230214225802-a3696a2f1f27 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
