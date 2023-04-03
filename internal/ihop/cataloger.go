@@ -15,7 +15,7 @@ type Cataloger struct{}
 
 // Scan generates an SBOM for an image tagged in the Docker daemon.
 func (c Cataloger) Scan(path string) (SBOM, error) {
-	input, err := source.ParseInput(fmt.Sprintf("oci-dir:%s", path), "", false)
+	input, err := source.ParseInput(fmt.Sprintf("oci-dir:%s", path), "")
 	if err != nil {
 		return SBOM{}, err
 	}
