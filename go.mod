@@ -18,7 +18,7 @@ require (
 	github.com/paketo-buildpacks/packit/v2 v2.9.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	golang.org/x/exp v0.0.0-20230306221820-f0f767cdffd6
 )
 
