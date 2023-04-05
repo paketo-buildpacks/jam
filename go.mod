@@ -8,7 +8,7 @@ require (
 	github.com/anchore/syft v0.76.0
 	github.com/buildpacks/pack v0.29.0
 	github.com/cenkalti/backoff/v4 v4.2.0
-	github.com/docker/cli v23.0.2+incompatible
+	github.com/docker/cli v23.0.3+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v23.0.3+incompatible
 	github.com/google/go-containerregistry v0.14.0
