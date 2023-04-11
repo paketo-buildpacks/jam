@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/Masterminds/semver/v3 v3.2.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/anchore/syft v0.76.1
 	github.com/buildpacks/pack v0.29.0
 	github.com/cenkalti/backoff/v4 v4.2.0
