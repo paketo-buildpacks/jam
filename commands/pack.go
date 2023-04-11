@@ -15,6 +15,7 @@ import (
 
 type packFlags struct {
 	buildpackTOMLPath string
+	extensionTOMLPath string
 	output            string
 	version           string
 	offline           bool
@@ -31,16 +32,13 @@ func pack() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flags.buildpackTOMLPath, "buildpack", "", "path to buildpack.toml")
+	cmd.Flags().StringVar(&flags.extensionTOMLPath, "extension", "", "path to extension.toml")
 	cmd.Flags().StringVar(&flags.output, "output", "", "path to location of output tarball")
 	cmd.Flags().StringVar(&flags.version, "version", "", "version of the buildpack")
 	cmd.Flags().BoolVar(&flags.offline, "offline", false, "enable offline caching of dependencies")
 	cmd.Flags().StringVar(&flags.stack, "stack", "", "restricts dependencies to given stack")
 
-	err := cmd.MarkFlagRequired("buildpack")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to mark buildpack flag as required")
-	}
-	err = cmd.MarkFlagRequired("output")
+	err := cmd.MarkFlagRequired("output")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark output flag as required")
 	}
@@ -56,24 +54,33 @@ func init() {
 }
 
 func packRun(flags packFlags) error {
-	buildpackDir, err := os.MkdirTemp("", "dup-dest")
+	buildpackOrExtensionDir, err := os.MkdirTemp("", "dup-dest")
 	if err != nil {
 		return fmt.Errorf("unable to create temporary directory: %s", err)
 	}
-	defer os.RemoveAll(buildpackDir)
+	defer os.RemoveAll(buildpackOrExtensionDir)
+
+	var buildpackOrExtensionTOMLPath string
+	if flags.buildpackTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.buildpackTOMLPath
+	} else if flags.extensionTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.extensionTOMLPath
+	} else {
+		return fmt.Errorf("--buildpack or --extension flag is required")
+	}
 
 	directoryDuplicator := cargo.NewDirectoryDuplicator()
-	err = directoryDuplicator.Duplicate(filepath.Dir(flags.buildpackTOMLPath), buildpackDir)
+	err = directoryDuplicator.Duplicate(filepath.Dir(buildpackOrExtensionTOMLPath), buildpackOrExtensionDir)
 	if err != nil {
 		return fmt.Errorf("failed to duplicate directory: %s", err)
 	}
 
-	flags.buildpackTOMLPath = filepath.Join(buildpackDir, filepath.Base(flags.buildpackTOMLPath))
+	buildpackOrExtensionTOMLPath = filepath.Join(buildpackOrExtensionDir, filepath.Base(buildpackOrExtensionTOMLPath))
 
 	configParser := cargo.NewBuildpackParser()
-	config, err := configParser.Parse(flags.buildpackTOMLPath)
+	config, err := configParser.Parse(buildpackOrExtensionTOMLPath)
 	if err != nil {
-		return fmt.Errorf("failed to parse buildpack.toml: %s", err)
+		return fmt.Errorf("failed to parse .toml file : %s", err)
 	}
 
 	config.Buildpack.Version = flags.version
@@ -94,7 +101,7 @@ func packRun(flags packFlags) error {
 	logger := scribe.NewLogger(os.Stdout)
 	bash := pexec.NewExecutable("bash")
 	prePackager := internal.NewPrePackager(bash, logger, scribe.NewWriter(os.Stdout, scribe.WithIndent(2)))
-	err = prePackager.Execute(config.Metadata.PrePackage, buildpackDir)
+	err = prePackager.Execute(config.Metadata.PrePackage, buildpackOrExtensionDir)
 	if err != nil {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
@@ -102,7 +109,7 @@ func packRun(flags packFlags) error {
 	if flags.offline {
 		transport := cargo.NewTransport()
 		dependencyCacher := internal.NewDependencyCacher(transport, logger)
-		config.Metadata.Dependencies, err = dependencyCacher.Cache(buildpackDir, config.Metadata.Dependencies)
+		config.Metadata.Dependencies, err = dependencyCacher.Cache(buildpackOrExtensionDir, config.Metadata.Dependencies)
 		if err != nil {
 			return fmt.Errorf("failed to cache dependencies: %s", err)
 		}
@@ -113,7 +120,7 @@ func packRun(flags packFlags) error {
 	}
 
 	fileBundler := internal.NewFileBundler()
-	files, err := fileBundler.Bundle(buildpackDir, config.Metadata.IncludeFiles, config)
+	files, err := fileBundler.Bundle(buildpackOrExtensionDir, config.Metadata.IncludeFiles, config)
 	if err != nil {
 		return fmt.Errorf("failed to bundle files: %s", err)
 	}
