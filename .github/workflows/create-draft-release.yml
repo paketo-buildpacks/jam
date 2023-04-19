@@ -86,13 +86,43 @@ jobs:
               "content_type": "application/octet-stream"
             },
             {
+              "path": "build/jam-darwin",
+              "name": "jam-darwin-amd64",
+              "content_type": "application/octet-stream"
+            },
+            {
+              "path": "build/jam-darwin-arm64",
+              "name": "jam-darwin-arm64",
+              "content_type": "application/octet-stream"
+            },
+            {
               "path": "build/jam-linux",
               "name": "jam-linux",
               "content_type": "application/octet-stream"
             },
             {
+              "path": "build/jam-linux",
+              "name": "jam-linux-amd64",
+              "content_type": "application/octet-stream"
+            },
+            {
+              "path": "build/jam-linux-arm64",
+              "name": "jam-linux-arm64",
+              "content_type": "application/octet-stream"
+            },
+            {
               "path": "build/jam-windows.exe",
               "name": "jam-windows.exe",
+              "content_type": "application/octet-stream"
+            },
+            {
+              "path": "build/jam-windows.exe",
+              "name": "jam-windows-amd64.exe",
+              "content_type": "application/octet-stream"
+            },
+            {
+              "path": "build/jam-windows-arm64.exe",
+              "name": "jam-windows-arm64.exe",
               "content_type": "application/octet-stream"
             }
           ]
