@@ -12,7 +12,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v23.0.4+incompatible
 	github.com/google/go-containerregistry v0.14.0
-	github.com/moby/buildkit v0.11.5
+	github.com/moby/buildkit v0.11.6
 	github.com/onsi/gomega v1.27.6
 	github.com/paketo-buildpacks/occam v0.16.0
 	github.com/paketo-buildpacks/packit/v2 v2.9.0
@@ -69,7 +69,7 @@ require (
 	github.com/buildpacks/lifecycle v0.16.0 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/containerd/console v1.0.3 // indirect
-	github.com/containerd/containerd v1.6.19 // indirect
+	github.com/containerd/containerd v1.6.20 // indirect
 	github.com/containerd/continuity v0.3.1-0.20230206214859-2a963a2f56e8 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
@@ -130,8 +130,8 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
-	github.com/opencontainers/runc v1.1.4 // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
