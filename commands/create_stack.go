@@ -21,6 +21,7 @@ type createStackFlags struct {
 	runOutput   string
 	secrets     []string
 	unbuffered  bool
+	publish     bool
 }
 
 func createStack() *cobra.Command {
@@ -33,10 +34,11 @@ func createStack() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flags.config, "config", "", "path to a stack descriptor file (required)")
-	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path to output the build image OCI archive (required)")
-	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path to output the run image OCI archive (required)")
+	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path or image reference to output the build image OCI archive (required)")
+	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path or image reference to output the run image OCI archive (required)")
 	cmd.Flags().StringSliceVar(&flags.secrets, "secret", nil, "secret to be passed to your Dockerfile")
 	cmd.Flags().BoolVar(&flags.unbuffered, "unbuffered", false, "do not buffer image contents into memory for fast access")
+	cmd.Flags().BoolVar(&flags.publish, "publish", false, "publish to a registry")
 
 	err := cmd.MarkFlagRequired("config")
 	if err != nil {
@@ -89,16 +91,30 @@ func createStackRun(flags createStackFlags) error {
 		return err
 	}
 
-	logger.Process("Exporting build image to %s", flags.buildOutput)
-	err = client.Export(flags.buildOutput, stack.Build...)
-	if err != nil {
-		return err
-	}
+	if !flags.publish {
+		logger.Process("Exporting build image to %s", flags.buildOutput)
+		err = client.Export(flags.buildOutput, stack.Build...)
+		if err != nil {
+			return err
+		}
 
-	logger.Process("Exporting run image to %s", flags.runOutput)
-	err = client.Export(flags.runOutput, stack.Run...)
-	if err != nil {
-		return err
+		logger.Process("Exporting run image to %s", flags.runOutput)
+		err = client.Export(flags.runOutput, stack.Run...)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Process("Uploading build image to %s", flags.buildOutput)
+		err = client.Upload(flags.buildOutput, stack.Build...)
+		if err != nil {
+			return err
+		}
+
+		logger.Process("Uploading run image to %s", flags.runOutput)
+		err = client.Upload(flags.runOutput, stack.Run...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

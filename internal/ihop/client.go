@@ -32,6 +32,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	control "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
@@ -444,30 +445,9 @@ func (c Client) Update(image Image) (Image, error) {
 // Export creates an OCI-archive tarball at the path location that includes the
 // given Images.
 func (c Client) Export(path string, images ...Image) error {
-	directory, err := randomName()
+	directory, err := c.imageToDirectory(images)
 	if err != nil {
 		return err
-	}
-
-	directory = filepath.Join(c.dir, directory)
-	err = os.Mkdir(directory, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	index, err := layout.Write(directory, empty.Index)
-	if err != nil {
-		return err
-	}
-
-	for _, image := range images {
-		err = index.AppendImage(image.Actual, layout.WithPlatform(v1.Platform{
-			OS:           image.OS,
-			Architecture: image.Architecture,
-		}))
-		if err != nil {
-			return err
-		}
 	}
 
 	file, err := os.Create(path)
@@ -523,6 +503,60 @@ func (c Client) Export(path string, images ...Image) error {
 	}
 
 	return nil
+}
+
+func (c Client) Upload(refName string, images ...Image) error {
+	directory, err := c.imageToDirectory(images)
+	if err != nil {
+		return err
+	}
+
+	path, err := layout.FromPath(directory)
+	if err != nil {
+		return err
+	}
+
+	imageIndex, err := path.ImageIndex()
+	if err != nil {
+		return err
+	}
+
+	ref, err := name.ParseReference(refName)
+	if err != nil {
+		return err
+	}
+
+	return remote.WriteIndex(ref, imageIndex, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+}
+
+func (c Client) imageToDirectory(images []Image) (string, error) {
+	directory, err := randomName()
+	if err != nil {
+		return "", err
+	}
+
+	directory = filepath.Join(c.dir, directory)
+	err = os.Mkdir(directory, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	index, err := layout.Write(directory, empty.Index)
+	if err != nil {
+		return "", err
+	}
+
+	for _, image := range images {
+		err = index.AppendImage(image.Actual, layout.WithPlatform(v1.Platform{
+			OS:           image.OS,
+			Architecture: image.Architecture,
+		}))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return directory, nil
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
