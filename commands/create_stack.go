@@ -91,19 +91,19 @@ func createStackRun(flags createStackFlags) error {
 		return err
 	}
 
-	if !flags.publish {
-		logger.Process("Exporting build image to %s", flags.buildOutput)
-		err = client.Export(flags.buildOutput, stack.Build...)
-		if err != nil {
-			return err
-		}
+	logger.Process("Exporting build image to %s", flags.buildOutput)
+	err = client.Export(flags.buildOutput, stack.Build...)
+	if err != nil {
+		return err
+	}
 
-		logger.Process("Exporting run image to %s", flags.runOutput)
-		err = client.Export(flags.runOutput, stack.Run...)
-		if err != nil {
-			return err
-		}
-	} else {
+	logger.Process("Exporting run image to %s", flags.runOutput)
+	err = client.Export(flags.runOutput, stack.Run...)
+	if err != nil {
+		return err
+	}
+
+	if flags.publish {
 		logger.Process("Uploading build image to %s", flags.buildOutput)
 		err = client.Upload(flags.buildOutput, stack.Build...)
 		if err != nil {
