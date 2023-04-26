@@ -505,13 +505,17 @@ func (c Client) Export(path string, images ...Image) error {
 	return nil
 }
 
-func (c Client) Upload(refName string, images ...Image) error {
+func (c Client) UploadImages(refName string, images ...Image) error {
 	directory, err := c.imageToDirectory(images)
 	if err != nil {
 		return err
 	}
 
-	path, err := layout.FromPath(directory)
+	return c.Upload(refName, directory)
+}
+
+func (c Client) Upload(refName string, fromDir string) error {
+	path, err := layout.FromPath(fromDir)
 	if err != nil {
 		return err
 	}
