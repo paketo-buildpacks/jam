@@ -38,6 +38,8 @@ func pack() *cobra.Command {
 	cmd.Flags().BoolVar(&flags.offline, "offline", false, "enable offline caching of dependencies")
 	cmd.Flags().StringVar(&flags.stack, "stack", "", "restricts dependencies to given stack")
 
+	cmd.MarkFlagsMutuallyExclusive("buildpack", "extension")
+
 	err := cmd.MarkFlagRequired("output")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark output flag as required")
@@ -66,7 +68,7 @@ func packRun(flags packFlags) error {
 	} else if flags.extensionTOMLPath != "" {
 		buildpackOrExtensionTOMLPath = flags.extensionTOMLPath
 	} else {
-		return fmt.Errorf("--buildpack or --extension flag is required")
+		return fmt.Errorf("\"buildpack\" or \"extension\" flag is required")
 	}
 
 	directoryDuplicator := cargo.NewDirectoryDuplicator()
