@@ -352,11 +352,11 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"buildpack\", \"output\", \"version\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"output\", \"version\" not set"))
 			})
 		})
 
-		context("when the required buildpack flag is not set", func() {
+		context("when the required buildpack or extension flag is not set", func() {
 			it("prints an error message", func() {
 				command := exec.Command(
 					path, "pack",
@@ -369,7 +369,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"buildpack\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: \"buildpack\" or \"extension\" flag is required"))
 			})
 		})
 
