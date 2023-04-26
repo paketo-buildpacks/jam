@@ -16,12 +16,14 @@ func init() {
 }
 
 type createStackFlags struct {
-	config      string
-	buildOutput string
-	runOutput   string
-	secrets     []string
-	unbuffered  bool
-	publish     bool
+	config         string
+	buildOutput    string
+	runOutput      string
+	secrets        []string
+	unbuffered     bool
+	publish        bool
+	buildReference string
+	runReference   string
 }
 
 func createStack() *cobra.Command {
@@ -39,6 +41,8 @@ func createStack() *cobra.Command {
 	cmd.Flags().StringSliceVar(&flags.secrets, "secret", nil, "secret to be passed to your Dockerfile")
 	cmd.Flags().BoolVar(&flags.unbuffered, "unbuffered", false, "do not buffer image contents into memory for fast access")
 	cmd.Flags().BoolVar(&flags.publish, "publish", false, "publish to a registry")
+	cmd.Flags().StringVar(&flags.buildReference, "build-ref", "", "reference that specifies where to publish the build image (required)")
+	cmd.Flags().StringVar(&flags.runReference, "run-ref", "", "reference that specifies where to publish the run image (required)")
 
 	err := cmd.MarkFlagRequired("config")
 	if err != nil {
@@ -54,6 +58,8 @@ func createStack() *cobra.Command {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark run-output flag as required")
 	}
+
+	cmd.MarkFlagsRequiredTogether("publish", "build-ref", "run-ref")
 
 	return cmd
 }
@@ -104,14 +110,14 @@ func createStackRun(flags createStackFlags) error {
 	}
 
 	if flags.publish {
-		logger.Process("Uploading build image to %s", flags.buildOutput)
-		err = client.Upload(flags.buildOutput, stack.Build...)
+		logger.Process("Uploading build image to %s", flags.buildReference)
+		err = client.UploadImages(flags.buildReference, stack.Build...)
 		if err != nil {
 			return err
 		}
 
-		logger.Process("Uploading run image to %s", flags.runOutput)
-		err = client.Upload(flags.runOutput, stack.Run...)
+		logger.Process("Uploading run image to %s", flags.runReference)
+		err = client.UploadImages(flags.runReference, stack.Run...)
 		if err != nil {
 			return err
 		}
