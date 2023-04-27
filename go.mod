@@ -10,7 +10,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/docker/cli v23.0.4+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v23.0.4+incompatible
+	github.com/docker/docker v23.0.5+incompatible
 	github.com/google/go-containerregistry v0.14.0
 	github.com/moby/buildkit v0.11.6
 	github.com/onsi/gomega v1.27.6
