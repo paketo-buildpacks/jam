@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -121,6 +122,9 @@ func extractTar(input string, destination string) error {
 			continue
 		}
 
+		if strings.Contains(header.Name, "..") {
+			return fmt.Errorf("entry contains unsafe relative link")
+		}
 		target := filepath.Join(destination, header.Name)
 
 		switch header.Typeflag {
@@ -129,7 +133,23 @@ func extractTar(input string, destination string) error {
 				return err
 			}
 		case tar.TypeLink:
-			if err := os.Symlink(header.Linkname, target); err != nil {
+			symlinkPath := header.Linkname
+			if !filepath.IsAbs(symlinkPath) {
+				realSymlinkPath, err := filepath.EvalSymlinks(filepath.Join(target, symlinkPath))
+				if err != nil {
+					return err
+				}
+
+				symlinkPath, err := filepath.Rel(target, realSymlinkPath)
+				if err != nil {
+					return err
+				}
+
+				if strings.HasPrefix(filepath.Clean(symlinkPath), "..") {
+					return fmt.Errorf("unsafe relative symlink")
+				}
+			}
+			if err := os.Symlink(symlinkPath, target); err != nil {
 				return err
 			}
 		case tar.TypeReg:
