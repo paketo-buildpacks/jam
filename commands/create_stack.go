@@ -36,8 +36,8 @@ func createStack() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flags.config, "config", "", "path to a stack descriptor file (required)")
-	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path or image reference to output the build image OCI archive (required)")
-	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path or image reference to output the run image OCI archive (required)")
+	cmd.Flags().StringVar(&flags.buildOutput, "build-output", "", "path to output the build image OCI archive (required)")
+	cmd.Flags().StringVar(&flags.runOutput, "run-output", "", "path to output the run image OCI archive (required)")
 	cmd.Flags().StringSliceVar(&flags.secrets, "secret", nil, "secret to be passed to your Dockerfile")
 	cmd.Flags().BoolVar(&flags.unbuffered, "unbuffered", false, "do not buffer image contents into memory for fast access")
 	cmd.Flags().BoolVar(&flags.publish, "publish", false, "publish to a registry")
