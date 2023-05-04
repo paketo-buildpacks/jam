@@ -112,6 +112,59 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 
 		})
 
+		it("caches extension dependencies and returns updated dependencies list", func() {
+			deps, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
+				{
+					ID:      "dep-1",
+					Version: "1.2.3",
+					Stacks:  []string{"some-stack"},
+					URI:     "http://dep1-uri",
+					SHA256:  "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
+				},
+				{
+					ID:       "dep-2",
+					Version:  "4.5.6",
+					Stacks:   []string{"some-stack", "some-other-stack"},
+					URI:      "http://dep2-uri",
+					Checksum: "sha256:bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deps).To(Equal([]cargo.ConfigExtensionMetadataDependency{
+				{
+					ID:      "dep-1",
+					Version: "1.2.3",
+					Stacks:  []string{"some-stack"},
+					URI:     "file:///dependencies/3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
+					SHA256:  "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
+				},
+				{
+					ID:       "dep-2",
+					Version:  "4.5.6",
+					Stacks:   []string{"some-stack", "some-other-stack"},
+					URI:      "file:///dependencies/bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+					Checksum: "sha256:bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7",
+				},
+			}))
+
+			Expect(downloader.DropCall.Receives.Root).To(Equal(""))
+
+			contents, err := os.ReadFile(filepath.Join(tmpDir, "dependencies", "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("dep1-contents"))
+
+			contents, err = os.ReadFile(filepath.Join(tmpDir, "dependencies", "bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("dep2-contents"))
+
+			Expect(output.String()).To(ContainSubstring("  Downloading dependencies..."))
+			Expect(output.String()).To(ContainSubstring("    dep-1 (1.2.3) [some-stack]"))
+			Expect(output.String()).To(ContainSubstring("      ↳  dependencies/3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f"))
+			Expect(output.String()).To(ContainSubstring("    dep-2 (4.5.6) [some-stack, some-other-stack]"))
+			Expect(output.String()).To(ContainSubstring("      ↳  dependencies/bfc72d62682f4a2edc3218d70b1f7052e4f336c179a8f19ef12ee721d4ea29b7"))
+
+		})
+
 		context("failure cases", func() {
 			context("when the dependencies directory cannot be created", func() {
 				it.Before(func() {
@@ -127,11 +180,26 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError(ContainSubstring("failed to create dependencies directory:")))
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
+
+				it("CacheExtension returns an error", func() {
+					_, err := cacher.CacheExtension(tmpDir, nil)
+					Expect(err).To(MatchError(ContainSubstring("failed to create dependencies directory:")))
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				})
 			})
 
 			context("when a dependency cannot be downloaded", func() {
 				it("returns an error", func() {
 					_, err := cacher.Cache(tmpDir, []cargo.ConfigMetadataDependency{
+						{
+							URI: "http://unknown-dep",
+						},
+					})
+					Expect(err).To(MatchError("failed to download dependency: no such dependency: http://unknown-dep"))
+				})
+
+				it("CacheExtension returns an error", func() {
+					_, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
 						{
 							URI: "http://unknown-dep",
 						},
@@ -159,11 +227,32 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError(ContainSubstring("failed to create destination file:")))
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
+
+				it("CacheExtension returns an error", func() {
+					_, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
+						{
+							URI:    "http://dep1-uri",
+							SHA256: "3c9de6683673f3e8039599d5200d533807c6c35fd9e35d6b6d77009122868f0f",
+						},
+					})
+					Expect(err).To(MatchError(ContainSubstring("failed to create destination file:")))
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				})
 			})
 
 			context("when we fail to read the downloaded file", func() {
 				it("returns an error", func() {
 					_, err := cacher.Cache(tmpDir, []cargo.ConfigMetadataDependency{
+						{
+							URI:    "http://error-dep",
+							SHA256: "some-sha",
+						},
+					})
+					Expect(err).To(MatchError("failed to copy dependency: failed to read"))
+				})
+
+				it("CacheExtension returns an error", func() {
+					_, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
 						{
 							URI:    "http://error-dep",
 							SHA256: "some-sha",
@@ -183,11 +272,32 @@ func testDependencyCacher(t *testing.T, context spec.G, it spec.S) {
 					})
 					Expect(err).To(MatchError("failed to create file for no-checksum-dep: no sha256 or checksum provided"))
 				})
+
+				it("CacheExtension returns a clear error", func() {
+					_, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
+						{
+							URI: "http://error-dep",
+							ID:  "no-checksum-dep",
+						},
+					})
+					Expect(err).To(MatchError("failed to create file for no-checksum-dep: no sha256 or checksum provided"))
+				})
+
 			})
 
 			context("when the checksum does not match", func() {
 				it("returns an error", func() {
 					_, err := cacher.Cache(tmpDir, []cargo.ConfigMetadataDependency{
+						{
+							URI:    "http://dep1-uri",
+							SHA256: "invalid-sha",
+						},
+					})
+					Expect(err).To(MatchError("failed to copy dependency: validation error: checksum does not match"))
+				})
+
+				it("CacheExtension returns an error", func() {
+					_, err := cacher.CacheExtension(tmpDir, []cargo.ConfigExtensionMetadataDependency{
 						{
 							URI:    "http://dep1-uri",
 							SHA256: "invalid-sha",
