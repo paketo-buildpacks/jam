@@ -117,3 +117,55 @@ func (b FileBundler) Bundle(root string, paths []string, config cargo.Config) ([
 
 	return files, nil
 }
+
+func (b FileBundler) BundleExtension(root string, paths []string, config cargo.ExtensionConfig) ([]File, error) {
+	var files []File
+
+	for _, path := range paths {
+		file := File{Name: path}
+
+		switch path {
+		case "extension.toml":
+			buf := bytes.NewBuffer(nil)
+			err := cargo.EncodeExtensionConfig(buf, config)
+			if err != nil {
+				return nil, fmt.Errorf("error encoding extension.toml: %s", err)
+			}
+
+			file.ReadCloser = io.NopCloser(buf)
+			file.Info = NewFileInfo("extension.toml", buf.Len(), 0644, time.Now())
+
+		default:
+			var err error
+			file.Info, err = os.Lstat(filepath.Join(root, path))
+			if err != nil {
+				return nil, fmt.Errorf("error stating included file: %s", err)
+			}
+
+			if file.Info.Mode()&os.ModeType != 0 {
+				link, err := os.Readlink(filepath.Join(root, path))
+				if err != nil {
+					return nil, fmt.Errorf("error readlinking included file: %s", err)
+				}
+
+				if !strings.HasPrefix(link, string(filepath.Separator)) {
+					link = filepath.Clean(filepath.Join(root, link))
+				}
+
+				file.Link, err = filepath.Rel(root, link)
+				if err != nil {
+					return nil, fmt.Errorf("error finding relative link path: %s", err)
+				}
+			} else {
+				file.ReadCloser, err = os.Open(filepath.Join(root, path))
+				if err != nil {
+					return nil, fmt.Errorf("error opening included file: %s", err)
+				}
+			}
+		}
+
+		files = append(files, file)
+	}
+
+	return files, nil
+}
