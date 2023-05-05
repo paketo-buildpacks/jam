@@ -1,0 +1,46 @@
+api = "0.7"
+
+[extension]
+  id = "some-extension-id"
+  name = "some-extension-name"
+  version = "version-string"
+  description = "some-extensin-description"
+  homepage = "some-extension-homepage"
+  keywords = [ "some-extension-keyword" ]
+
+  [[extension.licenses]]
+    type = "some-extension-license-type"
+    uri = "some-extension-license-uri"
+
+[metadata]
+  include-files = ["extension.toml"]
+
+  [metadata.default-versions]
+    node = "18.*.*"
+
+  [[metadata.dependencies]]
+    id = "some-dependency"
+    name = "Some Dependency"
+    sha256 = "shasum"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny", "*"]
+    uri = "http://some-url"
+    source = "http://some-source-url"
+    version = "1.2.3"
+
+  [[metadata.dependencies]]
+    id = "other-dependency"
+    name = "Other Dependency"
+    sha256 = "shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://other-url"
+    source = "http://some-source-url"
+    version = "4.5.6"
+
+  [[metadata.configurations]]
+    build = true
+    default = "16"
+    description = "the Node.js version"
+    name = "BP_NODE_VERSION"
+
+
+
