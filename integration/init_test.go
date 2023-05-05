@@ -34,6 +34,7 @@ func TestJam(t *testing.T) {
 	suite("update-buildpack", testUpdateBuildpack)
 	suite("update-dependencies-from-metadata", testUpdateDependenciesFromMetadata)
 	suite("version", testVersion)
+	suite("pack extension", testPackExtension)
 
 	var (
 		Expect = NewWithT(t).Expect
