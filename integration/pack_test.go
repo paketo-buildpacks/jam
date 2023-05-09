@@ -352,7 +352,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"output\", \"version\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring(`Error: required flag(s) "output", "version" not set`))
 			})
 		})
 
@@ -369,7 +369,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: \"buildpack\" or \"extension\" flag is required"))
+				Expect(session.Err.Contents()).To(ContainSubstring(`Error: "buildpack" or "extension" flag is required`))
 			})
 		})
 
@@ -386,7 +386,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"output\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring(`Error: required flag(s) "output" not set`))
 			})
 		})
 
@@ -403,7 +403,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"version\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring(`Error: required flag(s) "version" not set`))
 			})
 		})
 	})
