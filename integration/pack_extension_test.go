@@ -2,7 +2,8 @@ package integration_test
 
 import (
 	"fmt"
-
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"os/user"
@@ -181,7 +182,6 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
     default = "16"
     description = "the Node.js version"
     name = "BP_NODE_VERSION"
-
   [metadata.default-versions]
     node = "18.*.*"
 
@@ -234,4 +234,134 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(filepath.Join(extensionDir, "generated-file")).NotTo(BeARegularFile())
 		})
+
+		context("when the extension is built to run offline", func() {
+			var server *httptest.Server
+			it.Before(func() {
+				server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+					if req.URL.Path != "/some-dependency.tgz" {
+						http.NotFound(w, req)
+					}
+
+					fmt.Fprint(w, "dependency-contents")
+				}))
+
+				config, err := cargo.NewExtensionParser().Parse(filepath.Join(extensionDir, "extension.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config.Metadata.Dependencies).To(HaveLen(2))
+
+				config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
+				config.Metadata.Dependencies[0].Checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+
+				config.Metadata.Dependencies[1].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
+				config.Metadata.Dependencies[1].Checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+
+				bpTomlWriter, err := os.Create(filepath.Join(extensionDir, "extension.toml"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cargo.EncodeExtensionConfig(bpTomlWriter, config)).To(Succeed())
+			})
+
+			it.After(func() {
+				server.Close()
+			})
+
+			it("creates an offline packaged extension", func() {
+				command := exec.Command(
+					path, "pack",
+					"--extension", filepath.Join(extensionDir, "extension.toml"),
+					"--output", filepath.Join(tmpDir, "output.tgz"),
+					"--version", "some-version",
+					"--offline",
+					"--stack",
+					"io.buildpacks.stacks.bionic",
+				)
+				session, err := gexec.Start(command, buffer, buffer)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
+
+				Expect(session.Out).To(gbytes.Say("Packing some-extension-name some-version..."))
+				Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
+				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
+				Expect(session.Out).To(gbytes.Say("  Downloading dependencies..."))
+				Expect(session.Out).To(gbytes.Say(`    some-dependency \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\, \*]`))
+				Expect(session.Out).To(gbytes.Say("      ↳  dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"))
+				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+				Expect(session.Out).To(gbytes.Say("    bin/detect"))
+				Expect(session.Out).To(gbytes.Say("    bin/generate"))
+				Expect(session.Out).To(gbytes.Say("    bin/run"))
+				Expect(session.Out).To(gbytes.Say("    dependencies"))
+				Expect(session.Out).To(gbytes.Say("    dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"))
+				Expect(session.Out).To(gbytes.Say("    extension.toml"))
+				Expect(session.Out).To(gbytes.Say("    generated-file"))
+
+				file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+				Expect(err).NotTo(HaveOccurred())
+
+				contents, hdr, err := ExtractFile(file, "extension.toml")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(MatchTOML(`api = "0.7"
+
+[extension]
+  description = "some-extensin-description"
+  homepage = "some-extension-homepage"
+  id = "some-extension-id"
+  keywords = ["some-extension-keyword"]
+  name = "some-extension-name"
+  version = "some-version"
+
+  [[extension.licenses]]
+    type = "some-extension-license-type"
+    uri = "some-extension-license-uri"
+
+[metadata]
+  include-files = ["bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file",  "dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"]
+  pre-package = "./scripts/build.sh"
+
+  [[metadata.configurations]]
+    build = true
+    default = "16"
+    description = "the Node.js version"
+    name = "BP_NODE_VERSION"
+  [metadata.default-versions]
+    node = "18.*.*"
+
+  [[metadata.dependencies]]
+    checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+    id = "some-dependency"
+    name = "Some Dependency"
+    sha256 = "shasum"
+    source = "http://some-source-url"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny", "*"]
+	uri = "file:///dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+    version = "1.2.3"`))
+				Expect(hdr.Mode).To(Equal(int64(0644)))
+
+				contents, hdr, err = ExtractFile(file, "bin/detect")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("detect-contents"))
+				Expect(hdr.Mode).To(Equal(int64(0755)))
+
+				contents, hdr, err = ExtractFile(file, "bin/generate")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("generate-contents"))
+				Expect(hdr.Mode).To(Equal(int64(0755)))
+
+				contents, hdr, err = ExtractFile(file, "bin/run")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("run-contents"))
+				Expect(hdr.Mode).To(Equal(int64(0755)))
+
+				contents, hdr, err = ExtractFile(file, "generated-file")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("hello\n"))
+				Expect(hdr.Mode).To(Equal(int64(0644)))
+
+				contents, hdr, err = ExtractFile(file, "dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("dependency-contents"))
+				Expect(hdr.Mode).To(Equal(int64(0644)))
+			})
+		})
+	})
 }
