@@ -58,7 +58,7 @@ func init() {
 func packRun(flags packFlags) error {
 
 	if flags.buildpackTOMLPath == "" && flags.extensionTOMLPath == "" {
-		return fmt.Errorf("\"buildpack\" or \"extension\" flag is required")
+		return fmt.Errorf(`"buildpack" or "extension" flag is required`)
 	}
 
 	tmpDir, err := os.MkdirTemp("", "dup-dest")
