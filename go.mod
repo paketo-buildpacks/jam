@@ -11,7 +11,7 @@ require (
 	github.com/docker/cli v23.0.6+incompatible
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/docker/docker v23.0.6+incompatible
-	github.com/google/go-containerregistry v0.15.1
+	github.com/google/go-containerregistry v0.15.2
 	github.com/moby/buildkit v0.11.6
 	github.com/onsi/gomega v1.27.6
 	github.com/paketo-buildpacks/occam v0.16.0
