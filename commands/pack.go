@@ -86,7 +86,7 @@ func packRun(flags packFlags) error {
 	configParser := cargo.NewBuildpackParser()
 	config, err := configParser.Parse(buildpackTOMLPath)
 	if err != nil {
-		return fmt.Errorf("failed to parse .toml file : %s", err)
+		return fmt.Errorf("failed to parse buildpack.toml: %s", err)
 	}
 
 	config.Buildpack.Version = flags.version
@@ -153,7 +153,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	configParser := cargo.NewExtensionParser()
 	config, err := configParser.Parse(extensionTOMLPath)
 	if err != nil {
-		return fmt.Errorf("failed to parse .toml file : %s", err)
+		return fmt.Errorf("failed to parse extension.toml: %s", err)
 	}
 
 	config.Extension.Version = flags.version
