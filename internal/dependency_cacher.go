@@ -28,7 +28,7 @@ func NewDependencyCacher(downloader Downloader, logger scribe.Logger) Dependency
 	}
 }
 
-type ConfigBuilpackOrExtensionMetadataDependency interface {
+type configBuilpackOrExtensionMetadataDependency interface {
 	GetChecksum() string
 	GetID() string
 	GetSHA256() string
@@ -37,63 +37,63 @@ type ConfigBuilpackOrExtensionMetadataDependency interface {
 	GetVersion() string
 }
 
-type ExtensionConfigMetadataDependency struct {
+type extensionConfigMetadataDependency struct {
 	cargo.ConfigExtensionMetadataDependency
 }
 
-func (cd ExtensionConfigMetadataDependency) GetChecksum() string {
+func (cd extensionConfigMetadataDependency) GetChecksum() string {
 	return cd.Checksum
 }
 
-func (cd ExtensionConfigMetadataDependency) GetID() string {
+func (cd extensionConfigMetadataDependency) GetID() string {
 	return cd.ID
 }
 
-func (cd ExtensionConfigMetadataDependency) GetSHA256() string {
+func (cd extensionConfigMetadataDependency) GetSHA256() string {
 	return cd.SHA256
 }
 
-func (cd ExtensionConfigMetadataDependency) GetStacks() []string {
+func (cd extensionConfigMetadataDependency) GetStacks() []string {
 	return cd.Stacks
 }
 
-func (cd ExtensionConfigMetadataDependency) GetURI() string {
+func (cd extensionConfigMetadataDependency) GetURI() string {
 	return cd.URI
 }
 
-func (cd ExtensionConfigMetadataDependency) GetVersion() string {
+func (cd extensionConfigMetadataDependency) GetVersion() string {
 	return cd.Version
 }
 
-type BuildpackConfigMetadataDependency struct {
+type buildpackConfigMetadataDependency struct {
 	cargo.ConfigMetadataDependency
 }
 
-func (cd BuildpackConfigMetadataDependency) GetChecksum() string {
+func (cd buildpackConfigMetadataDependency) GetChecksum() string {
 	return cd.Checksum
 }
 
-func (cd BuildpackConfigMetadataDependency) GetID() string {
+func (cd buildpackConfigMetadataDependency) GetID() string {
 	return cd.ID
 }
 
-func (cd BuildpackConfigMetadataDependency) GetSHA256() string {
+func (cd buildpackConfigMetadataDependency) GetSHA256() string {
 	return cd.SHA256
 }
 
-func (cd BuildpackConfigMetadataDependency) GetStacks() []string {
+func (cd buildpackConfigMetadataDependency) GetStacks() []string {
 	return cd.Stacks
 }
 
-func (cd BuildpackConfigMetadataDependency) GetURI() string {
+func (cd buildpackConfigMetadataDependency) GetURI() string {
 	return cd.URI
 }
 
-func (cd BuildpackConfigMetadataDependency) GetVersion() string {
+func (cd buildpackConfigMetadataDependency) GetVersion() string {
 	return cd.Version
 }
 
-func (dc DependencyCacher) caching(root string, deps []ConfigBuilpackOrExtensionMetadataDependency) ([]string, error) {
+func (dc DependencyCacher) caching(root string, deps []configBuilpackOrExtensionMetadataDependency) ([]string, error) {
 	dc.logger.Process("Downloading dependencies...")
 	dir := filepath.Join(root, "dependencies")
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -156,9 +156,9 @@ func (dc DependencyCacher) caching(root string, deps []ConfigBuilpackOrExtension
 
 func (dc DependencyCacher) Cache(root string, deps []cargo.ConfigMetadataDependency) ([]cargo.ConfigMetadataDependency, error) {
 
-	dependencies := []ConfigBuilpackOrExtensionMetadataDependency{}
+	dependencies := []configBuilpackOrExtensionMetadataDependency{}
 	for _, dep := range deps {
-		dependencies = append(dependencies, BuildpackConfigMetadataDependency{dep})
+		dependencies = append(dependencies, buildpackConfigMetadataDependency{dep})
 	}
 
 	uris, err := dc.caching(root, dependencies)
@@ -175,9 +175,9 @@ func (dc DependencyCacher) Cache(root string, deps []cargo.ConfigMetadataDepende
 
 func (dc DependencyCacher) CacheExtension(root string, deps []cargo.ConfigExtensionMetadataDependency) ([]cargo.ConfigExtensionMetadataDependency, error) {
 
-	dependencies := []ConfigBuilpackOrExtensionMetadataDependency{}
+	dependencies := []configBuilpackOrExtensionMetadataDependency{}
 	for _, dep := range deps {
-		dependencies = append(dependencies, ExtensionConfigMetadataDependency{dep})
+		dependencies = append(dependencies, extensionConfigMetadataDependency{dep})
 	}
 
 	uris, err := dc.caching(root, dependencies)
