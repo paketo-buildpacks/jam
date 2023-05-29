@@ -66,6 +66,40 @@ func NewFileBundler() FileBundler {
 	return FileBundler{}
 }
 
+func (b FileBundler) bundling(root string, path string) (File, error) {
+
+	file := File{Name: path}
+
+	var err error
+	file.Info, err = os.Lstat(filepath.Join(root, path))
+	if err != nil {
+		return file, fmt.Errorf("error stating included file: %s", err)
+	}
+
+	if file.Info.Mode()&os.ModeType != 0 {
+		link, err := os.Readlink(filepath.Join(root, path))
+		if err != nil {
+			return file, fmt.Errorf("error readlinking included file: %s", err)
+		}
+
+		if !strings.HasPrefix(link, string(filepath.Separator)) {
+			link = filepath.Clean(filepath.Join(root, link))
+		}
+
+		file.Link, err = filepath.Rel(root, link)
+		if err != nil {
+			return file, fmt.Errorf("error finding relative link path: %s", err)
+		}
+	} else {
+		file.ReadCloser, err = os.Open(filepath.Join(root, path))
+		if err != nil {
+			return file, fmt.Errorf("error opening included file: %s", err)
+		}
+	}
+
+	return file, nil
+}
+
 func (b FileBundler) Bundle(root string, paths []string, config cargo.Config) ([]File, error) {
 	var files []File
 
@@ -85,34 +119,15 @@ func (b FileBundler) Bundle(root string, paths []string, config cargo.Config) ([
 
 		default:
 			var err error
-			file.Info, err = os.Lstat(filepath.Join(root, path))
+			file, err = b.bundling(root, path)
+
 			if err != nil {
-				return nil, fmt.Errorf("error stating included file: %s", err)
-			}
-
-			if file.Info.Mode()&os.ModeType != 0 {
-				link, err := os.Readlink(filepath.Join(root, path))
-				if err != nil {
-					return nil, fmt.Errorf("error readlinking included file: %s", err)
-				}
-
-				if !strings.HasPrefix(link, string(filepath.Separator)) {
-					link = filepath.Clean(filepath.Join(root, link))
-				}
-
-				file.Link, err = filepath.Rel(root, link)
-				if err != nil {
-					return nil, fmt.Errorf("error finding relative link path: %s", err)
-				}
-			} else {
-				file.ReadCloser, err = os.Open(filepath.Join(root, path))
-				if err != nil {
-					return nil, fmt.Errorf("error opening included file: %s", err)
-				}
+				return nil, fmt.Errorf("%s", err)
 			}
 		}
 
 		files = append(files, file)
+
 	}
 
 	return files, nil
@@ -137,30 +152,10 @@ func (b FileBundler) BundleExtension(root string, paths []string, config cargo.E
 
 		default:
 			var err error
-			file.Info, err = os.Lstat(filepath.Join(root, path))
+			file, err = b.bundling(root, path)
+
 			if err != nil {
-				return nil, fmt.Errorf("error stating included file: %s", err)
-			}
-
-			if file.Info.Mode()&os.ModeType != 0 {
-				link, err := os.Readlink(filepath.Join(root, path))
-				if err != nil {
-					return nil, fmt.Errorf("error readlinking included file: %s", err)
-				}
-
-				if !strings.HasPrefix(link, string(filepath.Separator)) {
-					link = filepath.Clean(filepath.Join(root, link))
-				}
-
-				file.Link, err = filepath.Rel(root, link)
-				if err != nil {
-					return nil, fmt.Errorf("error finding relative link path: %s", err)
-				}
-			} else {
-				file.ReadCloser, err = os.Open(filepath.Join(root, path))
-				if err != nil {
-					return nil, fmt.Errorf("error opening included file: %s", err)
-				}
+				return nil, fmt.Errorf("%s", err)
 			}
 		}
 
