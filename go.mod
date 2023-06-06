@@ -3,7 +3,7 @@ module github.com/paketo-buildpacks/jam/v2
 go 1.18
 
 require (
-	github.com/BurntSushi/toml v1.3.0
+	github.com/BurntSushi/toml v1.3.1
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/anchore/syft v0.79.0
 	github.com/buildpacks/pack v0.29.0
