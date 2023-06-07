@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.3.1
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/anchore/syft v0.79.0
+	github.com/anchore/syft v0.80.0
 	github.com/buildpacks/pack v0.29.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/docker/cli v24.0.2+incompatible
@@ -15,7 +15,7 @@ require (
 	github.com/moby/buildkit v0.11.6
 	github.com/onsi/gomega v1.27.8
 	github.com/paketo-buildpacks/occam v0.16.0
-	github.com/paketo-buildpacks/packit/v2 v2.10.1
+	github.com/paketo-buildpacks/packit/v2 v2.11.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.7.0
@@ -33,7 +33,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/CycloneDX/cyclonedx-go v0.7.1-0.20221222100750-41a1ac565cce // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.1 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/ForestEckhardt/freezer v0.0.12 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -195,6 +195,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.22.3 // indirect
-	modernc.org/sqlite v1.21.0 // indirect
 )
