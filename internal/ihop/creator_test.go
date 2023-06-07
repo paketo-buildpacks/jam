@@ -94,7 +94,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					VersionID: "some-distro-version",
 					IDLike:    []string{"some-distro-id-like"},
 				},
-				Packages: pkg.NewCatalog(
+				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "some-build-package",
 						Metadata: pkg.DpkgMetadata{
@@ -126,7 +126,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					VersionID: "some-distro-version",
 					IDLike:    []string{"some-distro-id-like"},
 				},
-				Packages: pkg.NewCatalog(
+				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "some-common-package",
 						Metadata: pkg.DpkgMetadata{
