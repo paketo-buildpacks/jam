@@ -62,7 +62,7 @@ func NewSBOM(sbom sbom.SBOM) SBOM {
 // Packages returns the list of packages included in the SBOM.
 func (s SBOM) Packages() []string {
 	var packages []string
-	for p := range s.sbom.Artifacts.PackageCatalog.Enumerate() {
+	for p := range s.sbom.Artifacts.Packages.Enumerate() {
 		packages = append(packages, p.Name)
 	}
 
@@ -75,7 +75,7 @@ func (s SBOM) Packages() []string {
 // format.
 func (s SBOM) LegacyFormat() (string, error) {
 	var packages []LegacySBOMPackage
-	for p := range s.sbom.Artifacts.PackageCatalog.Enumerate() {
+	for p := range s.sbom.Artifacts.Packages.Enumerate() {
 		switch metadata := p.Metadata.(type) {
 		case pkg.DpkgMetadata:
 			upstreamVersion := metadata.SourceVersion

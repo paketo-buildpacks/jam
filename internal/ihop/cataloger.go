@@ -37,7 +37,7 @@ func (c Cataloger) Scan(path string) (SBOM, error) {
 
 	return NewSBOM(sbom.SBOM{
 		Artifacts: sbom.Artifacts{
-			PackageCatalog:    catalog,
+			Packages:          catalog,
 			LinuxDistribution: release,
 		},
 		Source: src.Metadata,

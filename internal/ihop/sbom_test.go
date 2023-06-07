@@ -27,7 +27,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					VersionID: "some-distro-version",
 					IDLike:    []string{"some-distro-id-like"},
 				},
-				PackageCatalog: pkg.NewCatalog(
+				Packages: pkg.NewCatalog(
 					pkg.Package{
 						Name: "c-package",
 						Metadata: pkg.DpkgMetadata{
