@@ -19,8 +19,9 @@ func testBuildpackInspector(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		buildpackage string
-		inspector    internal.BuildpackInspector
+		inspector                             internal.BuildpackInspector
+		buildpackage                          string
+		contentBp1, contentBp2, contentMetaBp []byte
 	)
 
 	it.Before(func() {
@@ -33,7 +34,7 @@ func testBuildpackInspector(t *testing.T, context spec.G, it spec.S) {
 		firstBuildpackGW := gzip.NewWriter(firstBuildpack)
 		firstBuildpackTW := tar.NewWriter(firstBuildpackGW)
 
-		content := []byte(`[buildpack]
+		contentBp1 = []byte(`[buildpack]
 id = "some-buildpack"
 version = "1.2.3"
 
@@ -61,11 +62,11 @@ other-dependency = "2.3.x"
 		err = firstBuildpackTW.WriteHeader(&tar.Header{
 			Name: "./buildpack.toml",
 			Mode: 0644,
-			Size: int64(len(content)),
+			Size: int64(len(contentBp1)),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = firstBuildpackTW.Write(content)
+		_, err = firstBuildpackTW.Write(contentBp1)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(firstBuildpackTW.Close()).To(Succeed())
@@ -85,7 +86,7 @@ other-dependency = "2.3.x"
 		secondBuildpackGW := gzip.NewWriter(secondBuildpack)
 		secondBuildpackTW := tar.NewWriter(secondBuildpackGW)
 
-		content = []byte(`[buildpack]
+		contentBp2 = []byte(`[buildpack]
 id = "other-buildpack"
 version = "2.3.4"
 
@@ -113,11 +114,11 @@ second-dependency = "5.6.x"
 		err = secondBuildpackTW.WriteHeader(&tar.Header{
 			Name: "./buildpack.toml",
 			Mode: 0644,
-			Size: int64(len(content)),
+			Size: int64(len(contentBp2)),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = secondBuildpackTW.Write(content)
+		_, err = secondBuildpackTW.Write(contentBp2)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(secondBuildpackTW.Close()).To(Succeed())
@@ -137,7 +138,7 @@ second-dependency = "5.6.x"
 		thirdBuildpackGW := gzip.NewWriter(thirdBuildpack)
 		thirdBuildpackTW := tar.NewWriter(thirdBuildpackGW)
 
-		content = []byte(`[buildpack]
+		contentMetaBp = []byte(`[buildpack]
 id = "meta-buildpack"
 version = "3.4.5"
 
@@ -155,11 +156,11 @@ version = "2.3.4"
 		err = thirdBuildpackTW.WriteHeader(&tar.Header{
 			Name: "./buildpack.toml",
 			Mode: 0644,
-			Size: int64(len(content)),
+			Size: int64(len(contentMetaBp)),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = thirdBuildpackTW.Write(content)
+		_, err = thirdBuildpackTW.Write(contentMetaBp)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(thirdBuildpackTW.Close()).To(Succeed())
@@ -226,10 +227,13 @@ version = "2.3.4"
 	})
 
 	context("Dependencies", func() {
-		it("returns a list of dependencies", func() {
-			configs, err := inspector.Dependencies(buildpackage)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(configs).To(Equal([]internal.BuildpackMetadata{
+		var (
+			expectedMetadata []internal.BuildpackMetadata
+			buildpackageFlat string
+		)
+
+		it.Before(func() {
+			expectedMetadata = []internal.BuildpackMetadata{
 				{
 					Config: cargo.Config{
 						Buildpack: cargo.ConfigBuildpack{
@@ -317,7 +321,125 @@ version = "2.3.4"
 					},
 					SHA256: "sha256:manifest-sha",
 				},
-			}))
+			}
+		})
+
+		context("Unflattened buildpack", func() {
+			it("returns a list of dependencies", func() {
+				configs, err := inspector.Dependencies(buildpackage)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(configs).To(Equal(expectedMetadata))
+			})
+		})
+
+		context("Flattened buildpack", func() {
+			it.Before(func() {
+				/* Flattened buildpackage, but with the same buildpack metadata as the unflattened */
+				fileFlat, err := os.CreateTemp("", "buildpackage-flattened")
+				Expect(err).NotTo(HaveOccurred())
+
+				twf := tar.NewWriter(fileFlat)
+
+				flatLayer := bytes.NewBuffer(nil)
+				flatLayerGW := gzip.NewWriter(flatLayer)
+				flatLayerTW := tar.NewWriter(flatLayerGW)
+
+				err = flatLayerTW.WriteHeader(&tar.Header{
+					Name: "./buildpack-one/buildpack.toml",
+					Mode: 0644,
+					Size: int64(len(contentBp1)),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = flatLayerTW.Write(contentBp1)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = flatLayerTW.WriteHeader(&tar.Header{
+					Name: "./buildpack-two/buildpack.toml",
+					Mode: 0644,
+					Size: int64(len(contentBp2)),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = flatLayerTW.Write(contentBp2)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = flatLayerTW.WriteHeader(&tar.Header{
+					Name: "./buildpack-three-meta/buildpack.toml",
+					Mode: 0644,
+					Size: int64(len(contentMetaBp)),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = flatLayerTW.Write(contentMetaBp)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(flatLayerTW.Close()).To(Succeed())
+				Expect(flatLayerGW.Close()).To(Succeed())
+
+				err = twf.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/all-buildpacks-flattened-layer-sha",
+					Mode: 0644,
+					Size: int64(flatLayer.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = twf.Write(flatLayer.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				manifestFlat := bytes.NewBuffer(nil)
+				err = json.NewEncoder(manifestFlat).Encode(map[string]interface{}{
+					"layers": []map[string]interface{}{
+						{"digest": "sha256:all-buildpacks-flattened-layer-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = twf.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: int64(manifestFlat.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = twf.Write(manifestFlat.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				indexFlat := bytes.NewBuffer(nil)
+				err = json.NewEncoder(indexFlat).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = twf.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(indexFlat.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = twf.Write(indexFlat.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				buildpackageFlat = fileFlat.Name()
+
+				Expect(twf.Close()).To(Succeed())
+				Expect(fileFlat.Close()).To(Succeed())
+
+				inspector = internal.NewBuildpackInspector()
+			})
+
+			it.After(func() {
+				Expect(os.Remove(buildpackageFlat)).To(Succeed())
+			})
+
+			it("returns a list of dependencies", func() {
+				configs, err := inspector.Dependencies(buildpackageFlat)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(configs).To(Equal(expectedMetadata))
+			})
 		})
 
 		context("failure cases", func() {
@@ -559,7 +681,7 @@ version = "2.3.4"
 
 				it("returns an error", func() {
 					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError("failed to read buildpack gzip: unexpected EOF"))
+					Expect(err).To(MatchError("failed to read layer blob: unexpected EOF"))
 				})
 			})
 

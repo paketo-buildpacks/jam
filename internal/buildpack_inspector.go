@@ -2,6 +2,7 @@ package internal
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -31,7 +32,7 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 	}
 	defer file.Close()
 
-	indexJSON, err := fetchArchivedFile(tar.NewReader(file), "index.json")
+	indicesJSON, err := fetchFromArchive(tar.NewReader(file), "index.json", true)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,8 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 		} `json:"manifests"`
 	}
 
-	err = json.NewDecoder(indexJSON).Decode(&index)
+	// There can only be 1 image index
+	err = json.NewDecoder(indicesJSON[0]).Decode(&index)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 		return nil, err
 	}
 
-	manifest, err := fetchArchivedFile(tar.NewReader(file), filepath.Join("blobs", "sha256", strings.TrimPrefix(index.Manifests[0].Digest, "sha256:")))
+	manifests, err := fetchFromArchive(tar.NewReader(file), filepath.Join("blobs", "sha256", strings.TrimPrefix(index.Manifests[0].Digest, "sha256:")), true)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +67,8 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 		} `json:"layers"`
 	}
 
-	err = json.NewDecoder(manifest).Decode(&m)
+	// We only support single manifest images
+	err = json.NewDecoder(manifests[0]).Decode(&m)
 	if err != nil {
 		return nil, err
 	}
@@ -77,35 +80,40 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 			return nil, err
 		}
 
-		buildpack, err := fetchArchivedFile(tar.NewReader(file), filepath.Join("blobs", "sha256", strings.TrimPrefix(layer.Digest, "sha256:")))
+		layerBlobs, err := fetchFromArchive(tar.NewReader(file), filepath.Join("blobs", "sha256", strings.TrimPrefix(layer.Digest, "sha256:")), true)
 		if err != nil {
 			return nil, err
 		}
 
-		buildpackGR, err := gzip.NewReader(buildpack)
+		layerGR, err := gzip.NewReader(layerBlobs[0])
 		if err != nil {
-			return nil, fmt.Errorf("failed to read buildpack gzip: %w", err)
+			return nil, fmt.Errorf("failed to read layer blob: %w", err)
 		}
-		defer buildpackGR.Close()
+		defer layerGR.Close()
 
-		buildpackTOML, err := fetchArchivedFile(tar.NewReader(buildpackGR), "buildpack.toml")
-		if err != nil {
-			return nil, err
-		}
-
-		var config cargo.Config
-		err = cargo.DecodeConfig(buildpackTOML, &config)
+		// Generally, each layer corresponds to a buildpack.
+		// But certain buildpacks are "flattened" and contain multiple buildpacks
+		// in the same layer.
+		buildpackTOMLs, err := fetchFromArchive(tar.NewReader(layerGR), "buildpack.toml", false)
 		if err != nil {
 			return nil, err
 		}
 
-		metadata := BuildpackMetadata{
-			Config: config,
+		for _, buildpackTOML := range buildpackTOMLs {
+			var config cargo.Config
+			err = cargo.DecodeConfig(buildpackTOML, &config)
+			if err != nil {
+				return nil, err
+			}
+
+			metadata := BuildpackMetadata{
+				Config: config,
+			}
+			if len(config.Order) > 0 {
+				metadata.SHA256 = buildpackageDigest
+			}
+			metadataCollection = append(metadataCollection, metadata)
 		}
-		if len(config.Order) > 0 {
-			metadata.SHA256 = buildpackageDigest
-		}
-		metadataCollection = append(metadataCollection, metadata)
 	}
 
 	if len(metadataCollection) == 1 {
@@ -115,7 +123,14 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 	return metadataCollection, nil
 }
 
-func fetchArchivedFile(tr *tar.Reader, filename string) (io.Reader, error) {
+// This function takes a boolean to stop search after the first match because
+// tar.Reader is a streaming reader, and once you move to the next entry via a
+// Next() call, the previous file reader becomes invalid. This forces us to
+// copy the file contents to memory if we want to fetch multiple matches, and
+// we only want to do so for small text files, and not large files like layer
+// blobs.
+func fetchFromArchive(tr *tar.Reader, filename string, stopAtFirstMatch bool) ([]io.Reader, error) {
+	var readers []io.Reader
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
@@ -126,9 +141,20 @@ func fetchArchivedFile(tr *tar.Reader, filename string) (io.Reader, error) {
 		}
 
 		if strings.HasSuffix(hdr.Name, filename) {
-			return tr, nil
+			if stopAtFirstMatch {
+				return []io.Reader{tr}, nil
+			}
+			buff := bytes.NewBuffer(nil)
+			_, err = io.CopyN(buff, tr, hdr.Size)
+			if err != nil {
+				return nil, fmt.Errorf("failed to copy file %s: %w", hdr.Name, err)
+			}
+			readers = append(readers, buff)
 		}
 	}
 
-	return nil, fmt.Errorf("failed to fetch archived file %s", filename)
+	if len(readers) < 1 {
+		return nil, fmt.Errorf("failed to fetch archived file %s", filename)
+	}
+	return readers, nil
 }
