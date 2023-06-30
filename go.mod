@@ -14,12 +14,12 @@ require (
 	github.com/google/go-containerregistry v0.15.2
 	github.com/moby/buildkit v0.11.6
 	github.com/onsi/gomega v1.27.8
-	github.com/paketo-buildpacks/occam v0.16.0
+	github.com/paketo-buildpacks/occam v0.17.0
 	github.com/paketo-buildpacks/packit/v2 v2.11.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/exp v0.0.0-20230306221820-f0f767cdffd6
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
 )
 
 require (
@@ -110,7 +110,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/heroku/color v0.0.6 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
+	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
@@ -135,7 +135,7 @@ require (
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
+	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
@@ -159,7 +159,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/sylabs/sif/v2 v2.10.0 // indirect
 	github.com/sylabs/squashfs v0.6.1 // indirect
-	github.com/testcontainers/testcontainers-go v0.19.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.21.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20230214225802-a3696a2f1f27 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
