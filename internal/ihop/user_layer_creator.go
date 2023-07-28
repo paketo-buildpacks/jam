@@ -87,7 +87,7 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 	err = tw.WriteHeader(&tar.Header{
 		Typeflag: tar.TypeDir,
 		Name:     "home/cnb",
-		Mode:     int64(os.ModePerm),
+		Mode:     int64(os.FileMode(0750)),
 		Uid:      def.UID,
 		Gid:      def.GID,
 	})
