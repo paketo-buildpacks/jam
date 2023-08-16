@@ -3,6 +3,7 @@ package ihop
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -200,6 +201,17 @@ func (c Creator) mutate(image Image, def Definition, imageDef DefinitionImage, s
 		if err != nil {
 			return Image{}, err
 		}
+	}
+
+	for _, label := range def.Labels {
+		kv := strings.Split(label, "=")
+		if len(kv) != 2 {
+			return Image{}, fmt.Errorf("label input %q malformed: should be in the form of <label-name>=<label-value>", label)
+		}
+
+		c.logger.Action("Adding %s label", kv[0])
+
+		image.Labels[kv[0]] = kv[1]
 	}
 
 	// create and attach a layer that creates a cnb user in the container image

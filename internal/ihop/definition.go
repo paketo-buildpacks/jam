@@ -48,6 +48,9 @@ type Definition struct {
 	// IncludeExperimentalSBOM can be used to attach an experimental SBOM layer
 	// to the run image.
 	IncludeExperimentalSBOM bool `toml:"-"`
+
+	// Labels can be used to add custom labels to the build and run image.
+	Labels []string `toml:"-"`
 }
 
 type DefinitionImagePlatforms struct {

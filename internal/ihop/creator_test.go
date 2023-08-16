@@ -752,6 +752,48 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when additional labels are given", func() {
+		it("adds those labels to the build and run image", func() {
+			_, err := creator.Execute(ihop.Definition{
+				ID:                      "some-stack-id",
+				Homepage:                "some-stack-homepage",
+				Maintainer:              "some-stack-maintainer",
+				Platforms:               []string{"some-platform"},
+				IncludeExperimentalSBOM: true,
+				Build: ihop.DefinitionImage{
+					Description: "some-stack-build-description",
+					Dockerfile:  "test-base-build-dockerfile-path",
+					Args: map[string]any{
+						"sources":  "test-sources",
+						"packages": "test-build-packages",
+					},
+					UID: 1234,
+					GID: 2345,
+				},
+				Run: ihop.DefinitionImage{
+					Description: "some-stack-run-description",
+					Dockerfile:  "test-base-run-dockerfile-path",
+					Args: map[string]any{
+						"sources":  "test-sources",
+						"packages": "test-run-packages",
+					},
+					UID: 3456,
+					GID: 4567,
+				},
+				Labels: []string{"additional.label=label-value"},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
+
+			Expect(imageUpdateInvocations[0].Image.Digest).To(Equal("image-digest-1"))
+			Expect(imageUpdateInvocations[0].Image.Labels).To(HaveKeyWithValue("additional.label", "label-value"))
+
+			Expect(imageUpdateInvocations[1].Image.Digest).To(Equal("image-digest-2"))
+			Expect(imageUpdateInvocations[1].Image.Labels).To(HaveKeyWithValue("additional.label", "label-value"))
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the build image promise errors", func() {
 			it.Before(func() {
