@@ -47,6 +47,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 			"--build-output", filepath.Join(tmpDir, "build.oci"),
 			"--run-output", filepath.Join(tmpDir, "run.oci"),
 			"--secret", "some-secret=my-secret-value",
+			"--label", "additional.label=label-value",
 		)
 		command.Env = append(os.Environ(), "EXPERIMENTAL_ATTACH_RUN_IMAGE_SBOM=true")
 		session, err := gexec.Start(command, buffer, buffer)
@@ -116,6 +117,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring(`"build:git"`)),
 				HaveKeyWithValue("io.paketo.stack.packages", ContainSubstring(`"openssl"`)),
 				HaveKeyWithValue("platform", "amd64"),
+				HaveKeyWithValue("additional.label", "label-value"),
 			))
 
 			Expect(file.Config.Labels).NotTo(HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring("run:")))
@@ -189,6 +191,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring(`"openssl"`)),
 				HaveKeyWithValue("io.paketo.stack.packages", ContainSubstring(`"openssl"`)),
 				HaveKeyWithValue("io.buildpacks.base.sbom", file.RootFS.DiffIDs[len(file.RootFS.DiffIDs)-1].String()),
+				HaveKeyWithValue("additional.label", "label-value"),
 			))
 
 			Expect(file.Config.Labels).NotTo(HaveKeyWithValue("io.buildpacks.stack.mixins", ContainSubstring("build:")))
@@ -241,11 +244,13 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				"      Adding io.buildpacks.stack.* labels",
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
+				"      Adding additional.label label",
 				"      Creating cnb user",
 				"    run: Decorating base image",
 				"      Adding io.buildpacks.stack.* labels",
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
+				"      Adding additional.label label",
 				"      Creating cnb user",
 				"      Updating /etc/os-release",
 				"      Attaching experimental SBOM",
@@ -260,11 +265,13 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 				"      Adding io.buildpacks.stack.* labels",
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
+				"      Adding additional.label label",
 				"      Creating cnb user",
 				"    run: Decorating base image",
 				"      Adding io.buildpacks.stack.* labels",
 				"      Adding io.buildpacks.stack.mixins label",
 				"      Adding io.paketo.stack.packages label",
+				"      Adding additional.label label",
 				"      Creating cnb user",
 				"      Updating /etc/os-release",
 				"      Attaching experimental SBOM",
