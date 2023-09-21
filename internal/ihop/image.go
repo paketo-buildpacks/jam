@@ -42,7 +42,12 @@ func findFile(image v1.Image, filepath string) (*tar.Header, io.Reader, error) {
 				return nil, nil, err
 			}
 
-			if strings.TrimPrefix(hdr.Name, "/") == strings.TrimPrefix(filepath, "/") {
+			// Some images have filepaths with a preceding '.'
+			// e.g. './etc/...' instead of '/etc/...'
+			// Strip it off if it exists
+			headerName := strings.TrimPrefix(hdr.Name, ".")
+
+			if strings.TrimPrefix(headerName, "/") == strings.TrimPrefix(filepath, "/") {
 				found = true
 				if hdr.Typeflag == tar.TypeSymlink {
 					header, reader, err = findFile(image, path.Join(path.Dir(filepath), hdr.Linkname))

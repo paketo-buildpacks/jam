@@ -24,6 +24,7 @@ type createStackFlags struct {
 	publish        bool
 	buildReference string
 	runReference   string
+	labels         []string
 }
 
 func createStack() *cobra.Command {
@@ -43,6 +44,7 @@ func createStack() *cobra.Command {
 	cmd.Flags().BoolVar(&flags.publish, "publish", false, "publish to a registry")
 	cmd.Flags().StringVar(&flags.buildReference, "build-ref", "", "reference that specifies where to publish the build image (required)")
 	cmd.Flags().StringVar(&flags.runReference, "run-ref", "", "reference that specifies where to publish the run image (required)")
+	cmd.Flags().StringSliceVar(&flags.labels, "label", nil, "additional image label to be added to build and run image")
 
 	err := cmd.MarkFlagRequired("config")
 	if err != nil {
@@ -77,6 +79,8 @@ func createStackRun(flags createStackFlags) error {
 	}
 
 	_, definition.IncludeExperimentalSBOM = os.LookupEnv("EXPERIMENTAL_ATTACH_RUN_IMAGE_SBOM")
+
+	definition.Labels = flags.labels
 
 	scratch, err := os.MkdirTemp("", "")
 	if err != nil {
