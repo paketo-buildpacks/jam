@@ -35,6 +35,11 @@ description = "Some description"
 	image = "some-registry/some-repository/other-buildpack-id:0.20.22"
   version = "0.20.22"
 
+[[extensions]]
+  id = "some-repository/some-extension"
+  version = "0.0.3"
+  uri = "some-registry/some-repository/some-extension:0.0.3"
+
 [lifecycle]
   version = "0.10.2"
 
@@ -49,6 +54,12 @@ description = "Some description"
     id = "some-repository/some-buildpack-id"
     version = "0.0.10"
 		optional = true
+
+[[order-extensions]]
+
+  [[order-extensions.group]]
+    id = "some-repository/some-extension"
+    version = "0.0.3"
 
 [stack]
   id = "io.paketo.stacks.some-stack"
@@ -80,6 +91,13 @@ description = "Some description"
 						Version: "0.20.22",
 					},
 				},
+				Extensions: []internal.BuilderConfigExtension{
+					{
+						ID:      "some-repository/some-extension",
+						URI:     "some-registry/some-repository/some-extension:0.0.3",
+						Version: "0.0.3",
+					},
+				},
 				Lifecycle: internal.BuilderConfigLifecycle{
 					Version: "0.10.2",
 				},
@@ -97,6 +115,16 @@ description = "Some description"
 								ID:       "some-repository/some-buildpack-id",
 								Version:  "0.0.10",
 								Optional: true,
+							},
+						},
+					},
+				},
+				OrderExtension: []internal.BuilderExtensionConfigOrder{
+					{
+						Group: []internal.BuilderExtensionConfigOrderGroup{
+							{
+								ID:      "some-repository/some-extension",
+								Version: "0.0.3",
 							},
 						},
 					},
@@ -190,6 +218,113 @@ description = "Some description"
 						Version: "0.20.22",
 					},
 				},
+				Extensions: []internal.BuilderConfigExtension{
+					{
+						ID:      "some-repository/some-extension",
+						URI:     "some-registry/some-repository/some-extension:0.0.3",
+						Version: "0.0.3",
+					},
+				},
+				Lifecycle: internal.BuilderConfigLifecycle{
+					Version: "0.10.2",
+				},
+				Order: []internal.BuilderConfigOrder{
+					{
+						Group: []internal.BuilderConfigOrderGroup{
+							{
+								ID:      "some-repository/other-buildpack-id",
+								Version: "0.20.22",
+							},
+						},
+					},
+					{
+						Group: []internal.BuilderConfigOrderGroup{
+							{
+								ID:      "some-repository/some-buildpack-id",
+								Version: "0.0.10",
+							},
+						},
+					},
+				},
+				OrderExtension: []internal.BuilderExtensionConfigOrder{
+					{
+						Group: []internal.BuilderExtensionConfigOrderGroup{
+							{
+								ID:      "some-repository/some-extension",
+								Version: "0.0.3",
+							},
+						},
+					},
+				},
+				Stack: internal.BuilderConfigStack{
+					ID:              "io.paketo.stacks.some-stack",
+					BuildImage:      "some-registry/somerepository/build:1.2.3-some-cnb",
+					RunImage:        "some-registry/somerepository/run:some-cnb",
+					RunImageMirrors: []string{"some-registry/some-repository/run:some-cnb"},
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			contents, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(MatchTOML(`
+description = "Some description"
+
+[[buildpacks]]
+	uri = "docker://some-registry/some-repository/some-buildpack-id:0.0.10"
+  version = "0.0.10"
+
+[[buildpacks]]
+	uri = "docker://some-registry/some-repository/other-buildpack-id:0.20.22"
+  version = "0.20.22"
+
+[[extensions]]
+  id = "some-repository/some-extension"
+  version = "0.0.3"
+  uri = "docker://some-registry/some-repository/some-extension:0.0.3"
+
+[lifecycle]
+  version = "0.10.2"
+
+[[order]]
+
+  [[order.group]]
+    id = "some-repository/other-buildpack-id"
+    version = "0.20.22"
+
+[[order]]
+
+  [[order.group]]
+    id = "some-repository/some-buildpack-id"
+    version = "0.0.10"
+
+[[order-extensions]]
+
+  [[order-extensions.group]]
+    id = "some-repository/some-extension"
+    version = "0.0.3"
+
+[stack]
+  id = "io.paketo.stacks.some-stack"
+  build-image = "some-registry/somerepository/build:1.2.3-some-cnb"
+  run-image = "some-registry/somerepository/run:some-cnb"
+  run-image-mirrors = ["some-registry/some-repository/run:some-cnb"]
+				`))
+		})
+
+		it("overwrites the package.toml configuration without Extension", func() {
+			err := internal.OverwriteBuilderConfig(path, internal.BuilderConfig{
+				Description: "Some description",
+				Buildpacks: []internal.BuilderConfigBuildpack{
+					{
+						URI:     "some-registry/some-repository/some-buildpack-id:0.0.10",
+						Version: "0.0.10",
+					},
+					{
+						URI:     "some-registry/some-repository/other-buildpack-id:0.20.22",
+						Version: "0.20.22",
+					},
+				},
 				Lifecycle: internal.BuilderConfigLifecycle{
 					Version: "0.10.2",
 				},
@@ -254,8 +389,8 @@ description = "Some description"
   run-image = "some-registry/somerepository/run:some-cnb"
   run-image-mirrors = ["some-registry/some-repository/run:some-cnb"]
 				`))
-		})
 
+		})
 		context("failure cases", func() {
 			context("when the file cannot be opened", func() {
 				it.Before(func() {

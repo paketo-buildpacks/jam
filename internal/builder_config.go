@@ -10,14 +10,22 @@ import (
 )
 
 type BuilderConfig struct {
-	Description string                   `toml:"description"`
-	Buildpacks  []BuilderConfigBuildpack `toml:"buildpacks"`
-	Lifecycle   BuilderConfigLifecycle   `toml:"lifecycle"`
-	Order       []BuilderConfigOrder     `toml:"order"`
-	Stack       BuilderConfigStack       `toml:"stack"`
+	Description    string                        `toml:"description"`
+	Buildpacks     []BuilderConfigBuildpack      `toml:"buildpacks"`
+	Lifecycle      BuilderConfigLifecycle        `toml:"lifecycle"`
+	Order          []BuilderConfigOrder          `toml:"order"`
+	Extensions     []BuilderConfigExtension      `toml:"extensions"`
+	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions"`
+	Stack          BuilderConfigStack            `toml:"stack"`
 }
 
 type BuilderConfigBuildpack struct {
+	URI     string `toml:"uri"`
+	Version string `toml:"version"`
+}
+
+type BuilderConfigExtension struct {
+	ID      string `toml:"id"`
 	URI     string `toml:"uri"`
 	Version string `toml:"version"`
 }
@@ -31,6 +39,16 @@ type BuilderConfigOrder struct {
 }
 
 type BuilderConfigOrderGroup struct {
+	ID       string `toml:"id"`
+	Version  string `toml:"version,omitempty"`
+	Optional bool   `toml:"optional,omitempty"`
+}
+
+type BuilderExtensionConfigOrder struct {
+	Group []BuilderExtensionConfigOrderGroup `toml:"group"`
+}
+
+type BuilderExtensionConfigOrderGroup struct {
 	ID       string `toml:"id"`
 	Version  string `toml:"version,omitempty"`
 	Optional bool   `toml:"optional,omitempty"`
@@ -73,6 +91,39 @@ func (b *BuilderConfigBuildpack) UnmarshalTOML(v interface{}) error {
 	return nil
 }
 
+func (b *BuilderConfigExtension) UnmarshalTOML(v interface{}) error {
+	if m, ok := v.(map[string]interface{}); ok {
+		if image, ok := m["image"].(string); ok {
+			b.URI = image
+		}
+
+		if uri, ok := m["uri"].(string); ok {
+			b.URI = uri
+		}
+
+		if version, ok := m["version"].(string); ok {
+			b.Version = version
+		}
+
+		if id, ok := m["id"].(string); ok {
+			b.ID = id
+		}
+	}
+
+	if b.URI != "" {
+		uri, err := url.Parse(b.URI)
+		if err != nil {
+			return err
+		}
+
+		uri.Scheme = ""
+
+		b.URI = strings.TrimPrefix(uri.String(), "//")
+	}
+
+	return nil
+}
+
 func ParseBuilderConfig(path string) (BuilderConfig, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -93,6 +144,12 @@ func OverwriteBuilderConfig(path string, config BuilderConfig) error {
 	for i, buildpack := range config.Buildpacks {
 		if !strings.HasPrefix(buildpack.URI, "docker://") {
 			config.Buildpacks[i].URI = fmt.Sprintf("docker://%s", buildpack.URI)
+		}
+	}
+
+	for i, extension := range config.Extensions {
+		if !strings.HasPrefix(extension.URI, "docker://") {
+			config.Extensions[i].URI = fmt.Sprintf("docker://%s", extension.URI)
 		}
 	}
 

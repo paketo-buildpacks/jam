@@ -67,12 +67,20 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 		nodeImg, err := remote.Image(nodeRef)
 		Expect(err).ToNot(HaveOccurred())
 
+		extensionRef, err := name.ParseReference("paketocommunity/ubi-nodejs-extension")
+		Expect(err).ToNot(HaveOccurred())
+		extensionImg, err := remote.Image(extensionRef)
+		Expect(err).ToNot(HaveOccurred())
+
 		goManifestPath := "/v2/paketo-buildpacks/go/manifests/0.0.10"
 		goConfigPath := fmt.Sprintf("/v2/paketo-buildpacks/go/blobs/%s", mustConfigName(t, goImg))
 		goManifestReqCount := 0
 		nodeManifestPath := "/v2/paketobuildpacks/nodejs/manifests/0.20.22"
 		nodeConfigPath := fmt.Sprintf("/v2/paketobuildpacks/nodejs/blobs/%s", mustConfigName(t, nodeImg))
 		nodeManifestReqCount := 0
+		extensionManifestPath := "/v2/paketocommunity/ubi-nodejs-extension/manifests/0.0.3"
+	        extensionConfigPath := fmt.Sprintf("/v2/paketocommunity/ubi-nodejs-extension/blobs/%s", mustConfigName(t, extensionImg))
+		extensionManifestReqCount := 0
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
 			if req.Method == http.MethodHead {
@@ -104,6 +112,15 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 								"0.1.0",
 								"0.20.2",
 								"0.20.22"
+							]
+					}`)
+
+			case "/v2/paketocommunity/ubi-nodejs-extension/tags/list":
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.3",
+								"0.0.4"
 							]
 					}`)
 
@@ -156,6 +173,19 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 				}
 				_, _ = w.Write(mustRawManifest(t, nodeImg))
 
+			case extensionConfigPath:
+				if req.Method != http.MethodGet {
+					t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
+				}
+				_, _ = w.Write(mustRawConfigFile(t, extensionImg))
+
+			case extensionManifestPath:
+				extensionManifestReqCount++
+				if req.Method != http.MethodGet {
+					t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
+				}
+				_, _ = w.Write(mustRawManifest(t, extensionImg))
+
 			case "/v2/some-repository/error-buildpack-id/tags/list":
 				w.WriteHeader(http.StatusTeapot)
 
@@ -197,6 +227,11 @@ description = "Some description"
 	uri = "docker://REGISTRY-URI/paketobuildpacks/nodejs:0.20.22"
   version = "0.20.22"
 
+[[extensions]]
+  id = "paketo-community/ubi-nodejs-extension"
+  version = "0.0.3"
+  uri = "docker://REGISTRY-URI/paketocommunity/ubi-nodejs-extension:0.0.3"
+
 [lifecycle]
   version = "0.10.2"
 
@@ -211,6 +246,12 @@ description = "Some description"
 		id = "paketo-buildpacks/go"
     version = "0.0.10"
 		optional = true
+
+[[order-extensions]]
+
+  [[order-extensions.group]]
+    id = "paketo-community/ubi-nodejs-extension"
+    version = "0.0.3"
 
 [stack]
   id = "io.paketo.stacks.some-stack"
@@ -246,12 +287,17 @@ description = "Some description"
 description = "Some description"
 
 [[buildpacks]]
-	uri = "docker://REGISTRY-URI/paketo-buildpacks/go:0.20.12"
+  uri = "docker://REGISTRY-URI/paketo-buildpacks/go:0.20.12"
   version = "0.20.12"
 
 [[buildpacks]]
-	uri = "docker://REGISTRY-URI/paketobuildpacks/nodejs:0.20.22"
+  uri = "docker://REGISTRY-URI/paketobuildpacks/nodejs:0.20.22"
   version = "0.20.22"
+
+[[extensions]]
+  id = "paketo-community/ubi-nodejs-extension"
+  version = "0.0.4"
+  uri = "docker://REGISTRY-URI/paketocommunity/ubi-nodejs-extension:0.0.4"
 
 [lifecycle]
   version = "0.21.1"
@@ -265,12 +311,17 @@ description = "Some description"
 
   [[order.group]]
     id = "paketo-buildpacks/go"
-		version = "0.20.12"
-		optional = true
+    optional = true
+    version = "0.20.12"
+
+[[order-extensions]]
+  [[order-extensions.group]]
+    id = "paketo-community/ubi-nodejs-extension"
+    version = "0.0.4"
 
 [stack]
-  id = "io.paketo.stacks.some-stack"
   build-image = "REGISTRY-URI/somerepository/build:0.20.12-some-cnb"
+  id = "io.paketo.stacks.some-stack"
   run-image = "REGISTRY-URI/somerepository/run:some-cnb"
   run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
 			`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
