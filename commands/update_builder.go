@@ -67,6 +67,31 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 		}
 	}
 
+	for i, extension := range builder.Extensions {
+		image, err := internal.FindLatestImage(extension.URI)
+		if err != nil {
+			return err
+		}
+
+		builder.Extensions[i].Version = image.Version
+		builder.Extensions[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
+
+		extensionID, err := internal.GetBuildpackageID(extension.URI)
+		if err != nil {
+			return fmt.Errorf("failed to get extension ID for %s: %w", extension.URI, err)
+		}
+
+		for j, orderextensions := range builder.OrderExtension {
+			for k, group := range orderextensions.Group {
+				if group.ID == extensionID {
+					if builder.OrderExtension[j].Group[k].Version != "" {
+						builder.OrderExtension[j].Group[k].Version = image.Version
+					}
+				}
+			}
+		}
+	}
+
 	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI)
 	if err != nil {
 		return err
