@@ -244,7 +244,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	buffer := bytes.NewBuffer(nil)
 	displayChan := make(chan *client.SolveStatus)
 	go func() {
-		_, _ = progressui.DisplaySolveStatus(context.Background(), "", nil, buffer, displayChan)
+		_, _ = progressui.DisplaySolveStatus(context.Background(), nil, buffer, displayChan)
 	}()
 
 	stream := json.NewDecoder(resp.Body)
