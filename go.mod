@@ -8,7 +8,7 @@ require (
 	github.com/anchore/syft v0.80.0
 	github.com/buildpacks/pack v0.29.0
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/docker/cli v24.0.4+incompatible
+	github.com/docker/cli v24.0.6+incompatible
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/google/go-containerregistry v0.16.1
@@ -130,7 +130,7 @@ require (
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/moby/patternmatcher v0.5.0 // indirect
+	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
