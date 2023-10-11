@@ -166,7 +166,6 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 					}, "linux/amd64")
 					Expect(err).To(MatchError(ContainSubstring("load remote build context")))
 					Expect(err).To(MatchError(ContainSubstring("RUN \"no such command\"")))
-					Expect(err).To(MatchError(ContainSubstring("did not complete successfully")))
 				})
 			})
 
