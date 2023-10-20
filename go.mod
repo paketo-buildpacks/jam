@@ -9,7 +9,7 @@ require (
 	github.com/buildpacks/pack v0.29.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/docker/cli v24.0.6+incompatible
-	github.com/docker/distribution v2.8.2+incompatible
+	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/google/go-containerregistry v0.16.1
 	github.com/moby/buildkit v0.12.3
@@ -79,6 +79,7 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
+	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
