@@ -10,7 +10,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/pack/pkg/buildpack"
 	backoff "github.com/cenkalti/backoff/v4"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
