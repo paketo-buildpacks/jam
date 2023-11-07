@@ -44,6 +44,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			goManifestPath := "/v2/paketo-buildpacks/go-dist/manifests/0.20.1"
+			goBadVersionManifestPath := "/v2/paketo-buildpacks/go-dist/manifests/bad-version"
 			goConfigPath := fmt.Sprintf("/v2/paketo-buildpacks/go-dist/blobs/%s", mustConfigName(t, goImg))
 			goManifestReqCount := 0
 
@@ -91,6 +92,12 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 				case goManifestPath:
 					goManifestReqCount++
+					if req.Method != http.MethodGet {
+						t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
+					}
+					_, _ = w.Write(mustRawManifest(t, goImg))
+
+				case goBadVersionManifestPath:
 					if req.Method != http.MethodGet {
 						t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
 					}
@@ -246,6 +253,75 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				[[dependencies]]
 				uri = "urn:cnb:registry:paketo-buildpacks/node-engine@0.20.22"
 			`))
+		})
+
+		context("the --patch-only flag is set", func() {
+			it("updates ONLY patch-level changes in the buildpack.toml and package.toml files", func() {
+				command := exec.Command(
+					path,
+					"update-buildpack",
+					"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
+					"--package-file", filepath.Join(buildpackDir, "package.toml"),
+					"--api", server.URL,
+					"--patch-only",
+				)
+
+				buffer := gbytes.NewBuffer()
+				session, err := gexec.Start(command, buffer, buffer)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+				buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(buildpackContents)).To(MatchTOML(`
+				api = "0.2"
+
+				[buildpack]
+					id = "some-composite-buildpack"
+					name = "Some Composite Buildpack"
+					version = "some-composite-buildpack-version"
+
+				[metadata]
+					include-files = ["buildpack.toml"]
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.20.12"
+
+					[[order.group]]
+						id = "paketo-buildpacks/mri"
+						version = "0.2.0"
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/node-engine"
+						version = "0.1.0"
+						optional = true
+
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.20.12"
+			`))
+
+				packageContents, err := os.ReadFile(filepath.Join(buildpackDir, "package.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(packageContents)).To(MatchTOML(`
+				[buildpack]
+				uri = "build/buildpack.tgz"
+
+				[[dependencies]]
+				uri = "urn:cnb:registry:paketo-buildpacks/mri@0.2.0"
+
+				[[dependencies]]
+				uri = "urn:cnb:registry:paketo-buildpacks/go-dist@0.20.12"
+
+				[[dependencies]]
+				uri = "urn:cnb:registry:paketo-buildpacks/node-engine@0.1.0"
+			`))
+			})
+
 		})
 
 		context("failure cases", func() {
@@ -455,6 +531,53 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
 					Expect(string(buffer.Contents())).To(ContainSubstring("failed to open package config"))
+				})
+			})
+
+			context("--patch-only flag is set and versions cannot be parsed", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(buildpackDir, "buildpack.toml"), []byte(`
+						api = "0.2"
+
+						[buildpack]
+							id = "some-composite-buildpack"
+							name = "Some Composite Buildpack"
+							version = "some-composite-buildpack-version"
+
+						[metadata]
+							include-files = ["buildpack.toml"]
+
+						[[order]]
+							[[order.group]]
+						    id = "paketo-buildpacks/go-dist"
+						    version = "bad-version"
+					`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = os.WriteFile(filepath.Join(buildpackDir, "package.toml"), bytes.ReplaceAll([]byte(`
+						[buildpack]
+						uri = "build/buildpack.tgz"
+
+						[[dependencies]]
+				    uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:bad-version"
+					`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				it("returns an error", func() {
+					command := exec.Command(
+						path,
+						"update-buildpack",
+						"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
+						"--package-file", filepath.Join(buildpackDir, "package.toml"),
+						"--patch-only",
+					)
+
+					buffer := gbytes.NewBuffer()
+					session, err := gexec.Start(command, buffer, buffer)
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
+					Expect(string(buffer.Contents())).To(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint: improper constraint: ~bad-version"))
 				})
 			})
 		})
@@ -712,6 +835,74 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 			`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
 		})
 
+		context("the --patch-only flag is set", func() {
+			it("updates ONLY patch-level changes in the buildpack.toml and package.toml files", func() {
+				command := exec.Command(
+					path,
+					"update-buildpack",
+					"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
+					"--package-file", filepath.Join(buildpackDir, "package.toml"),
+					"--no-cnb-registry",
+					"--patch-only",
+				)
+
+				buffer := gbytes.NewBuffer()
+				session, err := gexec.Start(command, buffer, buffer)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+				buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(buildpackContents)).To(MatchTOML(`
+				api = "0.2"
+
+				[buildpack]
+					id = "some-composite-buildpack"
+					name = "Some Composite Buildpack"
+					version = "some-composite-buildpack-version"
+
+				[metadata]
+					include-files = ["buildpack.toml"]
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.20.12"
+
+					[[order.group]]
+						id = "paketo-buildpacks/mri"
+						version = "0.2.0"
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/node-engine"
+						version = "0.1.0"
+						optional = true
+
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.20.12"
+			`))
+
+				packageContents, err := os.ReadFile(filepath.Join(buildpackDir, "package.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(packageContents)).To(MatchTOML(strings.ReplaceAll(`
+				[buildpack]
+				uri = "build/buildpack.tgz"
+
+				[[dependencies]]
+				uri = "docker://REGISTRY-URI/paketobuildpacks/mri:0.2.0"
+
+				[[dependencies]]
+				uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:0.20.12"
+
+				[[dependencies]]
+				uri = "docker://REGISTRY-URI/paketobuildpacks/node-engine:0.1.0"
+			`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+			})
+		})
+
 		context("failure cases", func() {
 			context("when the latest image reference cannot be found", func() {
 				it.Before(func() {
@@ -807,6 +998,54 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
 					Expect(string(buffer.Contents())).To(MatchRegexp(`failed to get buildpackage ID for \d+\.\d+\.\d+\.\d+\:\d+\/some\-repository\/nonexistent\-labels\-id\:0\.2\.0\:`))
 					Expect(string(buffer.Contents())).To(ContainSubstring("unexpected status code 400 Bad Request"))
+				})
+			})
+
+			context("--patch-only flag is set and versions cannot be parsed", func() {
+				it.Before(func() {
+					err := os.WriteFile(filepath.Join(buildpackDir, "buildpack.toml"), []byte(`
+						api = "0.2"
+
+						[buildpack]
+							id = "some-composite-buildpack"
+							name = "Some Composite Buildpack"
+							version = "some-composite-buildpack-version"
+
+						[metadata]
+							include-files = ["buildpack.toml"]
+
+						[[order]]
+							[[order.group]]
+						    id = "paketo-buildpacks/go-dist"
+						    version = "bad-version"
+					`), 0600)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = os.WriteFile(filepath.Join(buildpackDir, "package.toml"), bytes.ReplaceAll([]byte(`
+						[buildpack]
+						uri = "build/buildpack.tgz"
+
+						[[dependencies]]
+				    uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:bad-version"
+					`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				it("returns an error", func() {
+					command := exec.Command(
+						path,
+						"update-buildpack",
+						"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
+						"--package-file", filepath.Join(buildpackDir, "package.toml"),
+						"--patch-only",
+						"--no-cnb-registry",
+					)
+
+					buffer := gbytes.NewBuffer()
+					session, err := gexec.Start(command, buffer, buffer)
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
+					Expect(string(buffer.Contents())).To(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint: improper constraint: ~bad-version"))
 				})
 			})
 		})

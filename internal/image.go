@@ -224,3 +224,16 @@ func GetBuildpackageID(uri string) (string, error) {
 	}
 	return metadata.BuildpackageID, nil
 }
+
+func IsPatchBump(newVersion, oldVersion string) (bool, error) {
+	newVersionSemver, err := semver.NewVersion(newVersion)
+	if err != nil {
+		return false, fmt.Errorf("version %s is not semantically versioned: %w", newVersion, err)
+	}
+	oldVersionConstraint, err := semver.NewConstraint(fmt.Sprintf("~%s", oldVersion))
+	if err != nil {
+		return false, fmt.Errorf("version constraint ~%s is not a valid semantic version constraint: %w", oldVersion, err)
+	}
+
+	return oldVersionConstraint.Check(newVersionSemver), nil
+}
