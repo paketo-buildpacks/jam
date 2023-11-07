@@ -454,4 +454,38 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 	})
+
+	context("IsPatchBump", func() {
+		context("new version is a patch bump from old version", func() {
+			it("returns true", func() {
+				isPatch, err := internal.IsPatchBump("1.2.3", "1.2.1")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPatch).To(BeTrue())
+			})
+		})
+
+		context("new version is a minor bump from old version", func() {
+			it("returns false ", func() {
+				isPatch, err := internal.IsPatchBump("1.3.0", "1.2.1")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPatch).To(BeFalse())
+			})
+		})
+
+		context("failure cases", func() {
+			context("new version is not a semantic version", func() {
+				it("returns an error", func() {
+					_, err := internal.IsPatchBump("bad-version", "1.2.1")
+					Expect(err).To(MatchError(ContainSubstring("version bad-version is not semantically versioned")))
+				})
+			})
+
+			context("old version is not a semantic version", func() {
+				it("returns an error", func() {
+					_, err := internal.IsPatchBump("1.2.3", "bad-version")
+					Expect(err).To(MatchError(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint")))
+				})
+			})
+		})
+	})
 }
