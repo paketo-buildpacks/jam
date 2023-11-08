@@ -48,6 +48,18 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					    {
 					      "version": "0.1.0",
 								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.1.0"
+					    },
+					    {
+					      "version": "0.0.3",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.0.3"
+					    },
+					    {
+					      "version": "0.0.2",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.0.2"
+					    },
+					    {
+					      "version": "0.0.1",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/some-ns/some-name/0.0.1"
 					    }
 					  ]
 					}`)
@@ -91,7 +103,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("returns the latest semver tag for the given image uri", func() {
-			image, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", server.URL)
+			image, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", server.URL, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(image).To(Equal(internal.Image{
 				Name:    "urn:cnb:registry:some-ns/some-name",
@@ -102,7 +114,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the uri is an image refernce that does not conform to the CNB registry", func() {
 			it("returns converts the uri", func() {
-				image, err := internal.FindLatestImageOnCNBRegistry("paketo-buildpacks/go", server.URL)
+				image, err := internal.FindLatestImageOnCNBRegistry("paketo-buildpacks/go", server.URL, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(image).To(Equal(internal.Image{
 					Name:    "urn:cnb:registry:paketo-buildpacks/go",
@@ -114,7 +126,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the request fails the first time", func() {
 			it("retries the request", func() {
-				image, err := internal.FindLatestImageOnCNBRegistry("retry-endpoint", server.URL)
+				image, err := internal.FindLatestImageOnCNBRegistry("retry-endpoint", server.URL, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(image).To(Equal(internal.Image{
 					Name:    "urn:cnb:registry:retry-endpoint",
@@ -124,25 +136,44 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("when a patch version to base the lookup off of is given", func() {
+			it("returns a latest semver patch for the given image uri", func() {
+				image, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", server.URL, "0.0.1")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(image).To(Equal(internal.Image{
+					Name:    "urn:cnb:registry:some-ns/some-name",
+					Path:    "some-ns/some-name",
+					Version: "0.0.3",
+				}))
+			})
+		})
+
 		context("failure cases", func() {
 			context("when the url cannot be parsed", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", "not a valid URL")
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", "not a valid URL", "")
 					Expect(err).To(MatchError(ContainSubstring("unsupported protocol scheme")))
 				})
 			})
 
 			context("when the get returns a not OK status", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:not/ok", server.URL)
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:not/ok", server.URL, "")
 					Expect(err).To(MatchError(ContainSubstring("unexpected response status: 418 I'm a teapot")))
 				})
 			})
 
 			context("when the response body is broken json", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:broken/response", server.URL)
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:broken/response", server.URL, "")
 					Expect(err).To(MatchError(ContainSubstring("invalid character")))
+				})
+			})
+
+			context("when a non-semantic versioned patch version to base the lookup off of if is given", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:some-ns/some-name@some-version", server.URL, "bad-version")
+					Expect(err).To(MatchError(ContainSubstring("could not get the highest patch in the bad-version line")))
 				})
 			})
 		})
@@ -165,6 +196,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
 						  "tags": [
+								"0.0.9",
 								"0.0.10",
 								"0.20.1",
 								"0.20.12",
@@ -219,7 +251,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("returns the latest non-prerelease semver tag for the given image uri", func() {
-			image, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-repo:latest", strings.TrimPrefix(server.URL, "http://")))
+			image, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-repo:latest", strings.TrimPrefix(server.URL, "http://")), "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(image).To(Equal(internal.Image{
 				Name:    fmt.Sprintf("%s/some-org/some-repo", strings.TrimPrefix(server.URL, "http://")),
@@ -228,24 +260,36 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 			}))
 		})
 
+		context("when a patch version to base the lookup off of is given", func() {
+			it("returns a latest semver patch for the given image uri", func() {
+				image, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-repo:latest", strings.TrimPrefix(server.URL, "http://")), "0.0.8")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(image).To(Equal(internal.Image{
+					Name:    fmt.Sprintf("%s/some-org/some-repo", strings.TrimPrefix(server.URL, "http://")),
+					Path:    "some-org/some-repo",
+					Version: "0.0.10",
+				}))
+			})
+		})
+
 		context("failure cases", func() {
 			context("when the uri cannot be parsed", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImage("not a valid uri")
+					_, err := internal.FindLatestImage("not a valid uri", "")
 					Expect(err).To(MatchError("failed to parse image reference \"not a valid uri\": invalid reference format"))
 				})
 			})
 
 			context("when the repo name cannot be parsed", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImage(fmt.Sprintf("%s/a:latest", strings.TrimPrefix(server.URL, "http://")))
+					_, err := internal.FindLatestImage(fmt.Sprintf("%s/a:latest", strings.TrimPrefix(server.URL, "http://")), "")
 					Expect(err).To(MatchError("failed to parse image repository: repository must be between 2 and 255 characters in length: a"))
 				})
 			})
 
 			context("when the tags cannot be listed", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/error-repo:latest", strings.TrimPrefix(server.URL, "http://")))
+					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/error-repo:latest", strings.TrimPrefix(server.URL, "http://")), "")
 					Expect(err).To(MatchError(ContainSubstring("failed to list tags:")))
 					Expect(err).To(MatchError(ContainSubstring("status code 418")))
 				})
@@ -253,8 +297,16 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 			context("when no valid tag can be found", func() {
 				it("returns an error", func() {
-					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-other-repo:latest", strings.TrimPrefix(server.URL, "http://")))
+					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-other-repo:latest", strings.TrimPrefix(server.URL, "http://")), "")
+
 					Expect(err).To(MatchError(ContainSubstring("could not find any valid tag")))
+				})
+			})
+
+			context("when a non-semantic versioned patch version to base the lookup off of if is given", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/some-repo:latest", strings.TrimPrefix(server.URL, "http://")), "bad-version")
+					Expect(err).To(MatchError(ContainSubstring("could not get the highest patch in the bad-version line")))
 				})
 			})
 		})
@@ -455,34 +507,25 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("IsPatchBump", func() {
-		context("new version is a patch bump from old version", func() {
-			it("returns true", func() {
-				isPatch, err := internal.IsPatchBump("1.2.3", "1.2.1")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(isPatch).To(BeTrue())
-			})
+	context("GetHighestPatch", func() {
+		it("returns the highest patch version in a minor version line given a patch", func() {
+			version, err := internal.GetHighestPatch("1.2.3", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(version).To(Equal("1.2.4"))
 		})
 
-		context("new version is a minor bump from old version", func() {
-			it("returns false ", func() {
-				isPatch, err := internal.IsPatchBump("1.3.0", "1.2.1")
+		context("the patch version provided is already the highest patch available", func() {
+			it("returns the given patch version", func() {
+				version, err := internal.GetHighestPatch("1.2.4", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(isPatch).To(BeFalse())
+				Expect(version).To(Equal("1.2.4"))
 			})
 		})
 
 		context("failure cases", func() {
-			context("new version is not a semantic version", func() {
+			context("the patch version given is not a semantic version", func() {
 				it("returns an error", func() {
-					_, err := internal.IsPatchBump("bad-version", "1.2.1")
-					Expect(err).To(MatchError(ContainSubstring("version bad-version is not semantically versioned")))
-				})
-			})
-
-			context("old version is not a semantic version", func() {
-				it("returns an error", func() {
-					_, err := internal.IsPatchBump("1.2.3", "bad-version")
+					_, err := internal.GetHighestPatch("bad-version", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
 					Expect(err).To(MatchError(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint")))
 				})
 			})
