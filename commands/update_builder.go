@@ -43,7 +43,7 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 	}
 
 	for i, buildpack := range builder.Buildpacks {
-		image, err := internal.FindLatestImage(buildpack.URI)
+		image, err := internal.FindLatestImage(buildpack.URI, "")
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 	}
 
 	for i, extension := range builder.Extensions {
-		image, err := internal.FindLatestImage(extension.URI)
+		image, err := internal.FindLatestImage(extension.URI, "")
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 		}
 	}
 
-	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI)
+	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI, "")
 	if err != nil {
 		return err
 	}

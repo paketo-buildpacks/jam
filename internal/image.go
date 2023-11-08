@@ -22,7 +22,7 @@ type Image struct {
 	Version string
 }
 
-func FindLatestImageOnCNBRegistry(uri, api string) (Image, error) {
+func FindLatestImageOnCNBRegistry(uri, api, patchVersion string) (Image, error) {
 	id, _ := buildpack.ParseIDLocator(uri)
 	var resp *http.Response
 	var err error
@@ -66,10 +66,32 @@ func FindLatestImageOnCNBRegistry(uri, api string) (Image, error) {
 		Latest struct {
 			Version string `json:"version"`
 		} `json:"latest"`
+		Versions []struct {
+			Version string `json:"version"`
+		} `json:"versions"`
 	}
+
 	err = json.NewDecoder(resp.Body).Decode(&metadata)
 	if err != nil {
 		return Image{}, err
+	}
+
+	// If a patch version is passed in, get the highest patch in the same minor version line
+	if patchVersion != "" {
+		versions := []string{}
+		for _, v := range metadata.Versions {
+			versions = append(versions, v.Version)
+		}
+
+		highestPatch, err := GetHighestPatch(patchVersion, versions)
+		if err != nil {
+			return Image{}, fmt.Errorf("could not get the highest patch in the %s line: %w", patchVersion, err)
+		}
+		return Image{
+			Name:    fmt.Sprintf("urn:cnb:registry:%s", id),
+			Path:    id,
+			Version: highestPatch,
+		}, nil
 	}
 
 	return Image{
@@ -79,7 +101,7 @@ func FindLatestImageOnCNBRegistry(uri, api string) (Image, error) {
 	}, nil
 }
 
-func FindLatestImage(uri string) (Image, error) {
+func FindLatestImage(uri, patchVersion string) (Image, error) {
 	named, err := reference.ParseNormalizedNamed(uri)
 	if err != nil {
 		return Image{}, fmt.Errorf("failed to parse image reference %q: %w", uri, err)
@@ -100,6 +122,18 @@ func FindLatestImage(uri string) (Image, error) {
 		return Image{}, fmt.Errorf("failed to list tags: %w", err)
 	}
 
+	if patchVersion != "" {
+		highestPatch, err := GetHighestPatch(patchVersion, tags)
+		if err != nil {
+			return Image{}, fmt.Errorf("could not get the highest patch in the %s line: %w", patchVersion, err)
+		}
+		return Image{
+			Name:    named.Name(),
+			Path:    reference.Path(named),
+			Version: highestPatch,
+		}, nil
+
+	}
 	var versions []*semver.Version
 	for _, tag := range tags {
 		version, err := semver.StrictNewVersion(tag)
@@ -109,7 +143,6 @@ func FindLatestImage(uri string) (Image, error) {
 		if version.Prerelease() != "" {
 			continue
 		}
-
 		versions = append(versions, version)
 	}
 
@@ -225,15 +258,30 @@ func GetBuildpackageID(uri string) (string, error) {
 	return metadata.BuildpackageID, nil
 }
 
-func IsPatchBump(newVersion, oldVersion string) (bool, error) {
-	newVersionSemver, err := semver.NewVersion(newVersion)
+func GetHighestPatch(patchVersion string, allVersions []string) (string, error) {
+	versionConstraint, err := semver.NewConstraint(fmt.Sprintf("~%s", patchVersion))
 	if err != nil {
-		return false, fmt.Errorf("version %s is not semantically versioned: %w", newVersion, err)
+		return "", fmt.Errorf("version constraint ~%s is not a valid semantic version constraint: %w", patchVersion, err)
 	}
-	oldVersionConstraint, err := semver.NewConstraint(fmt.Sprintf("~%s", oldVersion))
+	highestPatch, err := semver.NewVersion(patchVersion)
 	if err != nil {
-		return false, fmt.Errorf("version constraint ~%s is not a valid semantic version constraint: %w", oldVersion, err)
+		return "", fmt.Errorf("cannot convert %s to a semantic version: %w", patchVersion, err)
 	}
+	for _, versionEntry := range allVersions {
+		version, err := semver.NewVersion(versionEntry)
+		// do not error, since some upstream versions may not be semantic versions
+		if err != nil {
+			continue
+		}
+		if version.Prerelease() != "" {
+			continue
+		}
 
-	return oldVersionConstraint.Check(newVersionSemver), nil
+		if versionConstraint.Check(version) {
+			if version.GreaterThan(highestPatch) {
+				highestPatch = version
+			}
+		}
+	}
+	return highestPatch.String(), nil
 }

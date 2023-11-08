@@ -65,25 +65,19 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			image          internal.Image
 			err            error
 		)
+
 		if flags.noCNBRegistry {
-			image, err = internal.FindLatestImage(dependency.URI)
+			// If --patch-only is set, retrieve new version in the same version line as previous version, if it exists
+			oldVersion := ""
+			if flags.patchOnly {
+				oldVersionSlice := strings.Split(dependency.URI, ":")
+				oldVersion = oldVersionSlice[len(oldVersionSlice)-1]
+			}
+
+			image, err = internal.FindLatestImage(dependency.URI, oldVersion)
 			if err != nil {
 				return err
 			}
-			// If the new version is NOT a patch, and --patch-only is set, don't update
-			if flags.patchOnly {
-				oldVersionSlice := strings.Split(dependency.URI, ":")
-				oldVersion := oldVersionSlice[len(oldVersionSlice)-1]
-				isPatchBump, err := internal.IsPatchBump(image.Version, oldVersion)
-				if err != nil {
-					return err
-				}
-				if !isPatchBump {
-					fmt.Printf("The latest version of %s is %s, which not a patch release. As a result, it will not be updated\n", image.Name, image.Version)
-					continue
-				}
-			}
-
 			pkg.Dependencies[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
 
 			buildpackageID, err = internal.GetBuildpackageID(dependency.URI)
@@ -99,34 +93,24 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 				}
 			}
 
-			image, err = internal.FindLatestImageOnCNBRegistry(uri, flags.api)
-			if err != nil {
-				return err
-			}
-			// If the new version is NOT a patch, and --patch-only is set, don't update
+			// If --patch-only is set, retrieve new version in the same version line as previous version, if it exists
+			oldVersion := ""
 			if flags.patchOnly {
-				var oldVersion string
 				if strings.Contains(dependency.URI, "@") {
 					oldVersion = strings.Split(dependency.URI, "@")[1]
 				} else {
 					oldVersionSlice := strings.Split(dependency.URI, ":")
 					oldVersion = oldVersionSlice[len(oldVersionSlice)-1]
 				}
-				isPatchBump, err := internal.IsPatchBump(image.Version, oldVersion)
-				if err != nil {
-					return fmt.Errorf("Error determining if %s is a patch bump: %w", image.Name, err)
-				}
-				if !isPatchBump {
-					fmt.Printf("The latest version of %s is %s, which not a patch release. As a result, it will not be updated\n", image.Name, image.Version)
-					continue
-				}
+			}
+			image, err = internal.FindLatestImageOnCNBRegistry(uri, flags.api, oldVersion)
+			if err != nil {
+				return err
 			}
 
 			pkg.Dependencies[i].URI = fmt.Sprintf("%s@%s", image.Name, image.Version)
-
 			buildpackageID = image.Path
 		}
-
 		for j, order := range bp.Order {
 			for k, group := range order.Group {
 				if group.ID == buildpackageID {

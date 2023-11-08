@@ -64,8 +64,22 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
 						"latest": {
-							"version": "0.20.12"
-						}
+							"version": "0.21.0"
+						},
+					  "versions": [
+					    {
+					      "version": "0.20.1"
+					    },
+					    {
+					      "version": "0.20.2"
+					    },
+					    {
+					      "version": "0.20.12"
+					    },
+					    {
+					      "version": "0.21.0"
+					    }
+						]
 					}`)
 
 				case "/v1/buildpacks/paketo-buildpacks/mri":
@@ -73,7 +87,12 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.2.0"
-						}
+						},
+					  "versions": [
+					    {
+					      "version": "0.2.0"
+					    }
+						]
 					}`)
 
 				case "/v1/buildpacks/paketo-buildpacks/node-engine":
@@ -81,7 +100,12 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.20.22"
-						}
+						},
+					  "versions": [
+					    {
+					      "version": "0.20.22"
+					    }
+						]
 					}`)
 
 				case goConfigPath:
@@ -221,7 +245,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				[[order]]
 					[[order.group]]
 						id = "paketo-buildpacks/go-dist"
-						version = "0.20.12"
+						version = "0.21.0"
 
 					[[order.group]]
 						id = "paketo-buildpacks/mri"
@@ -235,7 +259,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 					[[order.group]]
 						id = "paketo-buildpacks/go-dist"
-						version = "0.20.12"
+						version = "0.21.0"
 			`))
 
 			packageContents, err := os.ReadFile(filepath.Join(buildpackDir, "package.toml"))
@@ -248,7 +272,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				uri = "urn:cnb:registry:paketo-buildpacks/mri@0.2.0"
 
 				[[dependencies]]
-				uri = "urn:cnb:registry:paketo-buildpacks/go-dist@0.20.12"
+				uri = "urn:cnb:registry:paketo-buildpacks/go-dist@0.21.0"
 
 				[[dependencies]]
 				uri = "urn:cnb:registry:paketo-buildpacks/node-engine@0.20.22"
@@ -628,6 +652,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 								"0.0.10",
 								"0.20.1",
 								"0.20.12",
+								"0.21.0",
 								"latest"
 							]
 					}`)
@@ -801,7 +826,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				[[order]]
 					[[order.group]]
 						id = "paketo-buildpacks/go-dist"
-						version = "0.20.12"
+						version = "0.21.0"
 
 					[[order.group]]
 						id = "paketo-buildpacks/mri"
@@ -815,7 +840,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 					[[order.group]]
 						id = "paketo-buildpacks/go-dist"
-						version = "0.20.12"
+						version = "0.21.0"
 			`))
 
 			packageContents, err := os.ReadFile(filepath.Join(buildpackDir, "package.toml"))
@@ -828,7 +853,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				uri = "docker://REGISTRY-URI/paketobuildpacks/mri:0.2.0"
 
 				[[dependencies]]
-				uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:0.20.12"
+				uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:0.21.0"
 
 				[[dependencies]]
 				uri = "docker://REGISTRY-URI/paketobuildpacks/node-engine:0.20.22"
