@@ -83,7 +83,7 @@ func FindLatestImageOnCNBRegistry(uri, api, patchVersion string) (Image, error) 
 			versions = append(versions, v.Version)
 		}
 
-		highestPatch, err := GetHighestPatch(patchVersion, versions)
+		highestPatch, err := getHighestPatch(patchVersion, versions)
 		if err != nil {
 			return Image{}, fmt.Errorf("could not get the highest patch in the %s line: %w", patchVersion, err)
 		}
@@ -123,7 +123,7 @@ func FindLatestImage(uri, patchVersion string) (Image, error) {
 	}
 
 	if patchVersion != "" {
-		highestPatch, err := GetHighestPatch(patchVersion, tags)
+		highestPatch, err := getHighestPatch(patchVersion, tags)
 		if err != nil {
 			return Image{}, fmt.Errorf("could not get the highest patch in the %s line: %w", patchVersion, err)
 		}
@@ -132,8 +132,8 @@ func FindLatestImage(uri, patchVersion string) (Image, error) {
 			Path:    reference.Path(named),
 			Version: highestPatch,
 		}, nil
-
 	}
+
 	var versions []*semver.Version
 	for _, tag := range tags {
 		version, err := semver.StrictNewVersion(tag)
@@ -258,7 +258,7 @@ func GetBuildpackageID(uri string) (string, error) {
 	return metadata.BuildpackageID, nil
 }
 
-func GetHighestPatch(patchVersion string, allVersions []string) (string, error) {
+func getHighestPatch(patchVersion string, allVersions []string) (string, error) {
 	versionConstraint, err := semver.NewConstraint(fmt.Sprintf("~%s", patchVersion))
 	if err != nil {
 		return "", fmt.Errorf("version constraint ~%s is not a valid semantic version constraint: %w", patchVersion, err)

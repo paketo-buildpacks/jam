@@ -64,6 +64,36 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					  ]
 					}`)
 
+				case "/v1/buildpacks/no-new-patch":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+					  "latest": {
+					    "version": "0.1.0"
+					  },
+					  "versions": [
+					    {
+					      "version": "0.1.0",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/no-new-patch/0.1.0"
+					    },
+					    {
+					      "version": "0.0.3-rc",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/no-new-patch/0.0.3-beta.1"
+					    },
+					    {
+					      "version": "random-version",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/no-new-patch/0.0.3-random-version"
+					    },
+					    {
+					      "version": "0.0.2-rc",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/no-new-patch/0.0.2-rc"
+					    },
+					    {
+					      "version": "0.0.1",
+								"_link": "https://registry.buildpacks.io//api/v1/buildpacks/no-new-patch/0.0.1"
+					    }
+					  ]
+					}`)
+
 				case "/v1/buildpacks/paketo-buildpacks/go":
 					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, `{
@@ -146,6 +176,18 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					Version: "0.0.3",
 				}))
 			})
+
+			context("there are newer patches available, but they are pre-releases or not semantically versioned", func() {
+				it("returns the highest semantically versioned regular patch", func() {
+					image, err := internal.FindLatestImageOnCNBRegistry("urn:cnb:registry:no-new-patch@0.0.1", server.URL, "0.0.1")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(image).To(Equal(internal.Image{
+						Name:    "urn:cnb:registry:no-new-patch",
+						Path:    "no-new-patch",
+						Version: "0.0.1",
+					}))
+				})
+			})
 		})
 
 		context("failure cases", func() {
@@ -203,6 +245,18 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"999999",
 								"latest",
 								"0.20.13-rc1"
+							]
+					}`)
+
+				case "/v2/some-org/no-new-patch/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.1",
+								"0.0.2-bad-version",
+								"0.0.3-rc",
+								"0.1.0",
+								"latest"
 							]
 					}`)
 
@@ -269,6 +323,18 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					Path:    "some-org/some-repo",
 					Version: "0.0.10",
 				}))
+			})
+
+			context("there are newer patches available, but they are pre-releases or not semantically versioned", func() {
+				it("returns the highest semantically versioned regular patch", func() {
+					image, err := internal.FindLatestImage(fmt.Sprintf("%s/some-org/no-new-patch:0.0.1", strings.TrimPrefix(server.URL, "http://")), "0.0.1")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(image).To(Equal(internal.Image{
+						Name:    fmt.Sprintf("%s/some-org/no-new-patch", strings.TrimPrefix(server.URL, "http://")),
+						Path:    "some-org/no-new-patch",
+						Version: "0.0.1",
+					}))
+				})
 			})
 		})
 
@@ -502,31 +568,6 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 				it("returns an error", func() {
 					_, err := internal.GetBuildpackageID("index.docker.io/paketobuildpacks/builder:base")
 					Expect(err).To(MatchError(ContainSubstring("could not get buildpackage id: image index.docker.io/paketobuildpacks/builder:base has no label 'io.buildpacks.buildpackage.metadata'")))
-				})
-			})
-		})
-	})
-
-	context("GetHighestPatch", func() {
-		it("returns the highest patch version in a minor version line given a patch", func() {
-			version, err := internal.GetHighestPatch("1.2.3", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(Equal("1.2.4"))
-		})
-
-		context("the patch version provided is already the highest patch available", func() {
-			it("returns the given patch version", func() {
-				version, err := internal.GetHighestPatch("1.2.4", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal("1.2.4"))
-			})
-		})
-
-		context("failure cases", func() {
-			context("the patch version given is not a semantic version", func() {
-				it("returns an error", func() {
-					_, err := internal.GetHighestPatch("bad-version", []string{"0.0.1", "0.0.2", "1.2.3", "1.2.4", "1.3.0", "2.3.4"})
-					Expect(err).To(MatchError(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint")))
 				})
 			})
 		})
