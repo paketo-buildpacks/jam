@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.3.2
-	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/anchore/syft v0.80.0
 	github.com/buildpacks/pack v0.29.0
@@ -12,7 +11,7 @@ require (
 	github.com/distribution/reference v0.5.0
 	github.com/docker/cli v24.0.7+incompatible
 	github.com/docker/docker v24.0.7+incompatible
-	github.com/google/go-containerregistry v0.16.1
+	github.com/google/go-containerregistry v0.17.0
 	github.com/moby/buildkit v0.12.3
 	github.com/onsi/gomega v1.30.0
 	github.com/paketo-buildpacks/occam v0.17.0
