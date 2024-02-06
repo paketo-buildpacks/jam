@@ -14,7 +14,7 @@ require (
 	github.com/google/go-containerregistry v0.19.0
 	github.com/moby/buildkit v0.12.5
 	github.com/onsi/gomega v1.31.1
-	github.com/paketo-buildpacks/occam v0.18.1
+	github.com/paketo-buildpacks/occam v0.18.2
 	github.com/paketo-buildpacks/packit/v2 v2.12.0
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
@@ -147,7 +147,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
-	github.com/opencontainers/runc v1.1.7 // indirect
+	github.com/opencontainers/runc v1.1.12 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
