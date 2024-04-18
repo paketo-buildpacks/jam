@@ -66,6 +66,14 @@ description = "Some description"
   build-image = "some-registry/somerepository/build:1.2.3-some-cnb"
   run-image = "some-registry/somerepository/run:some-cnb"
   run-image-mirrors = ["some-registry/some-repository/run:some-cnb"]
+
+[[targets]]
+	os = "linux"
+	arch = "amd64"
+
+[[targets]]
+	os = "linux"
+	arch = "arm64"
 			`)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -134,6 +142,16 @@ description = "Some description"
 					BuildImage:      "some-registry/somerepository/build:1.2.3-some-cnb",
 					RunImage:        "some-registry/somerepository/run:some-cnb",
 					RunImageMirrors: []string{"some-registry/some-repository/run:some-cnb"},
+				},
+				Targets: []internal.BuilderConfigTarget{
+					{
+						OS:   "linux",
+						Arch: "amd64",
+					},
+					{
+						OS:   "linux",
+						Arch: "arm64",
+					},
 				},
 			}))
 		})
@@ -262,6 +280,16 @@ description = "Some description"
 					RunImage:        "some-registry/somerepository/run:some-cnb",
 					RunImageMirrors: []string{"some-registry/some-repository/run:some-cnb"},
 				},
+				Targets: []internal.BuilderConfigTarget{
+					{
+						OS:   "linux",
+						Arch: "amd64",
+					},
+					{
+						OS:   "linux",
+						Arch: "arm64",
+					},
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -309,6 +337,14 @@ description = "Some description"
   build-image = "some-registry/somerepository/build:1.2.3-some-cnb"
   run-image = "some-registry/somerepository/run:some-cnb"
   run-image-mirrors = ["some-registry/some-repository/run:some-cnb"]
+
+[[targets]]
+	os = "linux"
+	arch = "amd64"
+
+[[targets]]
+	os = "linux"
+	arch = "arm64"
 				`))
 		})
 
@@ -352,6 +388,16 @@ description = "Some description"
 					RunImage:        "some-registry/somerepository/run:some-cnb",
 					RunImageMirrors: []string{"some-registry/some-repository/run:some-cnb"},
 				},
+				Targets: []internal.BuilderConfigTarget{
+					{
+						OS:   "linux",
+						Arch: "amd64",
+					},
+					{
+						OS:   "linux",
+						Arch: "arm64",
+					},
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -388,9 +434,17 @@ description = "Some description"
   build-image = "some-registry/somerepository/build:1.2.3-some-cnb"
   run-image = "some-registry/somerepository/run:some-cnb"
   run-image-mirrors = ["some-registry/some-repository/run:some-cnb"]
-				`))
 
+[[targets]]
+	os = "linux"
+	arch = "amd64"
+
+[[targets]]
+	os = "linux"
+	arch = "arm64"
+				`))
 		})
+
 		context("failure cases", func() {
 			context("when the file cannot be opened", func() {
 				it.Before(func() {

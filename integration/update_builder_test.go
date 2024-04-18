@@ -79,7 +79,7 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 		nodeConfigPath := fmt.Sprintf("/v2/paketobuildpacks/nodejs/blobs/%s", mustConfigName(t, nodeImg))
 		nodeManifestReqCount := 0
 		extensionManifestPath := "/v2/paketocommunity/ubi-nodejs-extension/manifests/0.0.3"
-	        extensionConfigPath := fmt.Sprintf("/v2/paketocommunity/ubi-nodejs-extension/blobs/%s", mustConfigName(t, extensionImg))
+		extensionConfigPath := fmt.Sprintf("/v2/paketocommunity/ubi-nodejs-extension/blobs/%s", mustConfigName(t, extensionImg))
 		extensionManifestReqCount := 0
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
@@ -258,6 +258,10 @@ description = "Some description"
   build-image = "REGISTRY-URI/somerepository/build:0.0.10-some-cnb"
   run-image = "REGISTRY-URI/somerepository/run:some-cnb"
   run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
+
+[[targets]]
+	os = "linux"
+	arch = "amd64"
 			`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -324,6 +328,10 @@ description = "Some description"
   id = "io.paketo.stacks.some-stack"
   run-image = "REGISTRY-URI/somerepository/run:some-cnb"
   run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
+
+[[targets]]
+	os = "linux"
+	arch = "amd64"
 			`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
 	})
 
