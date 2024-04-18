@@ -17,6 +17,7 @@ type BuilderConfig struct {
 	Extensions     []BuilderConfigExtension      `toml:"extensions"`
 	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions"`
 	Stack          BuilderConfigStack            `toml:"stack"`
+	Targets        []BuilderConfigTarget         `toml:"targets"`
 }
 
 type BuilderConfigBuildpack struct {
@@ -59,6 +60,11 @@ type BuilderConfigStack struct {
 	BuildImage      string   `toml:"build-image"`
 	RunImage        string   `toml:"run-image"`
 	RunImageMirrors []string `toml:"run-image-mirrors"`
+}
+
+type BuilderConfigTarget struct {
+	OS   string `toml:"os"`
+	Arch string `toml:"arch"`
 }
 
 // Note: this is to support that buildpackages can refer to this field as `image` or `uri`.
