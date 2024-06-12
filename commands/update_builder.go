@@ -99,12 +99,20 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 
 	builder.Lifecycle.Version = lifecycleImage.Version
 
-	buildImage, err := internal.FindLatestBuildImage(builder.Stack.RunImage, builder.Stack.BuildImage)
+	runImage, buildImage, err := internal.FindLatestStackImages(builder.Stack.RunImage, builder.Stack.BuildImage)
 	if err != nil {
 		return err
 	}
 
 	builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
+	if runImage != (internal.Image{}) {
+		builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
+		updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
+		if err != nil {
+			return err
+		}
+		builder.Stack.RunImageMirrors = updatedMirrors
+	}
 
 	err = internal.OverwriteBuilderConfig(flags.builderFile, builder)
 	if err != nil {
