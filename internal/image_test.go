@@ -378,6 +378,205 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		})
 	}, spec.Sequential())
 
+	context("FindLatestStackImages", func() {
+		it.Before(func() {
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.Header.Get("Authorization") != "Basic c29tZS11c2VybmFtZTpzb21lLXBhc3N3b3Jk" {
+					w.Header().Set("WWW-Authenticate", `Basic realm="localhost"`)
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+
+				switch req.URL.Path {
+				case "/v2/":
+					w.WriteHeader(http.StatusOK)
+
+				case "/v2/some-org/some-repo-build/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.10-some-cnb",
+								"0.0.10",
+								"0.20.1",
+								"0.20.2",
+								"0.20.12-some-cnb",
+								"0.20.12-other-cnb",
+								"999999-some-cnb",
+								"latest"
+							]
+					}`)
+
+				case "/v2/some-org/some-other-repo-build/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"v0.0.10-some-cnb",
+								"v0.20.2",
+								"v0.20.12-some-cnb",
+								"v0.20.12-other-cnb",
+								"999999-some-cnb",
+								"latest"
+							]
+					}`)
+
+				case "/v2/some-org/error-repo/tags/list":
+					w.WriteHeader(http.StatusTeapot)
+
+				default:
+					t.Fatalf("unknown path: %s", req.URL.Path)
+				}
+			}))
+
+			var err error
+			dockerConfig, err = os.MkdirTemp("", "docker-config")
+			Expect(err).NotTo(HaveOccurred())
+
+			contents := fmt.Sprintf(`{
+				"auths": {
+					%q: {
+						"username": "some-username",
+						"password": "some-password"
+					}
+				}
+			}`, strings.TrimPrefix(server.URL, "http://"))
+
+			err = os.WriteFile(filepath.Join(dockerConfig, "config.json"), []byte(contents), 0600)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(os.Setenv("DOCKER_CONFIG", dockerConfig)).To(Succeed())
+		})
+
+		it.After(func() {
+			Expect(os.Unsetenv("DOCKER_CONFIG")).To(Succeed())
+			Expect(os.RemoveAll(dockerConfig)).To(Succeed())
+			server.Close()
+		})
+
+		it("for suffixed stack repos, it returns the latest semver tag for both build and run images", func() {
+			runImage, buildImage, err := internal.FindLatestStackImages(
+				fmt.Sprintf("%s/some-org/some-repo-run:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(runImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-run", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-run",
+				Version: "0.20.12-some-cnb",
+			}))
+			Expect(buildImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-build",
+				Version: "0.20.12-some-cnb",
+			}))
+		})
+
+		it("for suffixed stack repos, when the run image is not semver, it returns the latest semver tag for the build image only", func() {
+			runImage, buildImage, err := internal.FindLatestStackImages(
+				fmt.Sprintf("%s/some-org/some-repo-run:some-cnb", strings.TrimPrefix(server.URL, "http://")),
+				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(runImage).To(Equal(internal.Image{}))
+			Expect(buildImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-build",
+				Version: "0.20.12-some-cnb",
+			}))
+		})
+
+		it("for non-suffixed stack repos, when the run image is semver, it returns the latest semver tag for both build and run images", func() {
+			runImage, buildImage, err := internal.FindLatestStackImages(
+				fmt.Sprintf("%s/some-org/some-repo-run:0.0.10", strings.TrimPrefix(server.URL, "http://")),
+				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10", strings.TrimPrefix(server.URL, "http://")),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(buildImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-build",
+				Version: "0.20.2",
+			}))
+			Expect(runImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-run", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-run",
+				Version: "0.20.2",
+			}))
+		})
+
+		it("for non-suffixed stack repos, when the run image is `latest`, it returns the latest semver tag for the build image only", func() {
+			runImage, buildImage, err := internal.FindLatestStackImages(
+				fmt.Sprintf("%s/some-org/some-repo-run:latest", strings.TrimPrefix(server.URL, "http://")),
+				fmt.Sprintf("%s/some-org/some-repo-build:0.0.10", strings.TrimPrefix(server.URL, "http://")),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(runImage).To(Equal(internal.Image{}))
+			Expect(buildImage).To(Equal(internal.Image{
+				Name:    fmt.Sprintf("%s/some-org/some-repo-build", strings.TrimPrefix(server.URL, "http://")),
+				Path:    "some-org/some-repo-build",
+				Version: "0.20.2",
+			}))
+		})
+
+		context("failure cases", func() {
+			context("when the run uri cannot be parsed", func() {
+				it("returns an error while finding the build image first", func() {
+					_, _, err := internal.FindLatestStackImages(
+						"not a valid uri",
+						fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+					)
+					Expect(err).To(MatchError(ContainSubstring("failed to find latest build image")))
+				})
+			})
+
+			context("when the build uri cannot be parsed", func() {
+				it("returns an error while finding the build image first", func() {
+					_, _, err := internal.FindLatestStackImages(
+						fmt.Sprintf("%s/some-org/some-repo-run:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+						"not a valid uri",
+					)
+					Expect(err).To(MatchError(ContainSubstring("failed to find latest build image")))
+				})
+			})
+
+			context("when the run image is not tagged", func() {
+				it("returns an error while finding the build image first", func() {
+					_, _, err := internal.FindLatestStackImages(
+						fmt.Sprintf("%s/some-org/some-repo-run", strings.TrimPrefix(server.URL, "http://")),
+						fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
+					)
+					Expect(err).To(MatchError(ContainSubstring("failed to find latest build image")))
+				})
+			})
+		})
+	}, spec.Sequential())
+
+	context("UpdateRunImageMirrors", func() {
+		it("only updates run image mirror versions with semantic versions", func() {
+			mirrors, err := internal.UpdateRunImageMirrors("1.2.3", []string{
+				"docker.io/some-repo/some-mirror:0.0.1",
+				"docker.io/some-repo/some-other-mirror:0.0.1-some-cnb",
+				"docker.io/some-repo/some-mirror:some-cnb",
+				"docker.io/some-repo/some-mirror:latest",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mirrors).To(Equal([]string{
+				"docker.io/some-repo/some-mirror:1.2.3",
+				"docker.io/some-repo/some-other-mirror:1.2.3",
+				"docker.io/some-repo/some-mirror:some-cnb",
+				"docker.io/some-repo/some-mirror:latest",
+			}))
+		})
+
+		context("failure cases", func() {
+			context("when a mirror uri cannot be parsed", func() {
+				it("returns an error", func() {
+					_, err := internal.UpdateRunImageMirrors("1.2.3", []string{"bad URI"})
+					Expect(err).To(MatchError(ContainSubstring("failed to parse image 'bad URI'")))
+				})
+			})
+		})
+	}, spec.Sequential())
+
 	context("FindLatestBuildImage", func() {
 		it.Before(func() {
 			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -403,6 +602,17 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"0.20.12-other-cnb",
 								"999999-some-cnb",
 								"latest"
+							]
+					}`)
+
+				case "/v2/some-org/tag-suffix-repo-build/tags/list":
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.10-some-cnb",
+								"0.20.12-some-cnb",
+								"0.20.12-other-cnb",
+								"999999-some-cnb"
 							]
 					}`)
 
@@ -479,13 +689,22 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		context("failure cases", func() {
+			context("the run tag has a suffix, but there's no matching build tags with the suffix", func() {
+				it("returns an error", func() {
+					_, err := internal.FindLatestBuildImage(
+						fmt.Sprintf("%s/some-org/tag-suffix-repo-run:0.0.10-novel-suffix", strings.TrimPrefix(server.URL, "http://")),
+						fmt.Sprintf("%s/some-org/tag-suffix-repo-build:0.0.10", strings.TrimPrefix(server.URL, "http://")),
+					)
+					Expect(err).To(MatchError(ContainSubstring("could not find any valid tag")))
+				})
+			})
 			context("when the run uri cannot be parsed", func() {
 				it("returns an error", func() {
 					_, err := internal.FindLatestBuildImage(
 						"not a valid uri",
 						fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
 					)
-					Expect(err).To(MatchError("failed to parse run image reference \"not a valid uri\": invalid reference format"))
+					Expect(err).To(MatchError("failed to parse run image: failed to parse image reference \"not a valid uri\": invalid reference format"))
 				})
 			})
 
@@ -495,7 +714,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 						fmt.Sprintf("%s/some-org/some-repo-run", strings.TrimPrefix(server.URL, "http://")),
 						fmt.Sprintf("%s/some-org/some-repo-build:0.0.10-some-cnb", strings.TrimPrefix(server.URL, "http://")),
 					)
-					Expect(err).To(MatchError("expected the run image to be tagged but it was not"))
+					Expect(err).To(MatchError("failed to parse run image: expected the image to be tagged but it was not"))
 				})
 			})
 

@@ -159,23 +159,52 @@ func FindLatestImage(uri, patchVersion string) (Image, error) {
 	}, nil
 }
 
-func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
-	runNamed, err := reference.ParseNormalizedNamed(runURI)
+// Finds latest build image, and the matching run image (if the run image has a semantic version, instead of latest)
+func FindLatestStackImages(runURI, buildURI string) (Image, Image, error) {
+	buildImage, err := FindLatestBuildImage(runURI, buildURI)
 	if err != nil {
-		return Image{}, fmt.Errorf("failed to parse run image reference %q: %w", runURI, err)
+		return Image{}, Image{}, fmt.Errorf("failed to find latest build image: %w", err)
 	}
 
-	tagged, ok := runNamed.(reference.Tagged)
-	if !ok {
-		return Image{}, fmt.Errorf("expected the run image to be tagged but it was not")
+	// If the run image tag is semver, update it to the same version as the build image
+	var runImage Image
+	runNamed, runTag, err := parseImageURI(runURI)
+	if err != nil {
+		return Image{}, Image{}, fmt.Errorf("failed to parse run image: %w", err)
 	}
+	runImageTagIsSemver, _ := checkRunImageTag(runTag)
+	if runImageTagIsSemver {
+		runImage = Image{
+			Name:    runNamed.Name(),
+			Path:    reference.Path(runNamed),
+			Version: buildImage.Version,
+		}
+	}
+	return runImage, buildImage, nil
+}
 
-	var suffix string
-	if tagged.Tag() != "latest" {
-		// one image repository is being used for multiple stacks;
-		// tag suffixes are used to distinguish between them
-		suffix = tagged.Tag()
+func UpdateRunImageMirrors(version string, mirrors []string) ([]string, error) {
+	for i, mirror := range mirrors {
+		mirrorNamed, mirrorTag, err := parseImageURI(mirror)
+		if err != nil {
+			return []string{}, fmt.Errorf("failed to parse image '%s': %w", mirror, err)
+		}
+		// if the mirror URI is semver (ex. 1.2.3) (ex. 1.2.3-suffix)
+		// update the version of the mirror to match the given version
+		tagIsSemver, _ := checkRunImageTag(mirrorTag)
+		if tagIsSemver {
+			mirrors[i] = fmt.Sprintf("%s:%s", mirrorNamed.Name(), version)
+		}
 	}
+	return mirrors, nil
+}
+
+func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
+	_, runTag, err := parseImageURI(runURI)
+	if err != nil {
+		return Image{}, fmt.Errorf("failed to parse run image: %w", err)
+	}
+	_, runTagSuffix := checkRunImageTag(runTag)
 
 	buildNamed, err := reference.ParseNormalizedNamed(buildURI)
 	if err != nil {
@@ -204,7 +233,11 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 		if err != nil {
 			continue
 		}
-		if suffix != version.Prerelease() {
+
+		// legacy case: if the run image tag has a suffix (ex. 1.2.3-suffix) (ex. suffix), it should be eequal to the build image suffix
+		// See this PR for more context: https://github.com/paketo-buildpacks/jam/pull/81
+		if version.Prerelease() != "" && runTagSuffix != version.Prerelease() {
+			fmt.Printf("Skipping build image version: %s, the tag suffix does not match run image tag: %s\n", tag, runTagSuffix)
 			continue
 		}
 
@@ -222,6 +255,49 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 		Path:    reference.Path(buildNamed),
 		Version: versions[len(versions)-1].String(),
 	}, nil
+}
+
+// Parse an image URI into a reference.Named type, and a tag
+func parseImageURI(uri string) (reference.Named, string, error) {
+	var imgNamed reference.Named
+	var err error
+	imgNamed, err = reference.ParseNormalizedNamed(uri)
+	if err != nil {
+		return imgNamed, "", fmt.Errorf("failed to parse image reference %q: %w", uri, err)
+	}
+	tagged, ok := imgNamed.(reference.Tagged)
+	if !ok {
+		return imgNamed, "", fmt.Errorf("expected the image to be tagged but it was not")
+	}
+	return imgNamed, tagged.Tag(), nil
+}
+
+// Given an image tag, check the tag for some rules pertaining to run images
+// If the tag is:
+// - `latest`: return runImageTagIsSemver=false, suffix=""
+// - semantically versioned: return runImageTagIsSemver=true, suffix=""
+// - semantically versioned with a suffix: return runImageTagIsSemver=true, suffix=<suffix>
+// - not semantically versioned: return runImageTagIsSemver=false, suffix=<tag>
+func checkRunImageTag(tag string) (bool, string) {
+	var suffix string
+	var runImageTagIsSemver bool
+
+	if tag != "latest" {
+		version, err := semver.StrictNewVersion(tag)
+		if err != nil {
+			// if the run image tag is NOT semantically versioned, follow legacy case:
+			// one image repository is being used for multiple stacks;
+			// tag suffixes are used to distinguish between them
+			// ex. <image>:<non-semver-suffix>
+			suffix = tag
+		} else {
+			// if the run image tag is semantically versioned, set runImageTagIsSemver to true
+			// ex. <image>:1.2.3-suffix
+			runImageTagIsSemver = true
+			suffix = version.Prerelease()
+		}
+	}
+	return runImageTagIsSemver, suffix
 }
 
 func GetBuildpackageID(uri string) (string, error) {
