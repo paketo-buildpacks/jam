@@ -234,7 +234,9 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 			continue
 		}
 
-		// legacy case: if the run image tag has a suffix (ex. 1.2.3-suffix) (ex. suffix), it should be eequal to the build image suffix
+		// legacy case: if the build image tag has a suffix (ex.
+		// <image>:1.2.3-suffix) (ex. <image>:suffix), it should be equal to the
+		// run image tag suffix in order to be considered as a valid version
 		// See this PR for more context: https://github.com/paketo-buildpacks/jam/pull/81
 		if version.Prerelease() != "" && runTagSuffix != version.Prerelease() {
 			fmt.Printf("Skipping build image version: %s, the tag suffix does not match run image tag: %s\n", tag, runTagSuffix)
