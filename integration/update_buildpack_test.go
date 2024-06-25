@@ -228,6 +228,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+			Expect(string(buffer.Contents())).To(ContainSubstring("Highest semver bump: minor"))
 
 			buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
 			Expect(err).NotTo(HaveOccurred())
@@ -295,6 +296,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+				Expect(session).Should(gbytes.Say("Highest semver bump: patch"))
 
 				buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
 				Expect(err).NotTo(HaveOccurred())
