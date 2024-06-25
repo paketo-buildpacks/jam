@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/paketo-buildpacks/jam/v2/internal"
 	"github.com/spf13/cobra"
 )
@@ -59,6 +60,7 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 		return err
 	}
 
+	highestFoundSemverBump := "<none>"
 	for i, dependency := range pkg.Dependencies {
 		var (
 			buildpackageID string
@@ -114,6 +116,12 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 		for j, order := range bp.Order {
 			for k, group := range order.Group {
 				if group.ID == buildpackageID {
+					bump, err := semverBump(group.Version, image.Version)
+					if err != nil {
+						return err
+					}
+					highestFoundSemverBump = highestSemverBump(highestFoundSemverBump, bump)
+
 					bp.Order[j].Group[k].Version = image.Version
 				}
 			}
@@ -130,5 +138,61 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 		return err
 	}
 
+	fmt.Printf("Highest semver bump: %s\n", highestFoundSemverBump)
+
 	return nil
+}
+
+func semverBump(oldVersion, newVersion string) (string, error) {
+	oldSemver, err := semver.StrictNewVersion(oldVersion)
+	if err != nil {
+		return "", err
+	}
+
+	newSemver, err := semver.StrictNewVersion(newVersion)
+	if err != nil {
+		return "", err
+	}
+
+	if newSemver.Major() > oldSemver.Major() {
+		return "major", nil
+	}
+
+	if newSemver.Minor() > oldSemver.Minor() {
+		return "minor", nil
+	}
+
+	if newSemver.Patch() > oldSemver.Patch() {
+		return "patch", nil
+	}
+
+	return "<none>", nil
+}
+
+func highestSemverBump(highest, current string) string {
+	if highest == "major" {
+		return highest
+	}
+
+	if highest == "minor" {
+		if current == "major" {
+			return current
+		} else {
+			return highest
+		}
+	}
+
+	if highest == "patch" {
+		if current == "major" || current == "minor" {
+			return current
+		} else {
+			return highest
+		}
+	}
+
+	if highest == "<none>" {
+		return current
+	}
+
+	return highest
 }
