@@ -24,6 +24,7 @@ func TestUnitInternal(t *testing.T) {
 	suite("BuilderConfig", testBuilderConfig)
 	suite("BuildpackConfig", testBuildpackConfig)
 	suite("BuildpackInspector", testBuildpackInspector)
+	suite("ExtensionInspector", testExtensionInspector)
 	suite("DependencyCacher", testDependencyCacher)
 	suite("Dependency", testDependency)
 	suite("FileBundler", testFileBundler)
