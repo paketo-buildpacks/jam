@@ -15,13 +15,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testBuildpackInspector(t *testing.T, context spec.G, it spec.S) {
+func testExtensionInspector(t *testing.T, context spec.G, it spec.S) {
 	var (
-		Expect = NewWithT(t).Expect
-
-		inspector                             internal.BuildpackInspector
-		buildpackage                          string
-		contentBp1, contentBp2, contentMetaBp []byte
+		Expect            = NewWithT(t).Expect
+		inspector         internal.ExtensionInspector
+		buildpackage      string
+		contentExtension1 []byte
 	)
 
 	it.Before(func() {
@@ -30,158 +29,96 @@ func testBuildpackInspector(t *testing.T, context spec.G, it spec.S) {
 
 		tw := tar.NewWriter(file)
 
-		firstBuildpack := bytes.NewBuffer(nil)
-		firstBuildpackGW := gzip.NewWriter(firstBuildpack)
-		firstBuildpackTW := tar.NewWriter(firstBuildpackGW)
+		firstExtension := bytes.NewBuffer(nil)
+		firstExtensionGW := gzip.NewWriter(firstExtension)
+		firstExtensionTW := tar.NewWriter(firstExtensionGW)
 
-		contentBp1 = []byte(`[buildpack]
-id = "some-buildpack"
-version = "1.2.3"
+		contentExtension1 = []byte(`
+		api = "1.2"
 
-[metadata.default-versions]
-some-dependency = "1.2.x"
-other-dependency = "2.3.x"
+		[extension]
+			description = "This extension installs the appropriate nodejs runtime via dnf"
+			id = "paketo-community/ubi-nodejs-extension"
+			name = "Ubi Node.js Extension"
+			version = "0.0.2"
+			homepage = "https://example.com/extension"
+			keywords = ["keyword1", "keyword2"]
+			licenses = [{type = "type-1.0", uri = "https://example.com/license"}]
+			sbom-formats = ["spdx", "cyclonedx"]
 
-[[metadata.dependencies]]
-	id = "some-dependency"
-	stacks = ["some-stack"]
-	version = "1.2.3"
+		[metadata]
+			include-files = ["bin/generate", "bin/detect", "bin/run", "extension.toml"]
+			pre-package = "./scripts/build.sh"
+			[metadata.default-versions]
+			node = "20.*.*"
 
-[[metadata.dependencies]]
-	id = "other-dependency"
-	stacks = ["other-stack"]
-	version = "2.3.4"
+			[[metadata.dependencies]]
+			checksum = "checksum-1"
+			id = "node"
+			licenses = ["license-1.0"]
+			name = "Ubi Node Extension"
+			SHA256 = "sha256:first-dependency-sha"
+			source = "paketocommunity/run-nodejs-20-ubi-base"
+			source-checksum = "source-checksum-1"
+			source_sha256 = "source-sha-1"
+			stacks = ["io.buildpacks.stacks.ubi8"]
+			uri = "https://example.com/first-dependency"
+			version = "20.1000"
 
-[[stacks]]
-	id = "some-stack"
+			[[metadata.dependencies]]
+			checksum = "checksum-2"
+			id = "node"
+			licenses = ["license-2.0"]
+			name = "Ubi Node Extension"
+			SHA256 = "sha256:second-dependency-sha"
+			source = "paketocommunity/run-nodejs-18-ubi-base"
+			source-checksum = "source-checksum-2"
+			source_sha256 = "source-sha-2"
+			stacks = ["io.buildpacks.stacks.ubi8"]
+			uri = "https://example.com/second-dependency"
+			version = "18.1000"
 
-[[stacks]]
-	id = "other-stack"
-`)
+			[[metadata.dependencies]]
+			checksum = "checksum-3"
+			id = "node"
+			licenses = ["license-3.0"]
+			SHA256 = "sha256:third-dependency-sha"
+			source = "paketocommunity/run-nodejs-16-ubi-base"
+			source-checksum = "source-checksum-3"
+			source_sha256 = "source-sha-3"
+			name = "Ubi Node Extension"
+			stacks = ["io.buildpacks.stacks.ubi8"]
+			uri = "https://example.com/third-dependency"
+			version = "16.1000"
+	`)
 
-		err = firstBuildpackTW.WriteHeader(&tar.Header{
-			Name: "./buildpack.toml",
+		err = firstExtensionTW.WriteHeader(&tar.Header{
+			Name: "./extension.toml",
 			Mode: 0644,
-			Size: int64(len(contentBp1)),
+			Size: int64(len(contentExtension1)),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = firstBuildpackTW.Write(contentBp1)
+		_, err = firstExtensionTW.Write(contentExtension1)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(firstBuildpackTW.Close()).To(Succeed())
-		Expect(firstBuildpackGW.Close()).To(Succeed())
+		Expect(firstExtensionTW.Close()).To(Succeed())
+		Expect(firstExtensionGW.Close()).To(Succeed())
 
 		err = tw.WriteHeader(&tar.Header{
-			Name: "blobs/sha256/first-buildpack-sha",
+			Name: "blobs/sha256/first-extension-sha",
 			Mode: 0644,
-			Size: int64(firstBuildpack.Len()),
+			Size: int64(firstExtension.Len()),
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = tw.Write(firstBuildpack.Bytes())
-		Expect(err).NotTo(HaveOccurred())
-
-		secondBuildpack := bytes.NewBuffer(nil)
-		secondBuildpackGW := gzip.NewWriter(secondBuildpack)
-		secondBuildpackTW := tar.NewWriter(secondBuildpackGW)
-
-		contentBp2 = []byte(`[buildpack]
-id = "other-buildpack"
-version = "2.3.4"
-
-[metadata.default-versions]
-first-dependency = "4.5.x"
-second-dependency = "5.6.x"
-
-[[metadata.dependencies]]
-	id = "first-dependency"
-	stacks = ["first-stack"]
-	version = "4.5.6"
-
-[[metadata.dependencies]]
-	id = "second-dependency"
-	stacks = ["second-stack"]
-	version = "5.6.7"
-
-[[stacks]]
-	id = "first-stack"
-
-[[stacks]]
-	id = "second-stack"
-`)
-
-		err = secondBuildpackTW.WriteHeader(&tar.Header{
-			Name: "./buildpack.toml",
-			Mode: 0644,
-			Size: int64(len(contentBp2)),
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = secondBuildpackTW.Write(contentBp2)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(secondBuildpackTW.Close()).To(Succeed())
-		Expect(secondBuildpackGW.Close()).To(Succeed())
-
-		err = tw.WriteHeader(&tar.Header{
-			Name: "blobs/sha256/second-buildpack-sha",
-			Mode: 0644,
-			Size: int64(secondBuildpack.Len()),
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = tw.Write(secondBuildpack.Bytes())
-		Expect(err).NotTo(HaveOccurred())
-
-		thirdBuildpack := bytes.NewBuffer(nil)
-		thirdBuildpackGW := gzip.NewWriter(thirdBuildpack)
-		thirdBuildpackTW := tar.NewWriter(thirdBuildpackGW)
-
-		contentMetaBp = []byte(`[buildpack]
-id = "meta-buildpack"
-version = "3.4.5"
-
-[[order]]
-[[order.group]]
-id = "some-buildpack"
-version = "1.2.3"
-
-[[order]]
-[[order.group]]
-id = "other-buildpack"
-version = "2.3.4"
-`)
-
-		err = thirdBuildpackTW.WriteHeader(&tar.Header{
-			Name: "./buildpack.toml",
-			Mode: 0644,
-			Size: int64(len(contentMetaBp)),
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = thirdBuildpackTW.Write(contentMetaBp)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(thirdBuildpackTW.Close()).To(Succeed())
-		Expect(thirdBuildpackGW.Close()).To(Succeed())
-
-		err = tw.WriteHeader(&tar.Header{
-			Name: "blobs/sha256/third-buildpack-sha",
-			Mode: 0644,
-			Size: int64(thirdBuildpack.Len()),
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = tw.Write(thirdBuildpack.Bytes())
+		_, err = tw.Write(firstExtension.Bytes())
 		Expect(err).NotTo(HaveOccurred())
 
 		manifest := bytes.NewBuffer(nil)
 		err = json.NewEncoder(manifest).Encode(map[string]interface{}{
 			"layers": []map[string]interface{}{
-				{"digest": "sha256:first-buildpack-sha"},
-				{"digest": "sha256:second-buildpack-sha"},
-				{"digest": "sha256:third-buildpack-sha"},
+				{"digest": "sha256:first-extension-sha"},
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -219,7 +156,7 @@ version = "2.3.4"
 		Expect(tw.Close()).To(Succeed())
 		Expect(file.Close()).To(Succeed())
 
-		inspector = internal.NewBuildpackInspector()
+		inspector = internal.NewExtensionInspector()
 	})
 
 	it.After(func() {
@@ -228,93 +165,75 @@ version = "2.3.4"
 
 	context("Dependencies", func() {
 		var (
-			expectedMetadata []internal.BuildpackMetadata
+			expectedMetadata []internal.ExtensionMetadata
 			buildpackageFlat string
 		)
 
 		it.Before(func() {
-			expectedMetadata = []internal.BuildpackMetadata{
+			expectedMetadata = []internal.ExtensionMetadata{
 				{
-					Config: cargo.Config{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "some-buildpack",
-							Version: "1.2.3",
-						},
-						Metadata: cargo.ConfigMetadata{
-							Dependencies: []cargo.ConfigMetadataDependency{
+					Config: cargo.ExtensionConfig{
+						API: "1.2",
+						Extension: cargo.ConfigExtension{
+							ID:          "paketo-community/ubi-nodejs-extension",
+							Name:        "Ubi Node.js Extension",
+							Version:     "0.0.2",
+							Homepage:    "https://example.com/extension",
+							Description: "This extension installs the appropriate nodejs runtime via dnf",
+							Keywords:    []string{"keyword1", "keyword2"},
+							Licenses: []cargo.ConfigExtensionLicense{
 								{
-									ID:      "some-dependency",
-									Stacks:  []string{"some-stack"},
-									Version: "1.2.3",
-								},
-								{
-									ID:      "other-dependency",
-									Stacks:  []string{"other-stack"},
-									Version: "2.3.4",
+									Type: "type-1.0",
+									URI:  "https://example.com/license",
 								},
 							},
+							SBOMFormats: []string{"spdx", "cyclonedx"},
+						},
+						Metadata: cargo.ConfigExtensionMetadata{
+							IncludeFiles: []string{"bin/generate", "bin/detect", "bin/run", "extension.toml"},
+							PrePackage:   "./scripts/build.sh",
 							DefaultVersions: map[string]string{
-								"some-dependency":  "1.2.x",
-								"other-dependency": "2.3.x",
+								"node": "20.*.*",
 							},
-						},
-						Stacks: []cargo.ConfigStack{
-							{ID: "some-stack"},
-							{ID: "other-stack"},
-						},
-					},
-				},
-				{
-					Config: cargo.Config{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "other-buildpack",
-							Version: "2.3.4",
-						},
-						Metadata: cargo.ConfigMetadata{
-							Dependencies: []cargo.ConfigMetadataDependency{
+							Dependencies: []cargo.ConfigExtensionMetadataDependency{
 								{
-									ID:      "first-dependency",
-									Stacks:  []string{"first-stack"},
-									Version: "4.5.6",
+									Checksum:       "checksum-1",
+									ID:             "node",
+									Licenses:       []interface{}{"license-1.0"},
+									Name:           "Ubi Node Extension",
+									SHA256:         "sha256:first-dependency-sha",
+									Source:         "paketocommunity/run-nodejs-20-ubi-base",
+									SourceChecksum: "source-checksum-1",
+									SourceSHA256:   "source-sha-1",
+									Stacks:         []string{"io.buildpacks.stacks.ubi8"},
+									URI:            "https://example.com/first-dependency",
+									Version:        "20.1000",
 								},
 								{
-									ID:      "second-dependency",
-									Stacks:  []string{"second-stack"},
-									Version: "5.6.7",
+									Checksum:       "checksum-2",
+									ID:             "node",
+									Licenses:       []interface{}{"license-2.0"},
+									Name:           "Ubi Node Extension",
+									SHA256:         "sha256:second-dependency-sha",
+									Source:         "paketocommunity/run-nodejs-18-ubi-base",
+									SourceChecksum: "source-checksum-2",
+									SourceSHA256:   "source-sha-2",
+									Stacks:         []string{"io.buildpacks.stacks.ubi8"},
+									URI:            "https://example.com/second-dependency",
+									Version:        "18.1000",
 								},
-							},
-							DefaultVersions: map[string]string{
-								"first-dependency":  "4.5.x",
-								"second-dependency": "5.6.x",
-							},
-						},
-						Stacks: []cargo.ConfigStack{
-							{ID: "first-stack"},
-							{ID: "second-stack"},
-						},
-					},
-				},
-				{
-					Config: cargo.Config{
-						Buildpack: cargo.ConfigBuildpack{
-							ID:      "meta-buildpack",
-							Version: "3.4.5",
-						},
-						Order: []cargo.ConfigOrder{
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "some-buildpack",
-										Version: "1.2.3",
-									},
-								},
-							},
-							{
-								Group: []cargo.ConfigOrderGroup{
-									{
-										ID:      "other-buildpack",
-										Version: "2.3.4",
-									},
+								{
+									Checksum:       "checksum-3",
+									ID:             "node",
+									Licenses:       []interface{}{"license-3.0"},
+									Name:           "Ubi Node Extension",
+									SHA256:         "sha256:third-dependency-sha",
+									Source:         "paketocommunity/run-nodejs-16-ubi-base",
+									SourceChecksum: "source-checksum-3",
+									SourceSHA256:   "source-sha-3",
+									Stacks:         []string{"io.buildpacks.stacks.ubi8"},
+									URI:            "https://example.com/third-dependency",
+									Version:        "16.1000",
 								},
 							},
 						},
@@ -324,7 +243,7 @@ version = "2.3.4"
 			}
 		})
 
-		context("Unflattened buildpack", func() {
+		context("Unflattened extension", func() {
 			it("returns a list of dependencies", func() {
 				configs, err := inspector.Dependencies(buildpackage)
 				Expect(err).NotTo(HaveOccurred())
@@ -332,9 +251,9 @@ version = "2.3.4"
 			})
 		})
 
-		context("Flattened buildpack", func() {
+		context("Flattened extension", func() {
 			it.Before(func() {
-				/* Flattened buildpackage, but with the same buildpack metadata as the unflattened */
+				/* Flattened buildpackage, but with the same extension metadata as the unflattened */
 				fileFlat, err := os.CreateTemp("", "buildpackage-flattened")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -345,40 +264,20 @@ version = "2.3.4"
 				flatLayerTW := tar.NewWriter(flatLayerGW)
 
 				err = flatLayerTW.WriteHeader(&tar.Header{
-					Name: "./buildpack-one/buildpack.toml",
+					Name: "./extension-one/extension.toml",
 					Mode: 0644,
-					Size: int64(len(contentBp1)),
+					Size: int64(len(contentExtension1)),
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = flatLayerTW.Write(contentBp1)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = flatLayerTW.WriteHeader(&tar.Header{
-					Name: "./buildpack-two/buildpack.toml",
-					Mode: 0644,
-					Size: int64(len(contentBp2)),
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = flatLayerTW.Write(contentBp2)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = flatLayerTW.WriteHeader(&tar.Header{
-					Name: "./buildpack-three-meta/buildpack.toml",
-					Mode: 0644,
-					Size: int64(len(contentMetaBp)),
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = flatLayerTW.Write(contentMetaBp)
+				_, err = flatLayerTW.Write(contentExtension1)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(flatLayerTW.Close()).To(Succeed())
 				Expect(flatLayerGW.Close()).To(Succeed())
 
 				err = twf.WriteHeader(&tar.Header{
-					Name: "blobs/sha256/all-buildpacks-flattened-layer-sha",
+					Name: "blobs/sha256/all-extensions-flattened-layer-sha",
 					Mode: 0644,
 					Size: int64(flatLayer.Len()),
 				})
@@ -390,7 +289,7 @@ version = "2.3.4"
 				manifestFlat := bytes.NewBuffer(nil)
 				err = json.NewEncoder(manifestFlat).Encode(map[string]interface{}{
 					"layers": []map[string]interface{}{
-						{"digest": "sha256:all-buildpacks-flattened-layer-sha"},
+						{"digest": "sha256:all-extensions-flattened-layer-sha"},
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -428,7 +327,7 @@ version = "2.3.4"
 				Expect(twf.Close()).To(Succeed())
 				Expect(fileFlat.Close()).To(Succeed())
 
-				inspector = internal.NewBuildpackInspector()
+				inspector = internal.NewExtensionInspector()
 			})
 
 			it.After(func() {
@@ -488,351 +387,351 @@ version = "2.3.4"
 					Expect(err).To(MatchError(ContainSubstring("invalid character '%'")))
 				})
 			})
+		})
 
-			context("when the manifest does not exist", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+		context("when the manifest does not exist", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					tw := tar.NewWriter(file)
+				tw := tar.NewWriter(file)
 
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError("failed to fetch archived file blobs/sha256/manifest-sha"))
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
 			})
 
-			context("when the manifest is malformed", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError("failed to fetch archived file blobs/sha256/manifest-sha"))
+			})
+		})
 
-					tw := tar.NewWriter(file)
+		context("when the manifest is malformed", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/manifest-sha",
-						Mode: 0644,
-						Size: 3,
-					})
-					Expect(err).NotTo(HaveOccurred())
+				tw := tar.NewWriter(file)
 
-					_, err = tw.Write([]byte(`%%%`))
-					Expect(err).NotTo(HaveOccurred())
-
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: 3,
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError(ContainSubstring("invalid character '%'")))
+				_, err = tw.Write([]byte(`%%%`))
+				Expect(err).NotTo(HaveOccurred())
+
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
 			})
 
-			context("when the buildpack blob does not exist", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError(ContainSubstring("invalid character '%'")))
+			})
+		})
 
-					tw := tar.NewWriter(file)
+		context("when the extension blob does not exist", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					manifest := bytes.NewBuffer(nil)
-					err = json.NewEncoder(manifest).Encode(map[string]interface{}{
-						"layers": []map[string]interface{}{
-							{"digest": "sha256:buildpack-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
+				tw := tar.NewWriter(file)
 
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/manifest-sha",
-						Mode: 0644,
-						Size: int64(manifest.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(manifest.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				manifest := bytes.NewBuffer(nil)
+				err = json.NewEncoder(manifest).Encode(map[string]interface{}{
+					"layers": []map[string]interface{}{
+						{"digest": "sha256:extension-sha"},
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError("failed to fetch archived file blobs/sha256/buildpack-sha"))
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: int64(manifest.Len()),
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(manifest.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
 			})
 
-			context("when the buildpack blob is not a gziped tar", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError("failed to fetch archived file blobs/sha256/extension-sha"))
+			})
+		})
 
-					tw := tar.NewWriter(file)
+		context("when the buildpack blob is not a gziped tar", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/buildpack-sha",
-						Mode: 0644,
-						Size: 3,
-					})
-					Expect(err).NotTo(HaveOccurred())
+				tw := tar.NewWriter(file)
 
-					_, err = tw.Write([]byte(`%%%`))
-					Expect(err).NotTo(HaveOccurred())
-
-					manifest := bytes.NewBuffer(nil)
-					err = json.NewEncoder(manifest).Encode(map[string]interface{}{
-						"layers": []map[string]interface{}{
-							{"digest": "sha256:buildpack-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/manifest-sha",
-						Mode: 0644,
-						Size: int64(manifest.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(manifest.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/extension-sha",
+					Mode: 0644,
+					Size: 3,
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError("failed to read layer blob: unexpected EOF"))
+				_, err = tw.Write([]byte(`%%%`))
+				Expect(err).NotTo(HaveOccurred())
+
+				manifest := bytes.NewBuffer(nil)
+				err = json.NewEncoder(manifest).Encode(map[string]interface{}{
+					"layers": []map[string]interface{}{
+						{"digest": "sha256:extension-sha"},
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: int64(manifest.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(manifest.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
 			})
 
-			context("when the buildpack blob does not contain a buildpack.toml", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError("failed to read layer blob: unexpected EOF"))
+			})
+		})
 
-					tw := tar.NewWriter(file)
+		context("when the extension blob does not contain a extension.toml", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					buildpack := bytes.NewBuffer(nil)
-					buildpackGW := gzip.NewWriter(buildpack)
-					buildpackTW := tar.NewWriter(buildpackGW)
+				tw := tar.NewWriter(file)
 
-					Expect(buildpackTW.Close()).To(Succeed())
-					Expect(buildpackGW.Close()).To(Succeed())
+				extension := bytes.NewBuffer(nil)
+				extensionGW := gzip.NewWriter(extension)
+				extensionTW := tar.NewWriter(extensionGW)
 
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/buildpack-sha",
-						Mode: 0644,
-						Size: int64(buildpack.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
+				Expect(extensionTW.Close()).To(Succeed())
+				Expect(extensionGW.Close()).To(Succeed())
 
-					_, err = tw.Write(buildpack.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					manifest := bytes.NewBuffer(nil)
-					err = json.NewEncoder(manifest).Encode(map[string]interface{}{
-						"layers": []map[string]interface{}{
-							{"digest": "sha256:buildpack-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/manifest-sha",
-						Mode: 0644,
-						Size: int64(manifest.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(manifest.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/extension-sha",
+					Mode: 0644,
+					Size: int64(extension.Len()),
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError("failed to fetch archived file buildpack.toml"))
+				_, err = tw.Write(extension.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				manifest := bytes.NewBuffer(nil)
+				err = json.NewEncoder(manifest).Encode(map[string]interface{}{
+					"layers": []map[string]interface{}{
+						{"digest": "sha256:extension-sha"},
+					},
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: int64(manifest.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(manifest.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
 			})
 
-			context("when the buildpack.toml is malformed", func() {
-				it.Before(func() {
-					file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
-					Expect(err).NotTo(HaveOccurred())
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError("failed to fetch archived file extension.toml"))
+			})
+		})
 
-					tw := tar.NewWriter(file)
+		context("when the extension.toml is malformed", func() {
+			it.Before(func() {
+				file, err := os.OpenFile(buildpackage, os.O_TRUNC|os.O_RDWR, 0644)
+				Expect(err).NotTo(HaveOccurred())
 
-					buildpack := bytes.NewBuffer(nil)
-					buildpackGW := gzip.NewWriter(buildpack)
-					buildpackTW := tar.NewWriter(buildpackGW)
+				tw := tar.NewWriter(file)
 
-					err = buildpackTW.WriteHeader(&tar.Header{
-						Name: "./buildpack.toml",
-						Mode: 0644,
-						Size: 3,
-					})
-					Expect(err).NotTo(HaveOccurred())
+				extension := bytes.NewBuffer(nil)
+				extensionGW := gzip.NewWriter(extension)
+				extensionTW := tar.NewWriter(extensionGW)
 
-					_, err = buildpackTW.Write([]byte(`%%%`))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(buildpackTW.Close()).To(Succeed())
-					Expect(buildpackGW.Close()).To(Succeed())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/buildpack-sha",
-						Mode: 0644,
-						Size: int64(buildpack.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(buildpack.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					manifest := bytes.NewBuffer(nil)
-					err = json.NewEncoder(manifest).Encode(map[string]interface{}{
-						"layers": []map[string]interface{}{
-							{"digest": "sha256:buildpack-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "blobs/sha256/manifest-sha",
-						Mode: 0644,
-						Size: int64(manifest.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(manifest.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					index := bytes.NewBuffer(nil)
-					err = json.NewEncoder(index).Encode(map[string]interface{}{
-						"manifests": []map[string]interface{}{
-							{"digest": "sha256:manifest-sha"},
-						},
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					err = tw.WriteHeader(&tar.Header{
-						Name: "index.json",
-						Mode: 0644,
-						Size: int64(index.Len()),
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = tw.Write(index.Bytes())
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(tw.Close()).To(Succeed())
-					Expect(file.Close()).To(Succeed())
+				err = extensionTW.WriteHeader(&tar.Header{
+					Name: "./extension.toml",
+					Mode: 0644,
+					Size: 3,
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				it("returns an error", func() {
-					_, err := inspector.Dependencies(buildpackage)
-					Expect(err).To(MatchError(ContainSubstring("got '%' instead")))
+				_, err = extensionTW.Write([]byte(`%%%`))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(extensionTW.Close()).To(Succeed())
+				Expect(extensionGW.Close()).To(Succeed())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/extension-sha",
+					Mode: 0644,
+					Size: int64(extension.Len()),
 				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(extension.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				manifest := bytes.NewBuffer(nil)
+				err = json.NewEncoder(manifest).Encode(map[string]interface{}{
+					"layers": []map[string]interface{}{
+						{"digest": "sha256:extension-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "blobs/sha256/manifest-sha",
+					Mode: 0644,
+					Size: int64(manifest.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(manifest.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				index := bytes.NewBuffer(nil)
+				err = json.NewEncoder(index).Encode(map[string]interface{}{
+					"manifests": []map[string]interface{}{
+						{"digest": "sha256:manifest-sha"},
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = tw.WriteHeader(&tar.Header{
+					Name: "index.json",
+					Mode: 0644,
+					Size: int64(index.Len()),
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tw.Write(index.Bytes())
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tw.Close()).To(Succeed())
+				Expect(file.Close()).To(Succeed())
+			})
+
+			it("returns an error", func() {
+				_, err := inspector.Dependencies(buildpackage)
+				Expect(err).To(MatchError(ContainSubstring("got '%' instead")))
 			})
 		})
 	})
