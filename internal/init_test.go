@@ -29,6 +29,7 @@ func TestUnitInternal(t *testing.T) {
 	suite("Dependency", testDependency)
 	suite("FileBundler", testFileBundler)
 	suite("Formatter", testFormatter)
+	suite("ExtensionFormatter", testExtensionFormatter)
 	suite("Image", testImage)
 	suite("PrePackager", testPrePackager)
 	suite("PackageConfig", testPackageConfig)
