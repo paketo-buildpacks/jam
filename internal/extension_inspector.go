@@ -89,17 +89,17 @@ func (i ExtensionInspector) Dependencies(path string) ([]ExtensionMetadata, erro
 		}
 		defer layerGR.Close()
 
-		// Generally, each layer corresponds to a buildpack.
-		// But certain buildpacks are "flattened" and contain multiple buildpacks
+		// Generally, each layer corresponds to an extension.
+		// But certain extension are "flattened" and contain multiple extension
 		// in the same layer.
-		buildpackTOMLs, err := fetchFromArchive(tar.NewReader(layerGR), "extension.toml", false)
+		extensionTOMLs, err := fetchFromArchive(tar.NewReader(layerGR), "extension.toml", false)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, buildpackTOML := range buildpackTOMLs {
+		for _, extensionTOML := range extensionTOMLs {
 			var config cargo.ExtensionConfig
-			err = cargo.DecodeExtensionConfig(buildpackTOML, &config)
+			err = cargo.DecodeExtensionConfig(extensionTOML, &config)
 			if err != nil {
 				return nil, err
 			}
