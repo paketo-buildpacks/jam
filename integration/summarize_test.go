@@ -433,7 +433,7 @@ version = "3.4.5"
 	})
 
 	context("failure cases", func() {
-		context("when the required buildpack flag is not set", func() {
+		context("when the required buildpack or extension flag is not set", func() {
 			it("prints an error message", func() {
 				command := exec.Command(
 					path, "summarize",
@@ -443,7 +443,7 @@ version = "3.4.5"
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: required flag(s) \"buildpack\" not set"))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: at least one of the flags in the group [buildpack extension] is required"))
 			})
 		})
 	})
