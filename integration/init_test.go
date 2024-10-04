@@ -28,6 +28,7 @@ func TestJam(t *testing.T) {
 	suite := spec.New("jam", spec.Report(report.Terminal{}))
 	suite("Errors", testErrors)
 	suite("create-stack", testCreateStack)
+	suite("publish-image", testPublishImage)
 	suite("pack", testPack)
 	suite("summarize", testSummarize)
 	suite("update-builder", testUpdateBuilder)
