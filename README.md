@@ -7,6 +7,8 @@ the idea of "packaging" or "packing" a buildpack.
 * create-stack        : create a CNB stack
 * help                : help about any command
 * pack                : package buildpack
+* publish-image       : publish an image to a registry
+* publish-stack       : publish a CNB stack to a registry
 * summarize           : summarize buildpackage
 * update-builder      : update builder
 * update-buildpack    : update buildpack
