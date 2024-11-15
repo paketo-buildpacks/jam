@@ -29,7 +29,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return config.Stacks[i].ID < config.Stacks[j].ID
 		})
 
-		fmt.Fprintf(writer, "#### Supported Stacks:\n")
+		fmt.Fprintf(writer, "### Supported Stacks\n\n")
 		for _, s := range config.Stacks {
 			fmt.Fprintf(writer, "- `%s`\n", s.ID)
 		}
@@ -37,7 +37,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 	}
 
 	if len(config.Metadata.DefaultVersions) > 0 {
-		fmt.Fprintf(writer, "#### Default Dependency Versions:\n| ID | Version |\n|---|---|\n")
+		fmt.Fprintf(writer, "### Default Dependency Versions\n\n| ID | Version |\n|---|---|\n")
 		var sortedDependencies []string
 		for key := range config.Metadata.DefaultVersions {
 			sortedDependencies = append(sortedDependencies, key)
@@ -104,7 +104,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return iVal.ID < jVal.ID
 		})
 
-		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
+		fmt.Fprintf(writer, "### Dependencies\n\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
 		for _, d := range sorted {
 			fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.SHA256)
 		}
@@ -128,7 +128,7 @@ func (f Formatter) Markdown(entries []BuildpackMetadata) {
 		//Header section
 		fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyMetadata.Config.Buildpack.Name, familyMetadata.Config.Buildpack.Version, familyMetadata.Config.Buildpack.ID)
 		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", familyMetadata.SHA256)
-		fmt.Fprintf(f.writer, "#### Included Buildpackages:\n")
+		fmt.Fprintf(f.writer, "### Included Buildpackages\n\n")
 		fmt.Fprintf(f.writer, "| Name | ID | Version |\n|---|---|---|\n")
 		for _, entry := range entries {
 			fmt.Fprintf(f.writer, "| %s | %s | %s |\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.ID, entry.Config.Buildpack.Version)
