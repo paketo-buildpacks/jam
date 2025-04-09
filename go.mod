@@ -12,7 +12,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v25.0.3+incompatible
-	github.com/docker/docker v25.0.6+incompatible
+	github.com/docker/docker v28.0.4+incompatible
 	github.com/google/go-containerregistry v0.19.0
 	github.com/moby/buildkit v0.12.5
 	github.com/onsi/gomega v1.37.0
@@ -145,6 +145,7 @@ require (
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
