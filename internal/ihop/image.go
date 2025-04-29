@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -17,6 +18,11 @@ func findFile(image v1.Image, filepath string) (*tar.Header, io.Reader, error) {
 	layers, err := image.Layers()
 	if err != nil {
 		return nil, nil, err
+	}
+
+	expectDir := false
+	if strings.HasSuffix(filepath, "/") {
+		expectDir = true
 	}
 
 	for i := len(layers) - 1; i >= 0; i-- {
@@ -47,8 +53,14 @@ func findFile(image v1.Image, filepath string) (*tar.Header, io.Reader, error) {
 			// Strip it off if it exists
 			headerName := strings.TrimPrefix(hdr.Name, ".")
 
-			if strings.TrimPrefix(headerName, "/") == strings.TrimPrefix(filepath, "/") {
+			if strings.Trim(headerName, "/") == strings.Trim(filepath, "/") {
 				found = true
+
+				if expectDir && !strings.HasSuffix(headerName, "/") {
+					return nil, nil, fmt.Errorf("file type mismatch for %s - expected directory, got regular file", filepath)
+
+				}
+
 				if hdr.Typeflag == tar.TypeSymlink {
 					header, reader, err = findFile(image, path.Join(path.Dir(filepath), hdr.Linkname))
 					if err != nil {
