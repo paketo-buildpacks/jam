@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/anchore/syft v0.80.0
 	github.com/buildpacks/pack v0.32.0
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v25.0.3+incompatible
 	github.com/docker/docker v25.0.6+incompatible
