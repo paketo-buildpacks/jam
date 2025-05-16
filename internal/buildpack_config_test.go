@@ -55,6 +55,17 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 						id = "some-repository/other-buildpack-id"
 						version = "0.1.0"
 						optional = true
+
+				[[stacks]]
+					id = "*"
+
+				[[targets]]
+					os = "linux"
+					arch = "amd64"
+
+				[[targets]]
+					os = "linux"
+					arch = "arm64"
 			`)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -107,6 +118,21 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 								Optional: true,
 							},
 						},
+					},
+				},
+				Stacks: []internal.BuildpackConfigStack{
+					{
+						ID: "*",
+					},
+				},
+				Targets: []internal.BuildpackConfigTarget{
+					{
+						OS:   "linux",
+						Arch: "amd64",
+					},
+					{
+						OS:   "linux",
+						Arch: "arm64",
 					},
 				},
 			}))

@@ -39,6 +39,14 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 
 				[[dependencies]]
 				uri = "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"
+
+				[[targets]]
+					os = "linux"
+					arch = "amd64"
+
+				[[targets]]
+					os = "linux"
+					arch = "arm64"
 			`)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -61,6 +69,10 @@ func testPackageConfig(t *testing.T, context spec.G, it spec.S) {
 					{URI: "some-registry/some-repository/some-buildpack-id:0.20.1"},
 					{URI: "some-registry/some-repository/other-buildpack-id:0.1.0"},
 					{URI: "urn:cnb:registry:some-registry/some-repository/final-buildpack-id@0.1.0"},
+				},
+				Targets: []internal.PackageConfigTarget{
+					{OS: "linux", Arch: "amd64"},
+					{OS: "linux", Arch: "arm64"},
 				},
 			}))
 		})
