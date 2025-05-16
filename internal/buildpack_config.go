@@ -8,10 +8,12 @@ import (
 )
 
 type BuildpackConfig struct {
-	API       interface{}            `toml:"api"`
-	Buildpack interface{}            `toml:"buildpack"`
-	Metadata  interface{}            `toml:"metadata"`
-	Order     []BuildpackConfigOrder `toml:"order"`
+	API       interface{}             `toml:"api"`
+	Buildpack interface{}             `toml:"buildpack"`
+	Metadata  interface{}             `toml:"metadata"`
+	Order     []BuildpackConfigOrder  `toml:"order"`
+	Stacks    []BuildpackConfigStack  `toml:"stacks,omitempty"`
+	Targets   []BuildpackConfigTarget `toml:"targets,omitempty"`
 }
 
 type BuildpackConfigOrder struct {
@@ -22,6 +24,16 @@ type BuildpackConfigOrderGroup struct {
 	ID       string `toml:"id"`
 	Version  string `toml:"version,omitempty"`
 	Optional bool   `toml:"optional,omitempty"`
+}
+
+type BuildpackConfigStack struct {
+	ID     string   `toml:"id"`
+	Mixins []string `toml:"mixins,omitempty"`
+}
+
+type BuildpackConfigTarget struct {
+	OS   string `toml:"os,omitempty"`
+	Arch string `toml:"arch,omitempty"`
 }
 
 func ParseBuildpackConfig(path string) (BuildpackConfig, error) {

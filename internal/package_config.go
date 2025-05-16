@@ -12,10 +12,16 @@ import (
 type PackageConfig struct {
 	Buildpack    interface{}               `toml:"buildpack"`
 	Dependencies []PackageConfigDependency `toml:"dependencies"`
+	Targets      []PackageConfigTarget     `toml:"targets,omitempty"`
 }
 
 type PackageConfigDependency struct {
 	URI string `toml:"uri"`
+}
+
+type PackageConfigTarget struct {
+	OS   string `toml:"os,omitempty"`
+	Arch string `toml:"arch,omitempty"`
 }
 
 // Note: this is to support that buildpackages can refer to this field as `image` or `uri`.
