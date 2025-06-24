@@ -30,7 +30,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "c-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "c-package",
 							Version:       "3.1.2",
 							Architecture:  "arm64",
@@ -41,7 +41,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "a-package",
-						Metadata: pkg.ApkMetadata{
+						Metadata: pkg.ApkDBEntry{
 							Package:      "a-package",
 							Version:      "1.2.3",
 							Architecture: "all",
@@ -49,7 +49,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "b-package",
-						Metadata: pkg.RpmMetadata{
+						Metadata: pkg.RpmDBEntry{
 							Name:      "b-package",
 							Version:   "2.3.1",
 							Arch:      "amd64",

@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/docker/cli/cli/command/image"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
 	"github.com/onsi/gomega/format"
@@ -21,14 +22,14 @@ func TestUnitIHOP(t *testing.T) {
 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	Expect(err).NotTo(HaveOccurred())
 
-	stream, err := client.ImagePull(context.Background(), "busybox:latest", types.ImagePullOptions{})
+	stream, err := client.ImagePull(context.Background(), "busybox:latest", image.PullOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = io.Copy(io.Discard, stream)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(stream.Close()).To(Succeed())
 
-	stream, err = client.ImagePull(context.Background(), "ubuntu:jammy", types.ImagePullOptions{})
+	stream, err = client.ImagePull(context.Background(), "ubuntu:jammy", image.PullOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = io.Copy(io.Discard, stream)

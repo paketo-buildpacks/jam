@@ -77,7 +77,7 @@ func (s SBOM) LegacyFormat() (string, error) {
 	var packages []LegacySBOMPackage
 	for p := range s.sbom.Artifacts.Packages.Enumerate() {
 		switch metadata := p.Metadata.(type) {
-		case pkg.DpkgMetadata:
+		case pkg.DpkgDBEntry:
 			upstreamVersion := metadata.SourceVersion
 
 			parts := strings.Split(upstreamVersion, ":")
@@ -102,14 +102,14 @@ func (s SBOM) LegacyFormat() (string, error) {
 				Summary: strings.SplitN(metadata.Description, "\n", 2)[0],
 			})
 
-		case pkg.ApkMetadata:
+		case pkg.ApkDBEntry:
 			packages = append(packages, LegacySBOMPackage{
 				Name:    metadata.Package,
 				Version: metadata.Version,
 				Arch:    metadata.Architecture,
 			})
 
-		case pkg.RpmMetadata:
+		case pkg.RpmDBEntry:
 			packages = append(packages, LegacySBOMPackage{
 				Name:    metadata.Name,
 				Version: metadata.Version,

@@ -22,6 +22,7 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/idtools"
@@ -318,7 +319,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 
 	defer func() {
-		_, err := c.docker.ImageRemove(context.Background(), tag, types.ImageRemoveOptions{})
+		_, err := c.docker.ImageRemove(context.Background(), tag, image.RemoveOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
