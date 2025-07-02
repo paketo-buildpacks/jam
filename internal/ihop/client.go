@@ -22,6 +22,7 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/idtools"
@@ -39,6 +40,7 @@ import (
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/session/secrets/secretsprovider"
 	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/opencontainers/go-digest"
 )
 
 // An Image is a representation of a container image that can be built,
@@ -142,13 +144,14 @@ func NewClient(dir string) (Client, error) {
 func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	// create a session to interact with the Docker daemon
 	sum := sha256.Sum256([]byte(def.Dockerfile))
-	sess, err := session.NewSession(context.Background(), def.Dockerfile, hex.EncodeToString(sum[:]))
+	sess, err := session.NewSession(context.Background(), hex.EncodeToString(sum[:]))
 	if err != nil {
 		return Image{}, err
 	}
 
 	// associate an authentication provider with the session
-	dockerAuthProvider := authprovider.NewDockerAuthProvider(config.LoadDefaultConfigFile(os.Stderr))
+	// dockerAuthProvider := authprovider.NewDockerAuthProvider(config.LoadDefaultConfigFile(os.Stderr))
+	dockerAuthProvider := authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{ConfigFile: config.LoadDefaultConfigFile(os.Stderr)})
 	sess.Allow(dockerAuthProvider)
 
 	// if the DefinitionImage contains secrets, add them to the session using the
@@ -244,7 +247,9 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	buffer := bytes.NewBuffer(nil)
 	displayChan := make(chan *client.SolveStatus)
 	go func() {
-		_, _ = progressui.DisplaySolveStatus(context.Background(), nil, buffer, displayChan)
+		// _, _ = progressui.DisplaySolveStatus(context.Background(), nil, buffer, displayChan)
+		d, _ := progressui.NewDisplay(buffer, progressui.PlainMode)
+		_, err = d.UpdateFrom(context.Background(), displayChan)
 	}()
 
 	stream := json.NewDecoder(resp.Body)
@@ -271,40 +276,48 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 			}
 
 			var resp control.StatusResponse
-			if err := (&resp).Unmarshal(dt); err != nil {
+			if err := (&resp).UnmarshalVT(dt); err != nil {
 				return Image{}, err
 			}
 
 			solveStatus := client.SolveStatus{}
 			for _, v := range resp.Vertexes {
+				inputs := make([]digest.Digest, 0, len(v.Inputs))
+				for _, input := range v.Inputs {
+					inputs = append(inputs, digest.Digest(input))
+				}
+				started := v.Started.AsTime()
+				completed := v.Completed.AsTime()
 				solveStatus.Vertexes = append(solveStatus.Vertexes, &client.Vertex{
-					Digest:    v.Digest,
-					Inputs:    v.Inputs,
+					Digest:    digest.Digest(v.Digest),
+					Inputs:    inputs,
 					Name:      v.Name,
-					Started:   v.Started,
-					Completed: v.Completed,
+					Started:   &started,
+					Completed: &completed,
 					Error:     v.Error,
 					Cached:    v.Cached,
 				})
 			}
 			for _, v := range resp.Statuses {
+				started := v.Started.AsTime()
+				completed := v.Completed.AsTime()
 				solveStatus.Statuses = append(solveStatus.Statuses, &client.VertexStatus{
 					ID:        v.ID,
-					Vertex:    v.Vertex,
+					Vertex:    digest.Digest(v.Vertex),
 					Name:      v.Name,
 					Total:     v.Total,
 					Current:   v.Current,
-					Timestamp: v.Timestamp,
-					Started:   v.Started,
-					Completed: v.Completed,
+					Timestamp: v.Timestamp.AsTime(),
+					Started:   &started,
+					Completed: &completed,
 				})
 			}
 			for _, v := range resp.Logs {
 				solveStatus.Logs = append(solveStatus.Logs, &client.VertexLog{
-					Vertex:    v.Vertex,
+					Vertex:    digest.Digest(v.Vertex),
 					Stream:    int(v.Stream),
 					Data:      v.Msg,
-					Timestamp: v.Timestamp,
+					Timestamp: v.Timestamp.AsTime(),
 				})
 			}
 
@@ -318,7 +331,7 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 
 	defer func() {
-		_, err := c.docker.ImageRemove(context.Background(), tag, types.ImageRemoveOptions{})
+		_, err := c.docker.ImageRemove(context.Background(), tag, image.RemoveOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}

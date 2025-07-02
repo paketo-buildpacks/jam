@@ -26,6 +26,12 @@ api = "0.6"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
+    os = "some-os"
+    arch = "some-arch"
+
+    [[metadata.dependencies.distros]]
+    name = "some-distro-name"
+    version = "some-distro-version"
 
   [[metadata.dependencies]]
     deprecation_date = 2022-04-01T00:00:00Z
@@ -35,7 +41,21 @@ api = "0.6"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
+    os = "some-other-os"
+    arch = "some-other-arch"
+
+    [[metadata.dependencies.distros]]
+    name = "some-other-distro-name"
+    version = "some-other-distro-version"
 
 [[stacks]]
   id = "some-stack-id"
   mixins = ["some-mixin-id"]
+
+[[targets]]
+  os = "some-os"
+  arch = "some-arch"
+
+[[targets]]
+  os = "some-other-os"
+  arch = "some-other-arch"
