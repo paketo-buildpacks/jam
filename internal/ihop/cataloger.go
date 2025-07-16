@@ -25,32 +25,4 @@ func (c Cataloger) Scan(path string) (SBOM, error) {
 	s, err := syft.CreateSBOM(context.Background(), src, cfg)
 
 	return NewSBOM(*s), nil
-
-	// input, err := source.ParseInput(fmt.Sprintf("oci-dir:%s", path), "")
-	// if err != nil {
-	// 	return SBOM{}, err
-	// }
-
-	// src, cleanup, err := source.New(*input, nil, nil)
-	// if err != nil {
-	// 	return SBOM{}, err
-	// }
-	// defer cleanup()
-
-	// catalog, _, release, err := syft.CatalogPackages(src, cataloger.Config{
-	// 	Search: cataloger.SearchConfig{
-	// 		Scope: source.SquashedScope,
-	// 	},
-	// })
-	// if err != nil {
-	// 	return SBOM{}, err
-	// }
-
-	// return NewSBOM(sbom.SBOM{
-	// 	Artifacts: sbom.Artifacts{
-	// 		Packages:          catalog,
-	// 		LinuxDistribution: release,
-	// 	},
-	// 	Source: src.Metadata,
-	// }), nil
 }

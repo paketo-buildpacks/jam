@@ -55,7 +55,7 @@ func testCataloger(t *testing.T, context spec.G, it spec.S) {
 			context("when the oci layout cannot be scanned", func() {
 				it("returns an error", func() {
 					_, err := cataloger.Scan("not a valid path")
-					Expect(err).To(MatchError(ContainSubstring("could not fetch image")))
+					Expect(err).To(MatchError(ContainSubstring("an error occurred attempting to resolve")))
 				})
 			})
 		})

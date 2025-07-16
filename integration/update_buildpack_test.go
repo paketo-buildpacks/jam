@@ -33,7 +33,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 	context("when updating buildpacks it uses the CNB registry by default", func() {
 		it.Before(func() {
-			goRef, err := name.ParseReference("gcr.io/paketo-buildpacks/go-dist")
+			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
 			goImg, err := remote.Image(goRef)
 			Expect(err).ToNot(HaveOccurred())
@@ -611,7 +611,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 	context("updating non-cnb registry image refs", func() {
 		it.Before(func() {
-			goRef, err := name.ParseReference("gcr.io/paketo-buildpacks/go-dist")
+			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
 			goImg, err := remote.Image(goRef)
 			Expect(err).ToNot(HaveOccurred())
