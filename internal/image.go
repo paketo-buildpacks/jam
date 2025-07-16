@@ -60,7 +60,11 @@ func FindLatestImageOnCNBRegistry(uri, api, patchVersion string) (Image, error) 
 	if err != nil {
 		return Image{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err2 := resp.Body.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	var metadata struct {
 		Latest struct {
@@ -91,14 +95,14 @@ func FindLatestImageOnCNBRegistry(uri, api, patchVersion string) (Image, error) 
 			Name:    fmt.Sprintf("urn:cnb:registry:%s", id),
 			Path:    id,
 			Version: highestPatch,
-		}, nil
+		}, err // err should be nil here, but return err to catch deferred error
 	}
 
 	return Image{
 		Name:    fmt.Sprintf("urn:cnb:registry:%s", id),
 		Path:    id,
 		Version: metadata.Latest.Version,
-	}, nil
+	}, err // err should be nil here, but return err to catch deferred error
 }
 
 func FindLatestImage(uri, patchVersion string) (Image, error) {

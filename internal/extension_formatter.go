@@ -24,7 +24,7 @@ func NewExtensionFormatter(writer io.Writer) ExtensionFormatter {
 func printExtensionImplementation(writer io.Writer, config cargo.ExtensionConfig) {
 
 	if len(config.Metadata.DefaultVersions) > 0 {
-		fmt.Fprintf(writer, "#### Default Dependency Versions:\n| ID | Version |\n|---|---|\n")
+		_, _ = fmt.Fprintf(writer, "#### Default Dependency Versions:\n| ID | Version |\n|---|---|\n")
 		var sortedDependencies []string
 		for key := range config.Metadata.DefaultVersions {
 			sortedDependencies = append(sortedDependencies, key)
@@ -33,9 +33,9 @@ func printExtensionImplementation(writer io.Writer, config cargo.ExtensionConfig
 		sort.Strings(sortedDependencies)
 
 		for _, key := range sortedDependencies {
-			fmt.Fprintf(writer, "| %s | %s |\n", key, config.Metadata.DefaultVersions[key])
+			_, _ = fmt.Fprintf(writer, "| %s | %s |\n", key, config.Metadata.DefaultVersions[key])
 		}
-		fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer)
 	}
 
 	if len(config.Metadata.Dependencies) > 0 {
@@ -86,20 +86,20 @@ func printExtensionImplementation(writer io.Writer, config cargo.ExtensionConfig
 			return iVal.ID < jVal.ID
 		})
 
-		fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Stacks | Source |\n|---|---|---|---|\n")
+		_, _ = fmt.Fprintf(writer, "#### Dependencies:\n| Name | Version | Stacks | Source |\n|---|---|---|---|\n")
 		for _, d := range sorted {
-			fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.Source)
+			_, _ = fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.Source)
 		}
-		fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer)
 	}
 
 }
 
 func (f ExtensionFormatter) Markdown(entries []ExtensionMetadata) {
 
-	fmt.Fprintf(f.writer, "## %s %s\n", entries[0].Config.Extension.Name, entries[0].Config.Extension.Version)
-	fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entries[0].Config.Extension.ID)
-	fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", entries[0].SHA256)
+	_, _ = fmt.Fprintf(f.writer, "## %s %s\n", entries[0].Config.Extension.Name, entries[0].Config.Extension.Version)
+	_, _ = fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entries[0].Config.Extension.ID)
+	_, _ = fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", entries[0].SHA256)
 	printExtensionImplementation(f.writer, entries[0].Config)
 
 }

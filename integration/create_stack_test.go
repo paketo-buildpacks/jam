@@ -64,7 +64,9 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 
 			archive, err := os.Open(filepath.Join(tmpDir, "build.oci"))
 			Expect(err).NotTo(HaveOccurred())
-			defer archive.Close()
+			defer func() {
+				Expect(archive.Close()).To(Succeed())
+			}()
 
 			err = vacation.NewArchive(archive).Decompress(dir)
 			Expect(err).NotTo(HaveOccurred())
@@ -150,7 +152,9 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 
 			archive, err := os.Open(filepath.Join(tmpDir, "run.oci"))
 			Expect(err).NotTo(HaveOccurred())
-			defer archive.Close()
+			defer func() {
+				Expect(archive.Close()).NotTo(HaveOccurred())
+			}()
 
 			err = vacation.NewArchive(archive).Decompress(dir)
 			Expect(err).NotTo(HaveOccurred())

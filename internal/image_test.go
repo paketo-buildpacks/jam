@@ -31,7 +31,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 				switch req.URL.Path {
 				case "/v1/buildpacks/some-ns/some-name":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 					  "latest": {
 					    "version": "0.1.0",
 					    "namespace": "some-ns",
@@ -63,10 +63,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					    }
 					  ]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v1/buildpacks/no-new-patch":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 					  "latest": {
 					    "version": "0.1.0"
 					  },
@@ -93,14 +94,16 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 					    }
 					  ]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v1/buildpacks/paketo-buildpacks/go":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.1.0"
 						}
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v1/buildpacks/retry-endpoint":
 					if count < 1 {
@@ -108,11 +111,12 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 						count++
 					} else {
 						w.WriteHeader(http.StatusOK)
-						fmt.Fprintln(w, `{
+						_, err := fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.1.0"
 							}
 						}`)
+						Expect(err).NotTo(HaveOccurred())
 					}
 
 				case "/v1/buildpacks/not/ok":
@@ -120,7 +124,8 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v1/buildpacks/broken/response":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `%`)
+					_, err := fmt.Fprintln(w, `%`)
+					Expect(err).NotTo(HaveOccurred())
 
 				default:
 					t.Fatalf("unknown path: %s", req.URL.Path)
@@ -236,7 +241,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/some-org/some-repo/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.9",
 								"0.0.10",
@@ -247,10 +252,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"0.20.13-rc1"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/no-new-patch/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.1",
 								"0.0.2-bad-version",
@@ -259,10 +265,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/some-other-repo/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"v0.0.10",
 								"some-weird-tag",
@@ -270,6 +277,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/error-repo/tags/list":
 					w.WriteHeader(http.StatusTeapot)
@@ -393,7 +401,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/some-org/some-repo-build/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
 								"0.0.10",
@@ -405,10 +413,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/some-other-repo-build/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"v0.0.10-some-cnb",
 								"v0.20.2",
@@ -418,6 +427,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/error-repo/tags/list":
 					w.WriteHeader(http.StatusTeapot)
@@ -592,7 +602,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/some-org/some-repo-build/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
 								"0.0.10",
@@ -604,10 +614,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/tag-suffix-repo-build/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
 								"0.20.12-some-cnb",
@@ -615,10 +626,11 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"999999-some-cnb"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/some-other-repo-build/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"v0.0.10-some-cnb",
 								"v0.20.2",
@@ -628,6 +640,7 @@ func testImage(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-org/error-repo/tags/list":
 					w.WriteHeader(http.StatusTeapot)

@@ -65,7 +65,11 @@ func packRun(flags packFlags) error {
 	if err != nil {
 		return fmt.Errorf("unable to create temporary directory: %s", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err2 := os.RemoveAll(tmpDir); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	if flags.extensionTOMLPath != "" {
 		err := packRunExtension(flags, tmpDir)
@@ -91,7 +95,7 @@ func packRun(flags packFlags) error {
 
 	config.Buildpack.Version = flags.version
 
-	fmt.Fprintf(os.Stdout, "Packing %s %s...\n", config.Buildpack.Name, flags.version)
+	_, _ = fmt.Fprintf(os.Stdout, "Packing %s %s...\n", config.Buildpack.Name, flags.version)
 
 	if flags.stack != "" {
 		var filteredDependencies []cargo.ConfigMetadataDependency
@@ -137,7 +141,7 @@ func packRun(flags packFlags) error {
 		return fmt.Errorf("failed to create output: %s", err)
 	}
 
-	return nil
+	return err // err should be nil here, but return err to catch deferred error
 }
 
 func packRunExtension(flags packFlags, tmpDir string) error {
@@ -158,7 +162,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 
 	config.Extension.Version = flags.version
 
-	fmt.Fprintf(os.Stdout, "Packing %s %s...\n", config.Extension.Name, flags.version)
+	_, _ = fmt.Fprintf(os.Stdout, "Packing %s %s...\n", config.Extension.Name, flags.version)
 
 	if flags.stack != "" {
 		var filteredDependencies []cargo.ConfigExtensionMetadataDependency

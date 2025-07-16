@@ -23,6 +23,9 @@ func (c Cataloger) Scan(path string) (SBOM, error) {
 
 	// build the SBOM
 	s, err := syft.CreateSBOM(context.Background(), src, cfg)
+	if err != nil {
+		return SBOM{}, err
+	}
 
 	return NewSBOM(*s), nil
 }

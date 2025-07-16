@@ -264,7 +264,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 						http.NotFound(w, req)
 					}
 
-					fmt.Fprint(w, "dependency-contents")
+					_, _ = fmt.Fprint(w, "dependency-contents")
 				}))
 
 				config, err := cargo.NewBuildpackParser().Parse(filepath.Join(buildpackDir, "buildpack.toml"))

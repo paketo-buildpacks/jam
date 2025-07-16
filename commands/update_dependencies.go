@@ -101,7 +101,11 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 	if err != nil {
 		return fmt.Errorf("failed to open buildpack config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	err = cargo.EncodeConfig(file, config)
 	if err != nil {
@@ -110,5 +114,5 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 
 	fmt.Println("Updating buildpack.toml with new versions: ", reflect.ValueOf(newVersionsFound).MapKeys())
 
-	return nil
+	return err // err should be nil here, but return err to catch deferred error
 }

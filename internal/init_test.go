@@ -48,7 +48,11 @@ func ExtractFile(file *os.File, name string) ([]byte, *tar.Header, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	defer gzr.Close()
+	defer func() {
+		if err2 := gzr.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	tr := tar.NewReader(gzr)
 
@@ -68,7 +72,7 @@ func ExtractFile(file *os.File, name string) ([]byte, *tar.Header, error) {
 				return nil, nil, err
 			}
 
-			return contents, hdr, nil
+			return contents, hdr, err // err should be nil here, but return err to catch deferred error
 		}
 	}
 

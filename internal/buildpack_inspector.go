@@ -30,7 +30,11 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	indicesJSON, err := fetchFromArchive(tar.NewReader(file), "index.json", true)
 	if err != nil {
@@ -89,7 +93,11 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 		if err != nil {
 			return nil, fmt.Errorf("failed to read layer blob: %w", err)
 		}
-		defer layerGR.Close()
+		defer func() {
+			if err2 := layerGR.Close(); err2 != nil && err == nil {
+				err = err2
+			}
+		}()
 
 		// Generally, each layer corresponds to a buildpack.
 		// But certain buildpacks are "flattened" and contain multiple buildpacks
@@ -120,7 +128,7 @@ func (i BuildpackInspector) Dependencies(path string) ([]BuildpackMetadata, erro
 		metadataCollection[0].SHA256 = buildpackageDigest
 	}
 
-	return metadataCollection, nil
+	return metadataCollection, err // err should be nil here, but return err to catch deferred error
 }
 
 // This function takes a boolean to stop search after the first match because

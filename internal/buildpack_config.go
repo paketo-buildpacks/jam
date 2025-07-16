@@ -41,7 +41,11 @@ func ParseBuildpackConfig(path string) (BuildpackConfig, error) {
 	if err != nil {
 		return BuildpackConfig{}, fmt.Errorf("failed to open buildpack config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	var config BuildpackConfig
 	err = toml.NewDecoder(file).Decode(&config)
@@ -49,7 +53,7 @@ func ParseBuildpackConfig(path string) (BuildpackConfig, error) {
 		return BuildpackConfig{}, fmt.Errorf("failed to parse buildpack config: %w", err)
 	}
 
-	return config, nil
+	return config, err // err should be nil here, but return err to catch deferred error
 }
 
 func OverwriteBuildpackConfig(path string, config BuildpackConfig) error {
@@ -57,7 +61,11 @@ func OverwriteBuildpackConfig(path string, config BuildpackConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to open buildpack config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	err = toml.NewEncoder(file).Encode(config)
 	if err != nil {

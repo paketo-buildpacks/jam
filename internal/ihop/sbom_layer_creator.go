@@ -19,7 +19,11 @@ func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (L
 	if err != nil {
 		return Layer{}, err
 	}
-	defer buffer.Close()
+	defer func() {
+		if err2 := buffer.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	tw := tar.NewWriter(buffer)
 	syftSBOM, err := sbom.SyftFormat()
@@ -65,5 +69,6 @@ func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (L
 		return Layer{}, err
 	}
 
-	return tarToLayer(buffer)
+	layer, err := tarToLayer(buffer)
+	return layer, err // err should be nil here, but return err to catch deferred error
 }

@@ -61,7 +61,9 @@ func testOsReleaseLayerCreator(t *testing.T, context spec.G, it spec.S) {
 
 		reader, err := layer.Uncompressed()
 		Expect(err).NotTo(HaveOccurred())
-		defer reader.Close()
+		defer func() {
+			Expect(reader.Close()).To(Succeed())
+		}()
 
 		tr := tar.NewReader(reader)
 		files := make(map[string]interface{})

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/onsi/gomega/types"
-	. "github.com/paketo-buildpacks/packit/v2/matchers"
+	"github.com/paketo-buildpacks/packit/v2/matchers"
 )
 
 func MatchTomlContent(expectedFilePath string) types.GomegaMatcher {
@@ -33,7 +33,7 @@ func (m matchTomlContentMatcher) Match(actual interface{}) (bool, error) {
 		return false, err
 	}
 
-	matchTomlMatcher := MatchTOML(expectedContents)
+	matchTomlMatcher := matchers.MatchTOML(expectedContents)
 	return matchTomlMatcher.Match(actualContents)
 }
 

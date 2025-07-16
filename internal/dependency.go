@@ -187,7 +187,7 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 	cargoDependency.Source = dependency.Source
 	cargoDependency.SourceSHA256 = dependency.SourceSHA256
 	cargoDependency.URI = dependency.URI
-	cargoDependency.Version = strings.Replace(dependency.Version, "v", "", -1)
+	cargoDependency.Version = strings.ReplaceAll(dependency.Version, "v", "")
 	cargoDependency.Checksum = dependency.Checksum
 	cargoDependency.SourceChecksum = dependency.SourceChecksum
 

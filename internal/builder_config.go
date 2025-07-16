@@ -135,7 +135,11 @@ func ParseBuilderConfig(path string) (BuilderConfig, error) {
 	if err != nil {
 		return BuilderConfig{}, fmt.Errorf("failed to open builder config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	var config BuilderConfig
 	err = toml.NewDecoder(file).Decode(&config)
@@ -143,7 +147,7 @@ func ParseBuilderConfig(path string) (BuilderConfig, error) {
 		return BuilderConfig{}, fmt.Errorf("failed to parse builder config: %w", err)
 	}
 
-	return config, nil
+	return config, err // err should be nil here, but return err to catch deferred error
 }
 
 func OverwriteBuilderConfig(path string, config BuilderConfig) error {

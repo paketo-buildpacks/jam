@@ -43,7 +43,9 @@ func testPublishImage(t *testing.T, context spec.G, it spec.S) {
 
 		archive, err := os.Open(filepath.Join(tmpDir, "run.oci"))
 		Expect(err).NotTo(HaveOccurred())
-		defer archive.Close()
+		defer func() {
+			Expect(archive.Close()).To(Succeed())
+		}()
 	})
 
 	it.After(func() {
