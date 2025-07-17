@@ -69,7 +69,11 @@ func publishStackRun(flags publishStackFlags) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(scratch)
+	defer func() {
+		if err2 := os.RemoveAll(scratch); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	tmpBuild := filepath.Join(scratch, "build")
 	err = extractTar(flags.buildArchive, tmpBuild)
@@ -100,7 +104,7 @@ func publishStackRun(flags publishStackFlags) error {
 		return err
 	}
 
-	return nil
+	return err // err should be nil here, but return err to catch deferred error
 }
 
 func extractTar(input string, destination string) error {

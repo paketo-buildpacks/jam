@@ -22,7 +22,11 @@ func testBuilderConfig(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			file, err := os.CreateTemp("", "package.toml")
 			Expect(err).NotTo(HaveOccurred())
-			defer file.Close()
+			defer func() {
+				if err2 := file.Close(); err2 != nil && err == nil {
+					err = err2
+				}
+			}()
 
 			_, err = file.WriteString(`
 description = "Some description"
@@ -211,7 +215,10 @@ description = "Some description"
 		it.Before(func() {
 			file, err := os.CreateTemp("", "builder.toml")
 			Expect(err).NotTo(HaveOccurred())
-			defer file.Close()
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				Expect(file.Close()).To(Succeed())
+			}()
 
 			_, err = file.WriteString(`previous contents of the file`)
 			Expect(err).NotTo(HaveOccurred())

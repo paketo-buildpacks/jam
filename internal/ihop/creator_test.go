@@ -97,7 +97,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "some-build-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "some-build-package",
 							Version:       "1.2.3",
 							Architecture:  "all",
@@ -107,7 +107,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "some-common-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "some-common-package",
 							Version:       "2.2.2",
 							Architecture:  "amd64",
@@ -129,7 +129,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "some-common-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "some-common-package",
 							Version:       "2.2.2",
 							Architecture:  "amd64",
@@ -139,7 +139,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "some-run-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "some-run-package",
 							Version:       "4.5.6",
 							Architecture:  "all",

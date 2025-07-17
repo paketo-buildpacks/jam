@@ -57,7 +57,7 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		goRef, err := name.ParseReference("gcr.io/paketo-buildpacks/go")
+		goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go")
 		Expect(err).ToNot(HaveOccurred())
 		goImg, err := remote.Image(goRef)
 		Expect(err).ToNot(HaveOccurred())
@@ -95,7 +95,7 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 
 			case "/v2/paketo-buildpacks/go/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.20.1",
@@ -103,10 +103,11 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case "/v2/paketobuildpacks/nodejs/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.1.0",
@@ -114,19 +115,21 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 								"0.20.22"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case "/v2/paketocommunity/ubi-nodejs-extension/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.3",
 								"0.0.4"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case "/v2/some-repository/lifecycle/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.20.1",
@@ -134,10 +137,11 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case "/v2/somerepository/build/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
 								"0.20.1",
@@ -146,6 +150,7 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case goConfigPath:
 				if req.Method != http.MethodGet {
@@ -197,13 +202,14 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 
 			case "/v2/some-repository/nonexistent-labels-id/tags/list":
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, `{
+				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.1.0",
 								"0.2.0",
 								"latest"
 							]
 					}`)
+				Expect(err).NotTo(HaveOccurred())
 
 			case "/v2/some-repository/nonexistent-labels-id/manifests/0.2.0":
 				w.WriteHeader(http.StatusBadRequest)

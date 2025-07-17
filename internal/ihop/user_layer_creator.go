@@ -22,7 +22,11 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 	if err != nil {
 		return Layer{}, err
 	}
-	defer tarBuffer.Close()
+	defer func() {
+		if err2 := tarBuffer.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 	tw := tar.NewWriter(tarBuffer)
 
 	// find any existing /etc/ folder and copy the header
@@ -47,7 +51,10 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 	if err != nil {
 		return Layer{}, err
 	}
-	buffer.WriteString(fmt.Sprintf("cnb:x:%d:\n", def.GID))
+	_, err = fmt.Fprintf(buffer, "cnb:x:%d:\n", def.GID)
+	if err != nil {
+		return Layer{}, err
+	}
 	hdr.Size = int64(buffer.Len())
 	files[hdr] = buffer
 
@@ -63,7 +70,10 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 	if err != nil {
 		return Layer{}, err
 	}
-	buffer.WriteString(fmt.Sprintf("cnb:x:%d:%d::/home/cnb:%s\n", def.UID, def.GID, def.Shell))
+	_, err = fmt.Fprintf(buffer, "cnb:x:%d:%d::/home/cnb:%s\n", def.UID, def.GID, def.Shell)
+	if err != nil {
+		return Layer{}, err
+	}
 	hdr.Size = int64(buffer.Len())
 	files[hdr] = buffer
 
@@ -100,5 +110,6 @@ func (c UserLayerCreator) Create(image Image, def DefinitionImage, _ SBOM) (Laye
 		return Layer{}, err
 	}
 
-	return tarToLayer(tarBuffer)
+	layer, err := tarToLayer(tarBuffer)
+	return layer, err // err should be nil here, but return err to catch deferred error
 }

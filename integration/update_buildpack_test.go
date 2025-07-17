@@ -33,7 +33,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 	context("when updating buildpacks it uses the CNB registry by default", func() {
 		it.Before(func() {
-			goRef, err := name.ParseReference("gcr.io/paketo-buildpacks/go-dist")
+			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
 			goImg, err := remote.Image(goRef)
 			Expect(err).ToNot(HaveOccurred())
@@ -62,7 +62,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v1/buildpacks/paketo-buildpacks/go-dist":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.21.0"
 						},
@@ -81,10 +81,11 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					    }
 						]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v1/buildpacks/paketo-buildpacks/mri":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.2.0"
 						},
@@ -94,10 +95,11 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					    }
 						]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v1/buildpacks/paketo-buildpacks/node-engine":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						"latest": {
 							"version": "0.20.22"
 						},
@@ -107,6 +109,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					    }
 						]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case goConfigPath:
 					if req.Method != http.MethodGet {
@@ -142,13 +145,14 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/some-repository/nonexistent-labels-id/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.1.0",
 								"0.2.0",
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-repository/nonexistent-labels-id/manifests/0.2.0":
 					w.WriteHeader(http.StatusBadRequest)
@@ -611,7 +615,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 	context("updating non-cnb registry image refs", func() {
 		it.Before(func() {
-			goRef, err := name.ParseReference("gcr.io/paketo-buildpacks/go-dist")
+			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
 			goImg, err := remote.Image(goRef)
 			Expect(err).ToNot(HaveOccurred())
@@ -649,7 +653,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/paketo-buildpacks/go-dist/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.20.1",
@@ -658,10 +662,11 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/paketobuildpacks/node-engine/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.1.0",
@@ -669,10 +674,11 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 								"0.20.22"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/paketobuildpacks/mri/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10",
 								"0.1.0",
@@ -680,6 +686,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case goConfigPath:
 					if req.Method != http.MethodGet {
@@ -725,13 +732,14 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 
 				case "/v2/some-repository/nonexistent-labels-id/tags/list":
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintln(w, `{
+					_, err := fmt.Fprintln(w, `{
 						  "tags": [
 								"0.1.0",
 								"0.2.0",
 								"latest"
 							]
 					}`)
+					Expect(err).NotTo(HaveOccurred())
 
 				case "/v2/some-repository/nonexistent-labels-id/manifests/0.2.0":
 					w.WriteHeader(http.StatusBadRequest)

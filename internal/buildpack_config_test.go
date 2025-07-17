@@ -22,7 +22,9 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			file, err := os.CreateTemp("", "buildpack.toml")
 			Expect(err).NotTo(HaveOccurred())
-			defer file.Close()
+			defer func() {
+				Expect(file.Close()).To(Succeed())
+			}()
 
 			_, err = file.WriteString(`
 				api = "0.6"
@@ -169,7 +171,9 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			file, err := os.CreateTemp("", "buildpack.toml")
 			Expect(err).NotTo(HaveOccurred())
-			defer file.Close()
+			defer func() {
+				Expect(file.Close()).To(Succeed())
+			}()
 
 			_, err = file.WriteString(`previous contents of the file`)
 			Expect(err).NotTo(HaveOccurred())

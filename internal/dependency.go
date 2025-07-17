@@ -12,29 +12,39 @@ import (
 )
 
 // Dependency represents the structure of a single entry in the dep-server
+// as well as the structure of github.com/paketo-buildpacks/packit/v2/postal.Dependency
 type Dependency struct {
-	DeprecationDate string `json:"deprecation_date,omitempty"`
+	Arch     string `json:"arch,omitempty"`
+	Checksum string `json:"checksum,omitempty"`
+	// Deprecated: use CPEs instead.
+	CPE             string   `json:"cpe,omitempty"`
+	CPEs            []string `json:"cpes,omitempty"`
+	CreatedAt       string   `json:"created_at,omitempty"`
+	DeprecationDate string   `json:"deprecation_date,omitempty"`
+	Distros         []Distro `json:"distros,omitempty"`
 	// The ID field should be the `name` from the dep-server
-	ID string `json:"name,omitempty"`
+	ID        string   `json:"name,omitempty"`
+	Licenses  []string `json:"licenses,omitempty"`
+	ModifedAt string   `json:"modified_at,omitempty"`
+	OS        string   `json:"os,omitempty"`
+	PURL      string   `json:"purl,omitempty"`
 	// Deprecated: use Checksum instead.
-	SHA256 string `json:"sha256,omitempty"`
-	Source string `json:"source,omitempty"`
-	// Deprecated: use SourceChecksum instead.
-	SourceSHA256   string   `json:"source_sha256,omitempty"`
-	Stacks         []Stack  `json:"stacks,omitempty"`
-	URI            string   `json:"uri,omitempty"`
-	Version        string   `json:"version,omitempty"`
-	CreatedAt      string   `json:"created_at,omitempty"`
-	ModifedAt      string   `json:"modified_at,omitempty"`
-	CPE            string   `json:"cpe,omitempty"`
-	PURL           string   `json:"purl,omitempty"`
-	Licenses       []string `json:"licenses,omitempty"`
-	Checksum       string   `json:"checksum,omitempty"`
-	SourceChecksum string   `json:"source-checksum,omitempty"`
+	SHA256         string  `json:"sha256,omitempty"`
+	Source         string  `json:"source,omitempty"`
+	SourceChecksum string  `json:"source-checksum,omitempty"`
+	SourceSHA256   string  `json:"source_sha256,omitempty"`
+	Stacks         []Stack `json:"stacks,omitempty"`
+	URI            string  `json:"uri,omitempty"`
+	Version        string  `json:"version,omitempty"`
 }
 
 type Stack struct {
 	ID string `json:"id,omitempty"`
+}
+
+type Distro struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 // GetDependenciesWithinConstraint reaches out to the given API to search for all
@@ -177,7 +187,7 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 	cargoDependency.Source = dependency.Source
 	cargoDependency.SourceSHA256 = dependency.SourceSHA256
 	cargoDependency.URI = dependency.URI
-	cargoDependency.Version = strings.Replace(dependency.Version, "v", "", -1)
+	cargoDependency.Version = strings.ReplaceAll(dependency.Version, "v", "")
 	cargoDependency.Checksum = dependency.Checksum
 	cargoDependency.SourceChecksum = dependency.SourceChecksum
 

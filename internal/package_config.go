@@ -57,7 +57,11 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 	if err != nil {
 		return PackageConfig{}, fmt.Errorf("failed to open package config file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	var config PackageConfig
 	err = toml.NewDecoder(file).Decode(&config)
@@ -65,7 +69,7 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 		return PackageConfig{}, fmt.Errorf("failed to parse package config: %w", err)
 	}
 
-	return config, nil
+	return config, err // err should be nil here, but return err to catch deferred error
 }
 
 func OverwritePackageConfig(path string, config PackageConfig) error {

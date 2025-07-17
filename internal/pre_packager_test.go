@@ -28,11 +28,13 @@ func testPrePackager(t *testing.T, context spec.G, it spec.S) {
 		bash = &fakes.Executable{}
 		bash.ExecuteCall.Stub = func(execution pexec.Execution) error {
 			if execution.Stdout != nil {
-				fmt.Fprint(execution.Stdout, "hello from stdout")
+				_, err := fmt.Fprint(execution.Stdout, "hello from stdout")
+				Expect(err).NotTo(HaveOccurred())
 			}
 
 			if execution.Stderr != nil {
-				fmt.Fprint(execution.Stderr, "hello from stderr")
+				_, err := fmt.Fprint(execution.Stderr, "hello from stderr")
+				Expect(err).NotTo(HaveOccurred())
 			}
 
 			return nil

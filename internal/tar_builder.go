@@ -29,13 +29,25 @@ func (b TarBuilder) Build(path string, files []File) error {
 	if err != nil {
 		return fmt.Errorf("failed to create tarball: %s", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	gw := gzip.NewWriter(file)
-	defer gw.Close()
+	defer func() {
+		if err2 := gw.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() {
+		if err2 := tw.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	directories := map[string]struct{}{}
 	for _, file := range files {
@@ -79,11 +91,14 @@ func (b TarBuilder) Build(path string, files []File) error {
 				return fmt.Errorf("failed to write file to tarball: %w", err)
 			}
 
-			file.Close()
+			err = file.Close()
+			if err != nil {
+				return fmt.Errorf("failed to close file: %w", err)
+			}
 		}
 	}
 
 	b.logger.Break()
 
-	return nil
+	return err // err should be nil here, but return err to catch deferred error
 }

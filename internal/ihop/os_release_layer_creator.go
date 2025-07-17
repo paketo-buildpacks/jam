@@ -22,7 +22,12 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 	if err != nil {
 		return Layer{}, err
 	}
-	defer tarBuffer.Close()
+	defer func() {
+		if err2 := tarBuffer.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
+
 	tw := tar.NewWriter(tarBuffer)
 
 	// find any existing /etc/ folder and copy the header
@@ -66,7 +71,8 @@ func (o OsReleaseLayerCreator) Create(image Image, _ DefinitionImage, _ SBOM) (L
 		return Layer{}, err
 	}
 
-	return tarToLayer(tarBuffer)
+	layer, err := tarToLayer(tarBuffer)
+	return layer, err // err should be nil here, but return err to catch deferred error
 }
 
 func createOsReleaseOverwrites(def Definition) map[string]string {

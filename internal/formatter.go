@@ -29,15 +29,15 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return config.Stacks[i].ID < config.Stacks[j].ID
 		})
 
-		fmt.Fprintf(writer, "### Supported Stacks\n\n")
+		_, _ = fmt.Fprintf(writer, "### Supported Stacks\n\n")
 		for _, s := range config.Stacks {
-			fmt.Fprintf(writer, "- `%s`\n", s.ID)
+			_, _ = fmt.Fprintf(writer, "- `%s`\n", s.ID)
 		}
-		fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer)
 	}
 
 	if len(config.Metadata.DefaultVersions) > 0 {
-		fmt.Fprintf(writer, "### Default Dependency Versions\n\n| ID | Version |\n|---|---|\n")
+		_, _ = fmt.Fprintf(writer, "### Default Dependency Versions\n\n| ID | Version |\n|---|---|\n")
 		var sortedDependencies []string
 		for key := range config.Metadata.DefaultVersions {
 			sortedDependencies = append(sortedDependencies, key)
@@ -46,9 +46,9 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 		sort.Strings(sortedDependencies)
 
 		for _, key := range sortedDependencies {
-			fmt.Fprintf(writer, "| %s | %s |\n", key, config.Metadata.DefaultVersions[key])
+			_, _ = fmt.Fprintf(writer, "| %s | %s |\n", key, config.Metadata.DefaultVersions[key])
 		}
-		fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer)
 	}
 
 	if len(config.Metadata.Dependencies) > 0 {
@@ -104,11 +104,11 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return iVal.ID < jVal.ID
 		})
 
-		fmt.Fprintf(writer, "### Dependencies\n\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
+		_, _ = fmt.Fprintf(writer, "### Dependencies\n\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
 		for _, d := range sorted {
-			fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.SHA256)
+			_, _ = fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.SHA256)
 		}
-		fmt.Fprintln(writer)
+		_, _ = fmt.Fprintln(writer)
 	}
 
 }
@@ -126,35 +126,35 @@ func (f Formatter) Markdown(entries []BuildpackMetadata) {
 		}
 
 		//Header section
-		fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyMetadata.Config.Buildpack.Name, familyMetadata.Config.Buildpack.Version, familyMetadata.Config.Buildpack.ID)
-		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", familyMetadata.SHA256)
-		fmt.Fprintf(f.writer, "### Included Buildpackages\n\n")
-		fmt.Fprintf(f.writer, "| Name | ID | Version |\n|---|---|---|\n")
+		_, _ = fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyMetadata.Config.Buildpack.Name, familyMetadata.Config.Buildpack.Version, familyMetadata.Config.Buildpack.ID)
+		_, _ = fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", familyMetadata.SHA256)
+		_, _ = fmt.Fprintf(f.writer, "### Included Buildpackages\n\n")
+		_, _ = fmt.Fprintf(f.writer, "| Name | ID | Version |\n|---|---|---|\n")
 		for _, entry := range entries {
-			fmt.Fprintf(f.writer, "| %s | %s | %s |\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.ID, entry.Config.Buildpack.Version)
+			_, _ = fmt.Fprintf(f.writer, "| %s | %s | %s |\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.ID, entry.Config.Buildpack.Version)
 		}
 		//Sub Header
-		fmt.Fprintf(f.writer, "\n<details>\n<summary>Order Groupings</summary>\n\n")
+		_, _ = fmt.Fprintf(f.writer, "\n<details>\n<summary>Order Groupings</summary>\n\n")
 		for _, o := range familyMetadata.Config.Order {
-			fmt.Fprintf(f.writer, "| ID | Version | Optional |\n|---|---|---|\n")
+			_, _ = fmt.Fprintf(f.writer, "| ID | Version | Optional |\n|---|---|---|\n")
 			for _, g := range o.Group {
-				fmt.Fprintf(f.writer, "| %s | %s | %t |\n", g.ID, g.Version, g.Optional)
+				_, _ = fmt.Fprintf(f.writer, "| %s | %s | %t |\n", g.ID, g.Version, g.Optional)
 			}
-			fmt.Fprintln(f.writer)
+			_, _ = fmt.Fprintln(f.writer)
 		}
-		fmt.Fprintf(f.writer, "</details>\n\n---\n")
+		_, _ = fmt.Fprintf(f.writer, "</details>\n\n---\n")
 
 		for _, entry := range entries {
-			fmt.Fprintf(f.writer, "\n<details>\n<summary>%s %s</summary>\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.Version)
-			fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entry.Config.Buildpack.ID)
+			_, _ = fmt.Fprintf(f.writer, "\n<details>\n<summary>%s %s</summary>\n", entry.Config.Buildpack.Name, entry.Config.Buildpack.Version)
+			_, _ = fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entry.Config.Buildpack.ID)
 			printImplementation(f.writer, entry.Config)
-			fmt.Fprintf(f.writer, "---\n\n</details>\n")
+			_, _ = fmt.Fprintf(f.writer, "---\n\n</details>\n")
 		}
 
 	} else { //Implementation case
-		fmt.Fprintf(f.writer, "## %s %s\n", entries[0].Config.Buildpack.Name, entries[0].Config.Buildpack.Version)
-		fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entries[0].Config.Buildpack.ID)
-		fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", entries[0].SHA256)
+		_, _ = fmt.Fprintf(f.writer, "## %s %s\n", entries[0].Config.Buildpack.Name, entries[0].Config.Buildpack.Version)
+		_, _ = fmt.Fprintf(f.writer, "\n**ID:** `%s`\n\n", entries[0].Config.Buildpack.ID)
+		_, _ = fmt.Fprintf(f.writer, "**Digest:** `%s`\n\n", entries[0].SHA256)
 		printImplementation(f.writer, entries[0].Config)
 	}
 

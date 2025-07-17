@@ -28,7 +28,11 @@ func (i ExtensionInspector) Dependencies(path string) ([]ExtensionMetadata, erro
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	indicesJSON, err := fetchFromArchive(tar.NewReader(file), "index.json", true)
 	if err != nil {
@@ -87,7 +91,11 @@ func (i ExtensionInspector) Dependencies(path string) ([]ExtensionMetadata, erro
 		if err != nil {
 			return nil, fmt.Errorf("failed to read layer blob: %w", err)
 		}
-		defer layerGR.Close()
+		defer func() {
+			if err2 := layerGR.Close(); err2 != nil && err == nil {
+				err = err2
+			}
+		}()
 
 		// Generally, each layer corresponds to an extension.
 		// But certain extension are "flattened" and contain multiple extension
@@ -115,5 +123,5 @@ func (i ExtensionInspector) Dependencies(path string) ([]ExtensionMetadata, erro
 		metadataCollection[0].SHA256 = buildpackageDigest
 	}
 
-	return metadataCollection, nil
+	return metadataCollection, err // err should be nil here, but return err to catch deferred error
 }

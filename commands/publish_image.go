@@ -52,7 +52,11 @@ func publishImageRun(flags publishImageFlags) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(scratch)
+	defer func() {
+		if err2 := os.RemoveAll(scratch); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	tmpExtractedImage := filepath.Join(scratch, "extracted_image")
 	err = extractTar(flags.imageArchive, tmpExtractedImage)
@@ -71,5 +75,5 @@ func publishImageRun(flags publishImageFlags) error {
 		return err
 	}
 
-	return nil
+	return err // err should be nil here, but return err to catch deferred error
 }

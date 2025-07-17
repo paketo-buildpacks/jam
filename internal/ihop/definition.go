@@ -164,7 +164,11 @@ func NewDefinitionFromFile(path string, secrets ...string) (Definition, error) {
 	if err != nil {
 		return Definition{}, err
 	}
-	defer file.Close()
+	defer func() {
+		if err2 := file.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
 
 	var definition Definition
 	_, err = toml.NewDecoder(file).Decode(&definition)

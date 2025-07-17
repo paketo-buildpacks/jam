@@ -1,11 +1,9 @@
 package ihop
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/anchore/syft/syft"
-	"github.com/anchore/syft/syft/pkg/cataloger"
-	"github.com/anchore/syft/syft/sbom"
 	"github.com/anchore/syft/syft/source"
 )
 
@@ -15,31 +13,19 @@ type Cataloger struct{}
 
 // Scan generates an SBOM for an image tagged in the Docker daemon.
 func (c Cataloger) Scan(path string) (SBOM, error) {
-	input, err := source.ParseInput(fmt.Sprintf("oci-dir:%s", path), "")
+	src, err := syft.GetSource(context.Background(), path, syft.DefaultGetSourceConfig().WithSources("oci-dir"))
 	if err != nil {
 		return SBOM{}, err
 	}
 
-	src, cleanup, err := source.New(*input, nil, nil)
-	if err != nil {
-		return SBOM{}, err
-	}
-	defer cleanup()
+	cfg := syft.DefaultCreateSBOMConfig()
+	cfg.Search.Scope = source.SquashedScope // this is the default, but we set it explicitly for clarity
 
-	catalog, _, release, err := syft.CatalogPackages(src, cataloger.Config{
-		Search: cataloger.SearchConfig{
-			Scope: source.SquashedScope,
-		},
-	})
+	// build the SBOM
+	s, err := syft.CreateSBOM(context.Background(), src, cfg)
 	if err != nil {
 		return SBOM{}, err
 	}
 
-	return NewSBOM(sbom.SBOM{
-		Artifacts: sbom.Artifacts{
-			Packages:          catalog,
-			LinuxDistribution: release,
-		},
-		Source: src.Metadata,
-	}), nil
+	return NewSBOM(*s), nil
 }

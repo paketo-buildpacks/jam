@@ -30,7 +30,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 				Packages: pkg.NewCollection(
 					pkg.Package{
 						Name: "c-package",
-						Metadata: pkg.DpkgMetadata{
+						Metadata: pkg.DpkgDBEntry{
 							Package:       "c-package",
 							Version:       "3.1.2",
 							Architecture:  "arm64",
@@ -41,7 +41,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "a-package",
-						Metadata: pkg.ApkMetadata{
+						Metadata: pkg.ApkDBEntry{
 							Package:      "a-package",
 							Version:      "1.2.3",
 							Architecture: "all",
@@ -49,7 +49,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					},
 					pkg.Package{
 						Name: "b-package",
-						Metadata: pkg.RpmMetadata{
+						Metadata: pkg.RpmDBEntry{
 							Name:      "b-package",
 							Version:   "2.3.1",
 							Arch:      "amd64",
@@ -118,104 +118,106 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 			Expect(output).To(MatchJSON(`{
 				"artifacts": [
 					{
-						"id": "af027636bc3daa4c",
-						"name": "a-package",
-						"version": "",
-						"type": "",
-						"foundBy": "",
-						"locations": [],
-						"licenses": [],
-						"language": "",
-						"cpes": [],
-						"purl": "",
-						"metadataType": "",
-						"metadata": {
-							"package": "a-package",
-							"originPackage": "",
-							"maintainer": "",
-							"version": "1.2.3",
-							"license": "",
-							"architecture": "all",
-							"url": "",
-							"description": "",
-							"size": 0,
-							"installedSize": 0,
-							"pullDependencies": null,
-							"provides": null,
-							"pullChecksum": "",
-							"gitCommitOfApkPort": "",
-							"files": null
-						}
+					"id": "fe5a291d49d734ea",
+					"name": "a-package",
+					"version": "",
+					"type": "",
+					"foundBy": "",
+					"locations": [],
+					"licenses": [],
+					"language": "",
+					"cpes": [],
+					"purl": "",
+					"metadataType": "apk-db-entry",
+					"metadata": {
+						"package": "a-package",
+						"originPackage": "",
+						"maintainer": "",
+						"version": "1.2.3",
+						"architecture": "all",
+						"url": "",
+						"description": "",
+						"size": 0,
+						"installedSize": 0,
+						"pullDependencies": null,
+						"provides": null,
+						"pullChecksum": "",
+						"gitCommitOfApkPort": "",
+						"files": null
+					}
 					},
 					{
-						"id": "9e1d9a70039b8e49",
+					"id": "7b80a8dd06b00cb4",
+					"name": "b-package",
+					"version": "",
+					"type": "",
+					"foundBy": "",
+					"locations": [],
+					"licenses": [],
+					"language": "",
+					"cpes": [],
+					"purl": "",
+					"metadataType": "rpm-db-entry",
+					"metadata": {
 						"name": "b-package",
-						"version": "",
-						"type": "",
-						"foundBy": "",
-						"locations": [],
-						"licenses": [],
-						"language": "",
-						"cpes": [],
-						"purl": "",
-						"metadataType": "",
-						"metadata": {
-							"name": "b-package",
-							"version": "2.3.1",
-							"epoch": null,
-							"architecture": "amd64",
-							"release": "",
-							"sourceRpm": "b-package-source",
-							"size": 0,
-							"license": "",
-							"vendor": "",
-							"modularityLabel": "",
-							"files": null
-						}
+						"version": "2.3.1",
+						"epoch": null,
+						"architecture": "amd64",
+						"release": "",
+						"sourceRpm": "b-package-source",
+						"size": 0,
+						"vendor": "",
+						"files": null
+					}
 					},
 					{
-						"id": "1d4dc26dfec3e100",
-						"name": "c-package",
-						"version": "",
-						"type": "",
-						"foundBy": "",
-						"locations": [],
-						"licenses": [],
-						"language": "",
-						"cpes": [],
-						"purl": "",
-						"metadataType": "",
-						"metadata": {
-							"package": "c-package",
-							"source": "c-package-source",
-							"version": "3.1.2",
-							"sourceVersion": "3.1.2-upstream-ubuntu3",
-							"architecture": "arm64",
-							"maintainer": "",
-							"installedSize": 0,
-							"files": null
-						}
+					"id": "8c94a67c9b13a73f",
+					"name": "c-package",
+					"version": "",
+					"type": "",
+					"foundBy": "",
+					"locations": [],
+					"licenses": [],
+					"language": "",
+					"cpes": [],
+					"purl": "",
+					"metadataType": "dpkg-db-entry",
+					"metadata": {
+						"package": "c-package",
+						"source": "c-package-source",
+						"version": "3.1.2",
+						"sourceVersion": "3.1.2-upstream-ubuntu3",
+						"architecture": "arm64",
+						"maintainer": "",
+						"installedSize": 0,
+						"files": null
+					}
 					}
 				],
 				"artifactRelationships": [],
 				"source": {
+					"id": "",
+					"name": "",
+					"version": "",
 					"type": "",
-					"target": null
+					"metadata": null
 				},
 				"distro": {
-					"name": "some-distro-name",
-					"version": "",
-					"idLike": "some-distro-id-like"
+					"id": "some-distro-name",
+					"idLike": [
+					"some-distro-id-like"
+					],
+					"versionID": "some-distro-version"
 				},
 				"descriptor": {
 					"name": "",
 					"version": ""
 				},
 				"schema": {
-					"version": "2.0.2",
-					"url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-2.0.2.json"
+					"version": "16.0.34",
+					"url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.34.json"
 				}
-			}`))
+				}`))
 		})
 	})
 

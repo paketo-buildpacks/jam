@@ -83,18 +83,22 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   include-files = ["buildpack.toml"]
 
   [[metadata.dependencies]]
+    arch = "some-arch"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
+    os = "some-os"
     sha256 = "shasum"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
 
   [[metadata.dependencies]]
-		deprecation_date = "2022-04-01T00:00:00Z"
+    arch = "some-other-arch"
+    deprecation_date = "2022-04-01T00:00:00Z"
     id = "other-dependency"
     name = "Other Dependency"
+    os = "some-other-os"
     sha256 = "shasum"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
@@ -107,7 +111,15 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 
   [[order.group]]
     id = "other-dependency"
-    version = "4.5.6"`))
+    version = "4.5.6"
+
+[[targets]]
+  arch = "some-arch"
+  os = "some-os"
+
+[[targets]]
+  arch = "some-other-arch"
+  os = "some-other-os"`))
 		})
 	})
 
@@ -154,12 +166,12 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 			Expect(contents).To(MatchTOML(`api = "0.6"
 
 [buildpack]
+  description = "some-buildpack-description"
+  homepage = "some-homepage-link"
   id = "some-buildpack-id"
+  keywords = ["some-buildpack-keyword"]
   name = "some-buildpack-name"
   version = "some-version"
-  homepage = "some-homepage-link"
-  description = "some-buildpack-description"
-  keywords = [ "some-buildpack-keyword" ]
 
 [[buildpack.licenses]]
   type = "some-buildpack-license-type"
@@ -172,26 +184,46 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
+    arch = "some-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
+    os = "some-os"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
 
+    [[metadata.dependencies.distros]]
+      name = "some-distro-name"
+      version = "some-distro-version"
+
   [[metadata.dependencies]]
+    arch = "some-other-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2022-04-01T00:00:00Z"
     id = "other-dependency"
     name = "Other Dependency"
+    os = "some-other-os"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
 
+    [[metadata.dependencies.distros]]
+      name = "some-other-distro-name"
+      version = "some-other-distro-version"
+
 [[stacks]]
   id = "some-stack-id"
-  mixins = ["some-mixin-id"]`))
+  mixins = ["some-mixin-id"]
+
+[[targets]]
+  arch = "some-arch"
+  os = "some-os"
+
+[[targets]]
+  arch = "some-other-arch"
+  os = "some-other-os"`))
 			Expect(hdr.Mode).To(Equal(int64(0644)))
 
 			contents, hdr, err = ExtractFile(file, "bin/build")
@@ -232,7 +264,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 						http.NotFound(w, req)
 					}
 
-					fmt.Fprint(w, "dependency-contents")
+					_, _ = fmt.Fprint(w, "dependency-contents")
 				}))
 
 				config, err := cargo.NewBuildpackParser().Parse(filepath.Join(buildpackDir, "buildpack.toml"))
@@ -290,12 +322,12 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(contents).To(MatchTOML(`api = "0.6"
 
 [buildpack]
+  description = "some-buildpack-description"
+  homepage = "some-homepage-link"
   id = "some-buildpack-id"
+  keywords = [ "some-buildpack-keyword" ]
   name = "some-buildpack-name"
   version = "some-version"
-  homepage = "some-homepage-link"
-  description = "some-buildpack-description"
-  keywords = [ "some-buildpack-keyword" ]
 
 [[buildpack.licenses]]
   type = "some-buildpack-license-type"
@@ -308,17 +340,31 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
+    arch = "some-arch"
     checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
+    os = "some-os"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "file:///dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
     version = "1.2.3"
 
+    [[metadata.dependencies.distros]]
+      name = "some-distro-name"
+      version = "some-distro-version"
+
 [[stacks]]
   id = "some-stack-id"
-  mixins = ["some-mixin-id"]`))
+  mixins = ["some-mixin-id"]
+
+[[targets]]
+  arch = "some-arch"
+  os = "some-os"
+
+[[targets]]
+  arch = "some-other-arch"
+  os = "some-other-os"`))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
 
 				contents, hdr, err = ExtractFile(file, "bin/build")

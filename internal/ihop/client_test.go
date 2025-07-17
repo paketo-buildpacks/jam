@@ -263,7 +263,9 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 			it.Before(func() {
 				tmp, err := os.CreateTemp("", "")
 				Expect(err).NotTo(HaveOccurred())
-				defer tmp.Close()
+				defer func() {
+					Expect(tmp.Close()).To(Succeed())
+				}()
 
 				tw := tar.NewWriter(tmp)
 				content := []byte("some-layer-content")
@@ -383,7 +385,11 @@ RUN --mount=type=secret,id=test-secret,dst=/temp cat /temp > /secret`), 0600)
 
 			file, err := os.Open(filepath.Join(dir, "archive.oci"))
 			Expect(err).NotTo(HaveOccurred())
-			defer file.Close()
+			defer func() {
+				if err2 := file.Close(); err2 != nil && err == nil {
+					err = err2
+				}
+			}()
 
 			err = vacation.NewArchive(file).Decompress(tmpDir)
 			Expect(err).NotTo(HaveOccurred())

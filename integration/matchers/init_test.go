@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	docker "github.com/docker/docker/client"
 	"github.com/onsi/gomega/format"
 	"github.com/sclevine/spec"
@@ -22,7 +22,7 @@ func TestMatchers(t *testing.T) {
 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	Expect(err).NotTo(HaveOccurred())
 
-	stream, err := client.ImagePull(context.Background(), "alpine:3.19", types.ImagePullOptions{})
+	stream, err := client.ImagePull(context.Background(), "alpine:3.19", image.PullOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = io.Copy(io.Discard, stream)
@@ -36,6 +36,6 @@ func TestMatchers(t *testing.T) {
 	suite("MatchTomlContent", testMatchTomlContent)
 	suite.Run(t)
 
-	_, err = client.ImageRemove(context.Background(), "alpine:3.19", types.ImageRemoveOptions{Force: true})
+	_, err = client.ImageRemove(context.Background(), "alpine:3.19", image.RemoveOptions{Force: true})
 	Expect(err).NotTo(HaveOccurred())
 }
