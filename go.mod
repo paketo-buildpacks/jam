@@ -12,7 +12,8 @@ require (
 	github.com/docker/cli v28.3.0+incompatible
 	github.com/docker/docker v28.3.0+incompatible
 	github.com/google/go-containerregistry v0.20.6
-	github.com/moby/buildkit v0.23.1
+	github.com/moby/buildkit v0.23.2
+	github.com/moby/go-archive v0.1.0
 	github.com/onsi/gomega v1.37.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/paketo-buildpacks/occam v0.28.0
@@ -193,7 +194,6 @@ require (
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
