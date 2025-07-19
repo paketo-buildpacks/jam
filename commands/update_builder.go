@@ -124,38 +124,59 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 	if currentBuildImage == "" {
 		currentBuildImage = builder.Build.Image
 	}
-	currentRunImage := builder.Stack.RunImage
-	if currentRunImage == "" {
-		currentRunImage = builder.Run.Images[0].Image
-	}
 
-	runImage, buildImage, err := internal.FindLatestStackImages(currentRunImage, currentBuildImage)
-	if err != nil {
-		return err
-	}
-
-	if builder.Stack.BuildImage != "" {
-		builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
-	}
-
-	if builder.Build.Image != "" {
-		builder.Build.Image = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
-	}
-
-	if runImage != (internal.Image{}) {
-		if builder.Stack.RunImage != "" {
-			builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
+	currentRunImages := []string{}
+	if builder.Stack.RunImage == "" {
+		for _, img := range builder.Run.Images {
+			currentRunImages = append(currentRunImages, img.Image)
 		}
+	} else {
+		currentRunImages = append(currentRunImages, builder.Stack.RunImage)
 
-		if len(builder.Run.Images) > 0 {
-			builder.Run.Images[0].Image = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
-		}
+	}
 
-		updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
+	updatedRunImages := []internal.ImageRegistry{}
+	for _, currentRunImg := range currentRunImages {
+		runImage, buildImage, err := internal.FindLatestStackImages(currentRunImg, currentBuildImage)
 		if err != nil {
 			return err
 		}
-		builder.Stack.RunImageMirrors = updatedMirrors
+
+		if builder.Stack.BuildImage != "" {
+			builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
+		}
+
+		if builder.Build.Image != "" {
+			builder.Build.Image = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
+		}
+
+		if runImage != (internal.Image{}) {
+			if builder.Stack.RunImage != "" {
+				builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
+			}
+
+			if len(builder.Run.Images) > 0 {
+				updatedRunImages = append(updatedRunImages, internal.ImageRegistry{
+					Image: fmt.Sprintf("%s:%s", runImage.Name, runImage.Version),
+				})
+			}
+
+			updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
+			if err != nil {
+				return err
+			}
+			builder.Stack.RunImageMirrors = updatedMirrors
+		} else {
+			if len(builder.Run.Images) > 0 {
+				updatedRunImages = append(updatedRunImages, internal.ImageRegistry{
+					Image: currentRunImg,
+				})
+			}
+		}
+	}
+
+	if len(builder.Run.Images) > 0 {
+		builder.Run.Images = updatedRunImages
 	}
 
 	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI, "")
