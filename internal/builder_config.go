@@ -16,13 +16,27 @@ type BuilderConfig struct {
 	Order          []BuilderConfigOrder          `toml:"order"`
 	Extensions     []BuilderConfigExtension      `toml:"extensions"`
 	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions"`
-	Stack          BuilderConfigStack            `toml:"stack"`
+	Build          Build                         `toml:"build,omitempty"`
+	Run            Run                           `toml:"run,omitempty"`
+	Stack          BuilderConfigStack            `toml:"stack,omitempty"`
 	Targets        []BuilderConfigTarget         `toml:"targets"`
 }
 
 type BuilderConfigBuildpack struct {
 	URI     string `toml:"uri"`
 	Version string `toml:"version"`
+}
+
+type Run struct {
+	Images []ImageRegistry `toml:"images"`
+}
+
+type ImageRegistry struct {
+	Image string `toml:"image"`
+}
+
+type Build struct {
+	Image string `toml:"image"`
 }
 
 type BuilderConfigExtension struct {
