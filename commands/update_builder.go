@@ -92,91 +92,11 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 		}
 	}
 
-	if builder.Stack.RunImage == "" && len(builder.Run.Images) == 0 {
-		return fmt.Errorf("run image is not specified in the builder")
-	}
+	isRunBuildImages := len(builder.Run.Images) > 0 || builder.Build.Image != ""
+	isStackImages := builder.Stack.BuildImage != "" || builder.Stack.RunImage != "" || builder.Stack.ID != ""
 
-	if builder.Stack.BuildImage == "" && builder.Build.Image == "" {
-		return fmt.Errorf("build image is not specified in the builder")
-	}
-
-	if builder.Stack.RunImage != "" && len(builder.Run.Images) > 1 {
-		return fmt.Errorf("run image mismatch: builder stack run image is set to '%s' but multiple run images are specified in the builder", builder.Stack.RunImage)
-	}
-
-	if builder.Stack.RunImage != "" && (len(builder.Run.Images) > 0 && builder.Run.Images[0].Image != "") && builder.Stack.RunImage != builder.Run.Images[0].Image {
-		return fmt.Errorf("run image mismatch: builder stack run image is set to '%s' but run image is set to '%s'", builder.Stack.RunImage, builder.Run.Images[0].Image)
-	}
-
-	if builder.Stack.BuildImage != "" && builder.Build.Image != "" && builder.Stack.BuildImage != builder.Build.Image {
-		return fmt.Errorf("build image mismatch: builder stack build image is set to '%s' but build image is set to '%s'", builder.Stack.BuildImage, builder.Build.Image)
-	}
-
-	if (builder.Stack.BuildImage == "" && builder.Stack.RunImage != "") || (builder.Stack.BuildImage != "" && builder.Stack.RunImage == "") {
-		return fmt.Errorf("both build and run images must be specified in the builder")
-	}
-
-	if (builder.Build.Image != "" && (len(builder.Run.Images) > 0 && builder.Run.Images[0].Image == "")) || (builder.Build.Image == "" && (len(builder.Run.Images) > 0 && builder.Run.Images[0].Image != "")) {
-		return fmt.Errorf("both build and run images must be specified in the builder")
-	}
-
-	currentBuildImage := builder.Stack.BuildImage
-	if currentBuildImage == "" {
-		currentBuildImage = builder.Build.Image
-	}
-
-	currentRunImages := []string{}
-	if builder.Stack.RunImage == "" {
-		for _, img := range builder.Run.Images {
-			currentRunImages = append(currentRunImages, img.Image)
-		}
-	} else {
-		currentRunImages = append(currentRunImages, builder.Stack.RunImage)
-
-	}
-
-	updatedRunImages := []internal.ImageRegistry{}
-	for _, currentRunImg := range currentRunImages {
-		runImage, buildImage, err := internal.FindLatestStackImages(currentRunImg, currentBuildImage)
-		if err != nil {
-			return err
-		}
-
-		if builder.Stack.BuildImage != "" {
-			builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
-		}
-
-		if builder.Build.Image != "" {
-			builder.Build.Image = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
-		}
-
-		if runImage != (internal.Image{}) {
-			if builder.Stack.RunImage != "" {
-				builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
-			}
-
-			if len(builder.Run.Images) > 0 {
-				updatedRunImages = append(updatedRunImages, internal.ImageRegistry{
-					Image: fmt.Sprintf("%s:%s", runImage.Name, runImage.Version),
-				})
-			}
-
-			updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
-			if err != nil {
-				return err
-			}
-			builder.Stack.RunImageMirrors = updatedMirrors
-		} else {
-			if len(builder.Run.Images) > 0 {
-				updatedRunImages = append(updatedRunImages, internal.ImageRegistry{
-					Image: currentRunImg,
-				})
-			}
-		}
-	}
-
-	if len(builder.Run.Images) > 0 {
-		builder.Run.Images = updatedRunImages
+	if !isRunBuildImages && !isStackImages {
+		return fmt.Errorf("no run or build images specified in the builder")
 	}
 
 	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI, "")
@@ -185,6 +105,67 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 	}
 
 	builder.Lifecycle.Version = lifecycleImage.Version
+
+	if (!isRunBuildImages && isStackImages) || (isRunBuildImages && isStackImages) {
+
+		// We set below if statement just because we want to support the scenario of having only a stack id
+		// but not any of the stack images. This is necessary for the transition from stacks to targets on the builders.
+		if !(isRunBuildImages && builder.Stack.BuildImage == "" && builder.Stack.RunImage == "" && builder.Stack.ID != "") {
+			runImage, buildImage, err := internal.FindLatestStackImages(builder.Stack.RunImage, builder.Stack.BuildImage)
+			if err != nil {
+				return err
+			}
+
+			builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
+			if runImage != (internal.Image{}) {
+				builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
+				updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
+				if err != nil {
+					return err
+				}
+				builder.Stack.RunImageMirrors = updatedMirrors
+			}
+		}
+	}
+
+	if (isRunBuildImages && !isStackImages) || (isRunBuildImages && isStackImages) {
+
+		if builder.Build.Image != "" {
+			latestBuildImage, err := internal.FindLatestImage(builder.Build.Image, "")
+			if err != nil {
+				return err
+			}
+
+			builder.Build.Image = fmt.Sprintf("%s:%s", latestBuildImage.Name, latestBuildImage.Version)
+		}
+
+		latestRunImages := []internal.ImageRegistry{}
+		for _, img := range builder.Run.Images {
+
+			runImage, err := internal.FindLatestImage(img.Image, "")
+			if err != nil {
+				return err
+			}
+
+			_, imgTag, err := internal.ParseImageURI(img.Image)
+			if err != nil {
+				return fmt.Errorf("failed to parse image URI %s: %w", img.Image, err)
+			}
+
+			if imgTag != "latest" {
+				latestRunImages = append(latestRunImages, internal.ImageRegistry{
+					Image: fmt.Sprintf("%s:%s", runImage.Name, runImage.Version),
+				})
+			} else {
+				latestRunImages = append(latestRunImages, internal.ImageRegistry{
+					Image: fmt.Sprintf("%s:%s", runImage.Name, "latest"),
+				})
+			}
+		}
+		if len(latestRunImages) > 0 {
+			builder.Run.Images = latestRunImages
+		}
+	}
 
 	err = internal.OverwriteBuilderConfig(flags.builderFile, builder)
 	if err != nil {

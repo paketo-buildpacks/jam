@@ -71,9 +71,9 @@ type BuilderExtensionConfigOrderGroup struct {
 
 type BuilderConfigStack struct {
 	ID              string   `toml:"id"`
-	BuildImage      string   `toml:"build-image"`
-	RunImage        string   `toml:"run-image"`
-	RunImageMirrors []string `toml:"run-image-mirrors"`
+	BuildImage      string   `toml:"build-image,omitempty"`
+	RunImage        string   `toml:"run-image,omitempty"`
+	RunImageMirrors []string `toml:"run-image-mirrors,omitempty"`
 }
 
 type BuilderConfigTarget struct {
