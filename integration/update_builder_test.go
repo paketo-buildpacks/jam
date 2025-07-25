@@ -144,6 +144,19 @@ func testUpdateBuilder(t *testing.T, context spec.G, it spec.S) {
 				_, err = fmt.Fprintln(w, `{
 						  "tags": [
 								"0.0.10-some-cnb",
+								"0.20.12-some-cnb",
+								"0.20.12-other-cnb",
+								"0.20.1",
+								"latest"
+							]
+					}`)
+				Expect(err).NotTo(HaveOccurred())
+
+			case "/v2/somerepository/run/tags/list":
+				w.WriteHeader(http.StatusOK)
+				_, err = fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.10-some-cnb",
 								"0.20.1",
 								"0.20.12-some-cnb",
 								"0.20.12-other-cnb",
@@ -485,6 +498,292 @@ description = "Some description"
 		})
 	})
 
+	context("when both stack and build-run images are specified with different tags", func() {
+		it.Before(func() {
+			err := os.WriteFile(filepath.Join(builderDir, "builder.toml"), bytes.ReplaceAll([]byte(`
+	description = "Some description"
+
+	[lifecycle]
+	  version = "0.10.2"
+
+	[stack]
+	  id = "io.paketo.stacks.some-stack"
+	  build-image = "REGISTRY-URI/somerepository/build:0.0.10"
+	  run-image = "REGISTRY-URI/somerepository/run:latest"
+	  run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
+
+	[build]
+	  image = "REGISTRY-URI/somerepository/build:0.0.10"
+
+	[run]
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:latest"
+
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:0.0.10"
+				`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("updates the build image as expected", func() {
+			command := exec.Command(
+				path,
+				"update-builder",
+				"--builder-file", filepath.Join(builderDir, "builder.toml"),
+				"--lifecycle-uri", fmt.Sprintf("%s/some-repository/lifecycle", strings.TrimPrefix(server.URL, "http://")),
+			)
+
+			buffer := gbytes.NewBuffer()
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+			builderContents, err := os.ReadFile(filepath.Join(builderDir, "builder.toml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(builderContents)).To(MatchTOML(strings.ReplaceAll(`
+	description = "Some description"
+
+	[build]
+		image = "REGISTRY-URI/somerepository/build:0.20.1"
+
+	[lifecycle]
+		version = "0.21.1"
+
+	[run]
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:latest"
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.20.1"
+
+	[stack]
+	  build-image = "REGISTRY-URI/somerepository/build:0.20.1"
+	  id = "io.paketo.stacks.some-stack"
+	  run-image = "REGISTRY-URI/somerepository/run:latest"
+	  run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
+				`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+		})
+	})
+
+	context("when build-run images are specified with run images having different tags", func() {
+		it.Before(func() {
+			err := os.WriteFile(filepath.Join(builderDir, "builder.toml"), bytes.ReplaceAll([]byte(`
+	description = "Some description"
+
+	[lifecycle]
+	  version = "0.10.2"
+
+	[build]
+	  image = "REGISTRY-URI/somerepository/build:0.0.10"
+
+	[run]
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:latest"
+
+	  [[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.0.10"
+				`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("updates the build and run images", func() {
+			command := exec.Command(
+				path,
+				"update-builder",
+				"--builder-file", filepath.Join(builderDir, "builder.toml"),
+				"--lifecycle-uri", fmt.Sprintf("%s/some-repository/lifecycle", strings.TrimPrefix(server.URL, "http://")),
+			)
+
+			buffer := gbytes.NewBuffer()
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+			builderContents, err := os.ReadFile(filepath.Join(builderDir, "builder.toml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(builderContents)).To(MatchTOML(strings.ReplaceAll(`
+	description = "Some description"
+
+	[build]
+		image = "REGISTRY-URI/somerepository/build:0.20.1"
+
+	[lifecycle]
+		version = "0.21.1"
+
+	[run]
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:latest"
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.20.1"
+				`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+		})
+	})
+
+	context("when only build image is specified with a tag", func() {
+		it.Before(func() {
+			err := os.WriteFile(filepath.Join(builderDir, "builder.toml"), bytes.ReplaceAll([]byte(`
+description = "Some description"
+
+[lifecycle]
+  version = "0.10.2"
+
+[build]
+  image = "REGISTRY-URI/somerepository/build:0.0.10"
+
+			`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("should update and output only the build image", func() {
+			command := exec.Command(
+				path,
+				"update-builder",
+				"--builder-file", filepath.Join(builderDir, "builder.toml"),
+				"--lifecycle-uri", fmt.Sprintf("%s/some-repository/lifecycle", strings.TrimPrefix(server.URL, "http://")),
+			)
+
+			buffer := gbytes.NewBuffer()
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+			builderContents, err := os.ReadFile(filepath.Join(builderDir, "builder.toml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(builderContents)).To(MatchTOML(strings.ReplaceAll(`
+description = "Some description"
+
+[build]
+	image = "REGISTRY-URI/somerepository/build:0.20.1"
+
+[lifecycle]
+	version = "0.21.1"
+			`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+		})
+	})
+
+	context("when only run images are specified with multiple tags", func() {
+		it.Before(func() {
+			err := os.WriteFile(filepath.Join(builderDir, "builder.toml"), bytes.ReplaceAll([]byte(`
+	description = "Some description"
+
+	[lifecycle]
+	  version = "0.10.2"
+
+	[run]
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:latest"
+
+	  [[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.0.10-some-cnb"
+
+				`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("is should only update the run images", func() {
+			command := exec.Command(
+				path,
+				"update-builder",
+				"--builder-file", filepath.Join(builderDir, "builder.toml"),
+				"--lifecycle-uri", fmt.Sprintf("%s/some-repository/lifecycle", strings.TrimPrefix(server.URL, "http://")),
+			)
+
+			buffer := gbytes.NewBuffer()
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+			builderContents, err := os.ReadFile(filepath.Join(builderDir, "builder.toml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(builderContents)).To(MatchTOML(strings.ReplaceAll(`
+	description = "Some description"
+
+	[lifecycle]
+		version = "0.21.1"
+
+	[run]
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:latest"
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.20.1"
+				`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+		})
+	})
+
+	context("when build-run images are specified and stack id", func() {
+		context("with different tags on the run images", func() {
+			it.Before(func() {
+				err := os.WriteFile(filepath.Join(builderDir, "builder.toml"), bytes.ReplaceAll([]byte(`
+	description = "Some description"
+
+	[lifecycle]
+	  version = "0.10.2"
+
+	[stack]
+	  id = "io.paketo.stacks.some-stack"
+
+	[build]
+	  image = "REGISTRY-URI/somerepository/build:0.0.10"
+
+	[run]
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:latest"
+
+	  [[run.images]]
+	    image = "REGISTRY-URI/somerepository/run:0.0.10"
+				`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("updates the the build-run images and keeps stack id", func() {
+				command := exec.Command(
+					path,
+					"update-builder",
+					"--builder-file", filepath.Join(builderDir, "builder.toml"),
+					"--lifecycle-uri", fmt.Sprintf("%s/some-repository/lifecycle", strings.TrimPrefix(server.URL, "http://")),
+				)
+
+				buffer := gbytes.NewBuffer()
+				session, err := gexec.Start(command, buffer, buffer)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+				builderContents, err := os.ReadFile(filepath.Join(builderDir, "builder.toml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(builderContents)).To(MatchTOML(strings.ReplaceAll(`
+	description = "Some description"
+
+	[build]
+		image = "REGISTRY-URI/somerepository/build:0.20.1"
+
+	[lifecycle]
+		version = "0.21.1"
+
+	[run]
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:latest"
+
+		[[run.images]]
+		image = "REGISTRY-URI/somerepository/run:0.20.1"
+
+	[stack]
+		id = "io.paketo.stacks.some-stack"
+				`, "REGISTRY-URI", strings.TrimPrefix(server.URL, "http://"))))
+			})
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the --builder-file flag is missing", func() {
 			it("prints an error and exits non-zero", func() {
@@ -586,7 +885,7 @@ description = "Some description"
 
 [stack]
   id = "io.paketo.stacks.some-stack"
-	build-image = "REGISTRY-URI/somerepository/error-build:0.0.10-some-cnb"
+  build-image = "REGISTRY-URI/somerepository/error-build:0.0.10-some-cnb"
   run-image = "REGISTRY-URI/somerepository/run:some-cnb"
   run-image-mirrors = ["REGISTRY-URI/some-repository/run:some-cnb"]
 			`), []byte(`REGISTRY-URI`), []byte(strings.TrimPrefix(server.URL, "http://"))), 0600)
