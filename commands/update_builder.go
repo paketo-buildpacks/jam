@@ -92,13 +92,6 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 		}
 	}
 
-	isRunBuildImages := len(builder.Run.Images) > 0 || builder.Build.Image != ""
-	isStackImages := builder.Stack.BuildImage != "" || builder.Stack.RunImage != "" || builder.Stack.ID != ""
-
-	if !isRunBuildImages && !isStackImages {
-		return fmt.Errorf("no run or build images specified in the builder")
-	}
-
 	lifecycleImage, err := internal.FindLatestImage(flags.lifecycleURI, "")
 	if err != nil {
 		return err
@@ -106,42 +99,18 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 
 	builder.Lifecycle.Version = lifecycleImage.Version
 
-	if (!isRunBuildImages && isStackImages) || (isRunBuildImages && isStackImages) {
-
-		// We set below if statement just because we want to support the scenario of having only a stack id
-		// but not any of the stack images. This is necessary for the transition from stacks to targets on the builders.
-		if !(isRunBuildImages && builder.Stack.BuildImage == "" && builder.Stack.RunImage == "" && builder.Stack.ID != "") {
-			runImage, buildImage, err := internal.FindLatestStackImages(builder.Stack.RunImage, builder.Stack.BuildImage)
-			if err != nil {
-				return err
-			}
-
-			builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
-			if runImage != (internal.Image{}) {
-				builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
-				updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
-				if err != nil {
-					return err
-				}
-				builder.Stack.RunImageMirrors = updatedMirrors
-			}
+	if builder.Build.Image != "" {
+		latestBuildImage, err := internal.FindLatestImage(builder.Build.Image, "")
+		if err != nil {
+			return err
 		}
+
+		builder.Build.Image = fmt.Sprintf("%s:%s", latestBuildImage.Name, latestBuildImage.Version)
 	}
 
-	if (isRunBuildImages && !isStackImages) || (isRunBuildImages && isStackImages) {
-
-		if builder.Build.Image != "" {
-			latestBuildImage, err := internal.FindLatestImage(builder.Build.Image, "")
-			if err != nil {
-				return err
-			}
-
-			builder.Build.Image = fmt.Sprintf("%s:%s", latestBuildImage.Name, latestBuildImage.Version)
-		}
-
+	if len(builder.Run.Images) > 0 {
 		latestRunImages := []internal.ImageRegistry{}
 		for _, img := range builder.Run.Images {
-
 			runImage, err := internal.FindLatestImage(img.Image, "")
 			if err != nil {
 				return err
@@ -162,8 +131,25 @@ func updateBuilderRun(flags updateBuilderFlags) error {
 				})
 			}
 		}
-		if len(latestRunImages) > 0 {
-			builder.Run.Images = latestRunImages
+
+		builder.Run.Images = latestRunImages
+	}
+
+	// Deprecated: when builder.Run.Images and builder.Build.Image are also specified, the lifecycle will ignore stack-based images
+	if builder.Stack.BuildImage != "" && builder.Stack.RunImage != "" {
+		runImage, buildImage, err := internal.FindLatestStackImages(builder.Stack.RunImage, builder.Stack.BuildImage)
+		if err != nil {
+			return err
+		}
+
+		builder.Stack.BuildImage = fmt.Sprintf("%s:%s", buildImage.Name, buildImage.Version)
+		if runImage != (internal.Image{}) {
+			builder.Stack.RunImage = fmt.Sprintf("%s:%s", runImage.Name, runImage.Version)
+			updatedMirrors, err := internal.UpdateRunImageMirrors(runImage.Version, builder.Stack.RunImageMirrors)
+			if err != nil {
+				return err
+			}
+			builder.Stack.RunImageMirrors = updatedMirrors
 		}
 	}
 
