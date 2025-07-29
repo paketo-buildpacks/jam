@@ -172,7 +172,7 @@ func FindLatestStackImages(runURI, buildURI string) (Image, Image, error) {
 
 	// If the run image tag is semver, update it to the same version as the build image
 	var runImage Image
-	runNamed, runTag, err := parseImageURI(runURI)
+	runNamed, runTag, err := ParseImageURI(runURI)
 	if err != nil {
 		return Image{}, Image{}, fmt.Errorf("failed to parse run image: %w", err)
 	}
@@ -189,7 +189,7 @@ func FindLatestStackImages(runURI, buildURI string) (Image, Image, error) {
 
 func UpdateRunImageMirrors(version string, mirrors []string) ([]string, error) {
 	for i, mirror := range mirrors {
-		mirrorNamed, mirrorTag, err := parseImageURI(mirror)
+		mirrorNamed, mirrorTag, err := ParseImageURI(mirror)
 		if err != nil {
 			return []string{}, fmt.Errorf("failed to parse image '%s': %w", mirror, err)
 		}
@@ -204,7 +204,7 @@ func UpdateRunImageMirrors(version string, mirrors []string) ([]string, error) {
 }
 
 func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
-	_, runTag, err := parseImageURI(runURI)
+	_, runTag, err := ParseImageURI(runURI)
 	if err != nil {
 		return Image{}, fmt.Errorf("failed to parse run image: %w", err)
 	}
@@ -264,7 +264,7 @@ func FindLatestBuildImage(runURI, buildURI string) (Image, error) {
 }
 
 // Parse an image URI into a reference.Named type, and a tag
-func parseImageURI(uri string) (reference.Named, string, error) {
+func ParseImageURI(uri string) (reference.Named, string, error) {
 	var imgNamed reference.Named
 	var err error
 	imgNamed, err = reference.ParseNormalizedNamed(uri)

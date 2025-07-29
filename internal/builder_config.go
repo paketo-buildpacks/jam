@@ -16,13 +16,27 @@ type BuilderConfig struct {
 	Order          []BuilderConfigOrder          `toml:"order"`
 	Extensions     []BuilderConfigExtension      `toml:"extensions"`
 	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions"`
-	Stack          BuilderConfigStack            `toml:"stack"`
+	Build          Build                         `toml:"build,omitempty"`
+	Run            Run                           `toml:"run,omitempty"`
+	Stack          BuilderConfigStack            `toml:"stack,omitempty"`
 	Targets        []BuilderConfigTarget         `toml:"targets"`
 }
 
 type BuilderConfigBuildpack struct {
 	URI     string `toml:"uri"`
 	Version string `toml:"version"`
+}
+
+type Run struct {
+	Images []ImageRegistry `toml:"images"`
+}
+
+type ImageRegistry struct {
+	Image string `toml:"image"`
+}
+
+type Build struct {
+	Image string `toml:"image"`
 }
 
 type BuilderConfigExtension struct {
@@ -57,9 +71,9 @@ type BuilderExtensionConfigOrderGroup struct {
 
 type BuilderConfigStack struct {
 	ID              string   `toml:"id"`
-	BuildImage      string   `toml:"build-image"`
-	RunImage        string   `toml:"run-image"`
-	RunImageMirrors []string `toml:"run-image-mirrors"`
+	BuildImage      string   `toml:"build-image,omitempty"`
+	RunImage        string   `toml:"run-image,omitempty"`
+	RunImageMirrors []string `toml:"run-image-mirrors,omitempty"`
 }
 
 type BuilderConfigTarget struct {
