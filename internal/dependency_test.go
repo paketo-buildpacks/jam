@@ -262,7 +262,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					}
 
 					_, err := internal.GetDependenciesWithinConstraint(dependencies, constraint, "")
-					Expect(err).To(MatchError("Invalid Semantic Version"))
+					Expect(err).To(MatchError("invalid semantic version"))
 				})
 			})
 		})
@@ -289,14 +289,15 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 				},
 				{
 					ID:           "some-dep",
-					SHA256:       "some-sha",
-					Source:       "some-source",
-					SourceSHA256: "some-source-sha",
+					SHA256:       "some-sha-two",
+					Source:       "some-source-two",
+					SourceSHA256: "some-source-sha-two",
 					Stacks: []string{
-						"different-stack",
+						"some-stack",
+						"some-stack-two",
 					},
-					URI:      "some-dep-uri",
-					Version:  "1.0.0",
+					URI:      "some-dep-uri-two-noarch",
+					Version:  "1.1.2",
 					CPE:      "cpe-notation",
 					PURL:     "some-purl",
 					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
@@ -314,6 +315,8 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					CPE:      "cpe-notation",
 					PURL:     "some-purl",
 					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					OS:       "some-os",
+					Arch:     "some-arch",
 				},
 				{
 					ID:           "some-dep",
@@ -321,13 +324,15 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					Source:       "some-source-two",
 					SourceSHA256: "some-source-sha-two",
 					Stacks: []string{
-						"an-even-different-stack",
+						"some-stack-two",
 					},
 					URI:      "some-dep-uri-two",
 					Version:  "1.1.2",
 					CPE:      "cpe-notation",
 					PURL:     "some-purl",
 					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					OS:       "some-os",
+					Arch:     "some-other-arch",
 				},
 				{
 					ID:           "some-dep",
@@ -342,6 +347,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					CPE:      "cpe-notation",
 					PURL:     "some-purl",
 					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					OS:       "some-os",
 				},
 				{
 					ID:           "some-dep",
@@ -384,6 +390,24 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					CPE:      "cpe-notation",
 					PURL:     "some-purl",
 					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					OS:       "some-os",
+					Arch:     "some-arch",
+				},
+				{
+					ID:             "some-dep",
+					Checksum:       "sha512:some-sha",
+					Source:         "some-source",
+					SourceChecksum: "sha512:some-source-sha",
+					Stacks: []string{
+						"some-stack",
+					},
+					URI:      "some-dep-uri",
+					Version:  "1.6.7",
+					CPE:      "cpe-notation",
+					PURL:     "some-purl",
+					Licenses: []interface{}{"fancy-license", "fancy-license-2"},
+					OS:       "some-os",
+					Arch:     "some-other-arch",
 				},
 			}
 		})
@@ -416,12 +440,12 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						PURL:         "some-purl",
 						ID:           "some-dep",
 						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
-						Version:      "1.0.0",
-						Stacks:       []string{"different-stack"},
-						URI:          "some-dep-uri",
-						SHA256:       "some-sha",
-						Source:       "some-source",
-						SourceSHA256: "some-source-sha",
+						Version:      "1.1.2",
+						Stacks:       []string{"some-stack", "some-stack-two"},
+						URI:          "some-dep-uri-two-noarch",
+						SHA256:       "some-sha-two",
+						Source:       "some-source-two",
+						SourceSHA256: "some-source-sha-two",
 					},
 					{
 						CPE:          "cpe-notation",
@@ -434,6 +458,8 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						SHA256:       "some-sha-two",
 						Source:       "some-source-two",
 						SourceSHA256: "some-source-sha-two",
+						OS:           "some-os",
+						Arch:         "some-arch",
 					},
 					{
 						CPE:          "cpe-notation",
@@ -441,11 +467,13 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						ID:           "some-dep",
 						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
 						Version:      "1.1.2",
-						Stacks:       []string{"an-even-different-stack"},
+						Stacks:       []string{"some-stack-two"},
 						URI:          "some-dep-uri-two",
 						SHA256:       "some-sha-two",
 						Source:       "some-source-two",
 						SourceSHA256: "some-source-sha-two",
+						OS:           "some-os",
+						Arch:         "some-other-arch",
 					},
 					{
 						CPE:          "cpe-notation",
@@ -458,6 +486,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						SHA256:       "some-sha-three",
 						Source:       "some-source-three",
 						SourceSHA256: "some-source-sha-three",
+						OS:           "some-os",
 					},
 					{
 						CPE:            "cpe-notation",
@@ -470,6 +499,22 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						Checksum:       "sha512:some-sha",
 						Source:         "some-source",
 						SourceChecksum: "sha512:some-source-sha",
+						OS:             "some-os",
+						Arch:           "some-arch",
+					},
+					{
+						CPE:            "cpe-notation",
+						PURL:           "some-purl",
+						ID:             "some-dep",
+						Licenses:       []interface{}{"fancy-license", "fancy-license-2"},
+						Version:        "1.6.7",
+						Stacks:         []string{"some-stack"},
+						URI:            "some-dep-uri",
+						Checksum:       "sha512:some-sha",
+						Source:         "some-source",
+						SourceChecksum: "sha512:some-source-sha",
+						OS:             "some-os",
+						Arch:           "some-other-arch",
 					},
 				}))
 			})
@@ -598,7 +643,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 						},
 					}
 					_, err := internal.GetCargoDependenciesWithinConstraint(cargoDependencies, constraint)
-					Expect(err).To(MatchError("Invalid Semantic Version"))
+					Expect(err).To(MatchError("invalid semantic version"))
 				})
 			})
 		})
