@@ -1,6 +1,8 @@
 package ihop_test
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/anchore/syft/syft/linux"
@@ -115,7 +117,12 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 		it("returns a Syft formatted SBOM", func() {
 			output, err := bom.SyftFormat()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchJSON(`{
+			schemaVersionPattern := regexp.MustCompile(`schema-(\d+\.\d+\.\d+)`)
+			outputReplaced1 := schemaVersionPattern.ReplaceAllString(string(output), `schema-x.x.x`)
+			matches := schemaVersionPattern.FindStringSubmatch(string(output))
+			Expect(matches).To(HaveLen(2))
+			outputReplaced2 := strings.Replace(outputReplaced1, matches[1], "x.x.x", -1)
+			Expect(outputReplaced2).To(MatchJSON(`{
 				"artifacts": [
 					{
 					"id": "fe5a291d49d734ea",
@@ -214,8 +221,8 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 					"version": ""
 				},
 				"schema": {
-					"version": "16.0.34",
-					"url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.34.json"
+					"version": "x.x.x",
+					"url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-x.x.x.json"
 				}
 				}`))
 		})
