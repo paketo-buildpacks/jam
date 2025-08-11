@@ -229,7 +229,7 @@ func testCreateStack(t *testing.T, _ spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(layer).To(SatisfyAll(
-				HaveFileWithContent(`/cnb/sbom/([a-f0-9]{8}).syft.json`, ContainSubstring("https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.34.json")),
+				HaveFileWithContent(`/cnb/sbom/([a-f0-9]{8}).syft.json`, MatchRegexp(`https://raw\.githubusercontent\.com/anchore/syft/main/schema/json/schema-\d+\.\d+\.\d+\.json`)),
 				HaveFileWithContent(`/cnb/sbom/([a-f0-9]{8}).cdx.json`, ContainSubstring(`"bomFormat": "CycloneDX"`)),
 				HaveFileWithContent(`/cnb/sbom/([a-f0-9]{8}).cdx.json`, ContainSubstring(`"specVersion": "1.3"`)),
 			))

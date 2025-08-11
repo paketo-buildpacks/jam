@@ -96,7 +96,7 @@ func GetDependenciesWithinConstraint(dependencies []Dependency, constraint cargo
 // ConfigMetadataDependencies and a cargo DependencyConstraint. It returns a
 // filtered list of dependencies that match the constraint and ID, in order of
 // lowest version to highest. It will include version duplicates if their
-// targets differ, and duplicates do not contribute to the number of patches in the constraints.
+// OS/Arch/Stack targets differ, and duplicates do not contribute to the number of patches in the constraints.
 func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDependency, constraint cargo.ConfigMetadataDependencyConstraint) ([]cargo.ConfigMetadataDependency, error) {
 	// Use a map to track target variants of the same version
 	matchingDependenciesMap := make(map[string][]cargo.ConfigMetadataDependency)
@@ -121,10 +121,11 @@ func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDep
 			versions = append(versions, dependency.Version)
 			matchingDependenciesMap[dependency.Version] = []cargo.ConfigMetadataDependency{dependency}
 		} else {
-			// if the map contains the version, but not the specific stack-related variant, add it
-			if !containsDependencyWithStack(matchingDeps, dependency.Stacks) {
+			// if the map contains the version, but not the specific OS/Arch/Stack-related variant, add it
+			if !containsDependencyWithOsArchStack(matchingDeps, dependency.OS, dependency.Arch, dependency.Stacks) {
 				matchingDependenciesMap[dependency.Version] = append(matchingDependenciesMap[dependency.Version], dependency)
 			}
+
 		}
 	}
 
@@ -203,10 +204,10 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 }
 
 // containsVariant determines if a dependency in a given list of cargo
-// ConfigMetadataDependency contains the given stack
-func containsDependencyWithStack(deps []cargo.ConfigMetadataDependency, stacks []string) bool {
+// ConfigMetadataDependency contains the given os, arch, and stack. If os and/or arch are empty, only the stacks are checked.
+func containsDependencyWithOsArchStack(deps []cargo.ConfigMetadataDependency, os string, arch string, stacks []string) bool {
 	for _, dep := range deps {
-		if slices.Equal(dep.Stacks, stacks) {
+		if (os == "" || dep.OS == os) && (arch == "" || dep.Arch == arch) && slices.Equal(dep.Stacks, stacks) {
 			return true
 		}
 	}
