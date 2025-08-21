@@ -11,13 +11,13 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-22.04
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 'stable'
-
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
 
     - name: Setup Docker Multi-Platform Builds
       run: |

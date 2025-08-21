@@ -20,12 +20,12 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-22.04
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 'stable'
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
     - name: Setup Docker Multi-Platform Builds
       run: |
         docker run --privileged --rm docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
@@ -37,12 +37,12 @@ jobs:
     runs-on: ubuntu-22.04
     needs: unit
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 'stable'
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
     - name: Reset Draft Release
       id: reset
