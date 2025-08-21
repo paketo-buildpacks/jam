@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal"
@@ -124,8 +125,54 @@ func packRun(flags packFlags) error {
 			return fmt.Errorf("failed to cache dependencies: %s", err)
 		}
 
+		// linux/amd64 will be the default target dir when dependencies don't specify os and arch
+		defaultTargetDir := "linux/amd64"
+		runtimeTargetDir := filepath.Join(runtime.GOOS, runtime.GOARCH)
+
 		for _, dependency := range config.Metadata.Dependencies {
-			config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+			var targetPlatformDir string
+			shouldMoveToPlatformDir := false
+			checkTargetDirPaths := []string{}
+			if dependency.OS != "" && dependency.Arch != "" {
+				checkTargetDirPaths = append(checkTargetDirPaths, filepath.Join(dependency.OS, dependency.Arch))
+			}
+			checkTargetDirPaths = append(checkTargetDirPaths, runtimeTargetDir, defaultTargetDir)
+
+			for _, dir := range checkTargetDirPaths {
+				info, err := os.Stat(filepath.Join(tmpDir, dir))
+				if err == nil && info.IsDir() && !os.IsNotExist(err) {
+					shouldMoveToPlatformDir = true
+					targetPlatformDir = dir
+					break
+				}
+			}
+
+			if shouldMoveToPlatformDir {
+				// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
+				// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
+				offlinePath := strings.TrimPrefix(dependency.URI, "file:///")
+				dependenciesDir := filepath.Dir(offlinePath)
+				offlineFilename := filepath.Base(offlinePath)
+
+				info, err := os.Stat(filepath.Join(tmpDir, dependenciesDir))
+				if err != nil || os.IsNotExist(err) || !info.IsDir() {
+					return fmt.Errorf("expected dependencies directory does not exist: %s", err)
+				}
+
+				err = os.MkdirAll(filepath.Join(tmpDir, targetPlatformDir, dependenciesDir), os.ModePerm)
+				if err != nil {
+					return fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
+				}
+
+				err = os.Rename(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, targetPlatformDir, dependenciesDir, offlineFilename))
+				if err != nil {
+					return fmt.Errorf("failed to move offline dependency to platform specific directory: %s", err)
+				}
+
+				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
+			} else {
+				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+			}
 		}
 	}
 
