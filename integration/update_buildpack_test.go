@@ -1093,4 +1093,187 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 	})
+
+	context("when dependencies include .cnb archives", func() {
+		var cnbServer *httptest.Server
+
+		it.Before(func() {
+			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
+			Expect(err).ToNot(HaveOccurred())
+			goImg, err := remote.Image(goRef)
+			Expect(err).ToNot(HaveOccurred())
+
+			goManifestPath := "/v2/paketo-buildpacks/go-dist/manifests/0.20.1"
+			goConfigPath := fmt.Sprintf("/v2/paketo-buildpacks/go-dist/blobs/%s", mustConfigName(t, goImg))
+
+			cnbServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				switch req.URL.Path {
+				case "/v1/":
+					w.WriteHeader(http.StatusOK)
+
+				case "/v2/":
+					w.WriteHeader(http.StatusOK)
+
+				case "/v1/buildpacks/paketo-buildpacks/go-dist":
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintln(w, `{
+						"latest": {
+							"version": "0.21.0"
+						},
+					  "versions": [
+					    {
+					      "version": "0.20.1"
+					    },
+					    {
+					      "version": "0.21.0"
+					    }
+						]
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+
+				case "/v1/buildpacks/paketo-buildpacks/node-engine":
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintln(w, `{
+						"latest": {
+							"version": "0.20.22"
+						},
+					  "versions": [
+					    {
+					      "version": "0.20.22"
+					    }
+						]
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+
+				case goConfigPath:
+					if req.Method != http.MethodGet {
+						t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
+					}
+					_, _ = w.Write(mustRawConfigFile(t, goImg))
+
+				case goManifestPath:
+					if req.Method != http.MethodGet {
+						t.Errorf("Method; got %v, want %v", req.Method, http.MethodGet)
+					}
+					_, _ = w.Write(mustRawManifest(t, goImg))
+
+				case "/buildpacks/my-local-buildpack.cnb":
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte("fake cnb archive data"))
+
+				default:
+					t.Fatalf("unknown path: %s", req.URL.Path)
+				}
+			}))
+
+			buildpackDir, err = os.MkdirTemp("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(buildpackDir, "buildpack.toml"), []byte(`
+				api = "0.2"
+
+				[buildpack]
+					id = "some-composite-buildpack"
+					name = "Some Composite Buildpack"
+					version = "some-composite-buildpack-version"
+
+				[metadata]
+					include-files = ["buildpack.toml"]
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.20.1"
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/node-engine"
+						version = "0.1.0"
+						optional = true
+			`), 0600)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Write package.toml with placeholders, then replace them with actual server URLs
+			packageTomlContent := `
+[buildpack]
+uri = "build/buildpack.tgz"
+
+[[dependencies]]
+uri = "urn:cnb:registry:paketo-buildpacks/go-dist@0.20.1"
+
+[[dependencies]]
+uri = "urn:cnb:registry:paketo-buildpacks/node-engine@0.1.0"
+
+[[dependencies]]
+uri = "./local-buildpack.cnb"
+
+[[dependencies]]
+uri = "CNB-SERVER-URI/buildpacks/my-local-buildpack.cnb"
+`
+			packageTomlContent = strings.ReplaceAll(packageTomlContent, "CNB-SERVER-URI", cnbServer.URL)
+			err = os.WriteFile(filepath.Join(buildpackDir, "package.toml"), []byte(packageTomlContent), 0600)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it.After(func() {
+			cnbServer.Close()
+			Expect(os.RemoveAll(buildpackDir)).To(Succeed())
+		})
+
+		it("skips updating .cnb archive dependencies while updating others", func() {
+			command := exec.Command(
+				path,
+				"update-buildpack",
+				"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
+				"--package-file", filepath.Join(buildpackDir, "package.toml"),
+				"--api", cnbServer.URL,
+			)
+
+			buffer := gbytes.NewBuffer()
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0), func() string { return string(buffer.Contents()) })
+
+			buildpackContents, err := os.ReadFile(filepath.Join(buildpackDir, "buildpack.toml"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(buildpackContents)).To(MatchTOML(`
+				api = "0.2"
+
+				[buildpack]
+					id = "some-composite-buildpack"
+					name = "Some Composite Buildpack"
+					version = "some-composite-buildpack-version"
+
+				[metadata]
+					include-files = ["buildpack.toml"]
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/go-dist"
+						version = "0.21.0"
+
+				[[order]]
+					[[order.group]]
+						id = "paketo-buildpacks/node-engine"
+						version = "0.20.22"
+						optional = true
+			`))
+
+			packageContents, err := os.ReadFile(filepath.Join(buildpackDir, "package.toml"))
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify docker:// dependency was updated
+			Expect(string(packageContents)).To(ContainSubstring("urn:cnb:registry:paketo-buildpacks/go-dist@0.21.0"))
+
+			// Verify urn:cnb:registry dependency was updated
+			Expect(string(packageContents)).To(ContainSubstring("urn:cnb:registry:paketo-buildpacks/node-engine@0.20.22"))
+
+			// Verify local .cnb file was NOT updated (remains unchanged)
+			Expect(string(packageContents)).To(ContainSubstring("./local-buildpack.cnb"))
+
+			// Verify HTTP .cnb file was NOT updated (remains unchanged with http:// scheme)
+			Expect(string(packageContents)).To(MatchRegexp(`uri = "` + cnbServer.URL + `/buildpacks/my-local-buildpack\.cnb"`))
+		})
+	})
 }
