@@ -125,9 +125,12 @@ func packRun(flags packFlags) error {
 			return fmt.Errorf("failed to cache dependencies: %s", err)
 		}
 
+		systemOS := osFromSystem()
+		systemArch := archFromSystem()
+
 		// linux/amd64 will be the default target dir when dependencies don't specify os and arch
 		defaultTargetDir := "linux/amd64"
-		runtimeTargetDir := filepath.Join(runtime.GOOS, runtime.GOARCH)
+		systemTargetDir := filepath.Join(systemOS, systemArch)
 
 		for _, dependency := range config.Metadata.Dependencies {
 			var targetPlatformDir string
@@ -136,11 +139,35 @@ func packRun(flags packFlags) error {
 			if dependency.OS != "" && dependency.Arch != "" {
 				checkTargetDirPaths = append(checkTargetDirPaths, filepath.Join(dependency.OS, dependency.Arch))
 			}
-			checkTargetDirPaths = append(checkTargetDirPaths, runtimeTargetDir, defaultTargetDir)
+			checkTargetDirPaths = append(checkTargetDirPaths, systemTargetDir, defaultTargetDir)
 
 			for _, dir := range checkTargetDirPaths {
+				hasTargetDir := false
 				info, err := os.Stat(filepath.Join(tmpDir, dir))
 				if err == nil && info.IsDir() && !os.IsNotExist(err) {
+					hasTargetDir = true
+				}
+
+				// Don't move to platform-specific directory unless include-files has required executables in the platform-specific bin directory.
+				hasTargetExecutableIncludeFiles := false
+				requiredFileNames := []string{"build", "detect"}
+				requiredFilesFound := 0
+				for _, file := range config.Metadata.IncludeFiles {
+					if hasTargetExecutableIncludeFiles {
+						break
+					}
+					for _, name := range requiredFileNames {
+						if file == fmt.Sprintf("%s/bin/%s", dir, name) {
+							requiredFilesFound++
+						}
+						if requiredFilesFound == len(requiredFileNames) {
+							hasTargetExecutableIncludeFiles = true
+							break
+						}
+					}
+				}
+
+				if hasTargetDir && hasTargetExecutableIncludeFiles {
 					shouldMoveToPlatformDir = true
 					targetPlatformDir = dir
 					break
@@ -256,4 +283,22 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	}
 
 	return nil
+}
+
+func osFromSystem() string {
+	osFromEnv, ok := os.LookupEnv("BP_OS")
+	if ok {
+		return osFromEnv
+	}
+
+	return runtime.GOOS
+}
+
+func archFromSystem() string {
+	archFromEnv, ok := os.LookupEnv("BP_ARCH")
+	if ok {
+		return archFromEnv
+	}
+
+	return runtime.GOARCH
 }
