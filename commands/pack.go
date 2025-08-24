@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -191,9 +192,9 @@ func packRun(flags packFlags) error {
 					return fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
 				}
 
-				err = os.Rename(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, targetPlatformDir, dependenciesDir, offlineFilename))
+				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, targetPlatformDir, dependenciesDir, offlineFilename))
 				if err != nil {
-					return fmt.Errorf("failed to move offline dependency to platform specific directory: %s", err)
+					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
 
 				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
@@ -301,4 +302,37 @@ func archFromSystem() string {
 	}
 
 	return runtime.GOARCH
+}
+
+func copyFile(src string, dst string) (int64, error) {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return 0, err
+	}
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err2 := source.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err2 := destination.Close(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
+
+	nBytes, err := io.Copy(destination, source)
+	return nBytes, err
 }
