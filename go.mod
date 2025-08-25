@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/anchore/syft v1.30.0
+	github.com/anchore/syft v1.31.0
 	github.com/buildpacks/pack v0.38.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/distribution/reference v0.6.0
