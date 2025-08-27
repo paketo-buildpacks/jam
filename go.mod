@@ -14,7 +14,7 @@ require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/moby/buildkit v0.23.2
 	github.com/moby/go-archive v0.1.0
-	github.com/onsi/gomega v1.38.1
+	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/paketo-buildpacks/occam v0.28.1
 	github.com/paketo-buildpacks/packit/v2 v2.23.0
