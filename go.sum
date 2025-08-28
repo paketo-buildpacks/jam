@@ -1493,10 +1493,10 @@ github.com/opencontainers/runtime-spec v1.2.1/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/
 github.com/opencontainers/selinux v1.12.0 h1:6n5JV4Cf+4y0KNXW48TLj5DwfXpvWlxXplUkdTrmPb8=
 github.com/opencontainers/selinux v1.12.0/go.mod h1:BTPX+bjVbWGXw7ZZWUbdENt8w0htPSrlgOOysQaU62U=
 github.com/orisano/pixelmatch v0.0.0-20220722002657-fb0b55479cde/go.mod h1:nZgzbfBr3hhjoZnS66nKrHmduYNpc34ny7RK4z5/HM0=
-github.com/paketo-buildpacks/freezer v0.2.1 h1:6XpdAgK6DMC8lme/ndKmnsmmssPTWfuomM7NmsjDedo=
-github.com/paketo-buildpacks/freezer v0.2.1/go.mod h1:rsuH8ILZKMokRkCPxpZtngICCDKPsEuWGTBqDpvwiws=
-github.com/paketo-buildpacks/occam v0.28.1 h1:Lbx5MbLfbkiF08Eb0Jtf9l88wK8w+oQjvzjrdccVrxE=
-github.com/paketo-buildpacks/occam v0.28.1/go.mod h1:vakX67VSG26Q8F9SgSoQNu1p7pIUrZvisNr42xdmuko=
+github.com/paketo-buildpacks/freezer v0.2.2 h1:p0qcGMQ54uGMzDFNkfpDpxddNl8+OTqt3teAWIkmCu4=
+github.com/paketo-buildpacks/freezer v0.2.2/go.mod h1:8dkcCqZKYFKxDV4MuooIR/Fr/LmpXqpr8R9mFvkGerE=
+github.com/paketo-buildpacks/occam v0.29.1 h1:75yqeESfI3HKAYkhyZSzFb4Ahz/mZHRC9XTxs/PoHrg=
+github.com/paketo-buildpacks/occam v0.29.1/go.mod h1:LaPnQFsDhQyXC7dfKXsLcBblTXEsN49A3gCfMnjFlD0=
 github.com/paketo-buildpacks/packit/v2 v2.23.0 h1:9v01l0wymOMCvSIfflPa5vy+NmeFU2egU8qRL4PtYYs=
 github.com/paketo-buildpacks/packit/v2 v2.23.0/go.mod h1:Sd7qAaRFYnGk75FFxY6rGJqhKmTEd+5q2gTUHGFYW+w=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
