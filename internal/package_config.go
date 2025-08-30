@@ -43,9 +43,14 @@ func (d *PackageConfigDependency) UnmarshalTOML(v interface{}) error {
 				return err
 			}
 
-			uri.Scheme = ""
-
-			d.URI = strings.TrimPrefix(uri.String(), "//")
+			// allow .cnb archives over HTTP
+			switch uri.Scheme {
+			case "http", "https":
+				break
+			default:
+				uri.Scheme = ""
+				d.URI = strings.TrimPrefix(uri.String(), "//")
+			}
 		}
 	}
 
@@ -74,8 +79,10 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 
 func OverwritePackageConfig(path string, config PackageConfig) error {
 	for i, dependency := range config.Dependencies {
-		if !strings.HasPrefix(dependency.URI, "docker://") && !strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
-			config.Dependencies[i].URI = fmt.Sprintf("docker://%s", dependency.URI)
+		if !isArchive(dependency) {
+			if !isDocker(dependency) && !isCnbRegistry(dependency) {
+				config.Dependencies[i].URI = fmt.Sprintf("docker://%s", dependency.URI)
+			}
 		}
 	}
 
