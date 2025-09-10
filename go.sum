@@ -1497,8 +1497,8 @@ github.com/paketo-buildpacks/freezer v0.2.2 h1:p0qcGMQ54uGMzDFNkfpDpxddNl8+OTqt3
 github.com/paketo-buildpacks/freezer v0.2.2/go.mod h1:8dkcCqZKYFKxDV4MuooIR/Fr/LmpXqpr8R9mFvkGerE=
 github.com/paketo-buildpacks/occam v0.30.0 h1:uiq5E60fXIC3OtWrM57GNrRP2bHcyx4JZeRgrxTuyQY=
 github.com/paketo-buildpacks/occam v0.30.0/go.mod h1:pbd8tiySEPtE9o1DTXTRRNQdi0ucfFrwL9u0pAMp6R0=
-github.com/paketo-buildpacks/packit/v2 v2.24.0 h1:G0jDMTG/BcgkME+/DTQx1/LpZkS06rQwC89MHWuLqdw=
-github.com/paketo-buildpacks/packit/v2 v2.24.0/go.mod h1:vVGOYB09yUfHfA05s7MYD/9jI98V99+RizZMaiDDGIE=
+github.com/paketo-buildpacks/packit/v2 v2.25.0 h1:3fqvuqHFXA32iQ2yjD+i97xxyJ+ItTDyWCdGyJlB5wA=
+github.com/paketo-buildpacks/packit/v2 v2.25.0/go.mod h1:icmM80Rih45tHbabXri+0qtViICUutZThsccK4b1WR0=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pborman/getopt v0.0.0-20170112200414-7148bc3a4c30/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
@@ -1709,8 +1709,8 @@ github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab/go.mod h1:ulncasL
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.10/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/ulikunitz/xz v0.5.14 h1:uv/0Bq533iFdnMHZdRBTOlaNMdb1+ZxXIlHDZHIHcvg=
-github.com/ulikunitz/xz v0.5.14/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
+github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/vbatts/go-mtree v0.5.4 h1:OMAb8jaCyiFA7zXj0Zc/oARcxBDBoeu2LizjB8BVJl0=
 github.com/vbatts/go-mtree v0.5.4/go.mod h1:5GqJbVhm9BBiCc4K5uc/c42FPgXulHaQs4sFUEfIWMo=
 github.com/vbatts/tar-split v0.12.1 h1:CqKoORW7BUWBe7UL/iqTVvkTBOF8UvOMKOIZykxnnbo=
