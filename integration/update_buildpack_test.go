@@ -31,7 +31,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 		buildpackDir string
 	)
 
-	context("when updating buildpacks it uses the CNB registry by default", func() {
+	context("when updating cnb registry image refs", func() {
 		it.Before(func() {
 			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
@@ -157,6 +157,19 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				case "/v2/some-repository/nonexistent-labels-id/manifests/0.2.0":
 					w.WriteHeader(http.StatusBadRequest)
 
+				case "/v2/paketo-buildpacks/go-dist/tags/list":
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintln(w, `{
+						  "tags": [
+								"0.0.10",
+								"0.20.1",
+								"0.20.12",
+								"0.21.0",
+								"latest"
+							]
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+
 				default:
 					t.Fatalf("unknown path: %s", req.URL.Path)
 				}
@@ -202,10 +215,10 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				uri = "build/buildpack.tgz"
 
 				[[dependencies]]
-				uri = "docker://REGISTRY-URI/paketobuildpacks/mri:0.2.0"
+				uri = "urn:cnb:registry:paketo-buildpacks/mri@0.2.0"
 
 				[[dependencies]]
-				uri = "docker://REGISTRY-URI/paketo-buildpacks/go-dist:0.20.1"
+				uri = "urn:cnb:registry:paketo-buildpacks/go-dist@0.20.1"
 
 				[[dependencies]]
 				uri = "urn:cnb:registry:paketo-buildpacks/node-engine@0.1.0"
@@ -613,7 +626,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("updating non-cnb registry image refs", func() {
+	context("when updating non-cnb registry image refs", func() {
 		it.Before(func() {
 			goRef, err := name.ParseReference("index.docker.io/paketobuildpacks/go-dist")
 			Expect(err).ToNot(HaveOccurred())
@@ -811,7 +824,6 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 				"update-buildpack",
 				"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
 				"--package-file", filepath.Join(buildpackDir, "package.toml"),
-				"--no-cnb-registry",
 			)
 
 			buffer := gbytes.NewBuffer()
@@ -877,7 +889,6 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					"update-buildpack",
 					"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
 					"--package-file", filepath.Join(buildpackDir, "package.toml"),
-					"--no-cnb-registry",
 					"--patch-only",
 				)
 
@@ -975,7 +986,6 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 						"update-buildpack",
 						"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
 						"--package-file", filepath.Join(buildpackDir, "package.toml"),
-						"--no-cnb-registry",
 					)
 
 					buffer := gbytes.NewBuffer()
@@ -1023,7 +1033,6 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 						"update-buildpack",
 						"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
 						"--package-file", filepath.Join(buildpackDir, "package.toml"),
-						"--no-cnb-registry",
 					)
 
 					buffer := gbytes.NewBuffer()
@@ -1072,7 +1081,6 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 						"--buildpack-file", filepath.Join(buildpackDir, "buildpack.toml"),
 						"--package-file", filepath.Join(buildpackDir, "package.toml"),
 						"--patch-only",
-						"--no-cnb-registry",
 					)
 
 					buffer := gbytes.NewBuffer()

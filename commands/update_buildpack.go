@@ -25,13 +25,17 @@ func updateBuildpack() *cobra.Command {
 		Use:   "update-buildpack",
 		Short: "update buildpack",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			f := cmd.Flags().Lookup("no-cnb-registry")
+			if f != nil && f.Changed {
+				fmt.Fprintln(os.Stderr, "WARNING: The --no-cnb-registry flag is deprecated and ignored. You can safely remove it.")
+			}
 			return updateBuildpackRun(*flags)
 		},
 	}
 	cmd.Flags().StringVar(&flags.buildpackFile, "buildpack-file", "", "path to the buildpack.toml file (required)")
 	cmd.Flags().StringVar(&flags.packageFile, "package-file", "", "path to the package.toml file (required)")
 	cmd.Flags().StringVar(&flags.api, "api", "https://registry.buildpacks.io/api/", "api for cnb registry (default: https://registry.buildpacks.io/api/)")
-	cmd.Flags().BoolVar(&flags.noCNBRegistry, "no-cnb-registry", false, "buildpacks not available on the CNB registry, so will revert to previous image references behavior")
+	cmd.Flags().BoolVar(&flags.noCNBRegistry, "no-cnb-registry", false, "when false updates dependencies to use cnb-registry uris (DEPRECATED and ignored)")
 	cmd.Flags().BoolVar(&flags.patchOnly, "patch-only", false, "allow patch changes ONLY to buildpack version bumps")
 
 	err := cmd.MarkFlagRequired("buildpack-file")
@@ -66,11 +70,23 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			buildpackageID string
 			image          internal.Image
 			err            error
+			oldVersion     string
 		)
 
-		if flags.noCNBRegistry {
-			// If --patch-only is set, retrieve new version in the same version line as previous version, if it exists
-			oldVersion := ""
+		if strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
+			if flags.patchOnly {
+				oldVersion = strings.Split(dependency.URI, "@")[1]
+			}
+
+			image, err = internal.FindLatestImageOnCNBRegistry(dependency.URI, flags.api, oldVersion)
+			if err != nil {
+				return err
+			}
+
+			pkg.Dependencies[i].URI = fmt.Sprintf("%s@%s", image.Name, image.Version)
+			buildpackageID = image.Path
+
+		} else {
 			if flags.patchOnly {
 				oldVersionSlice := strings.Split(dependency.URI, ":")
 				oldVersion = oldVersionSlice[len(oldVersionSlice)-1]
@@ -80,39 +96,14 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			if err != nil {
 				return err
 			}
-			pkg.Dependencies[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
 
+			pkg.Dependencies[i].URI = fmt.Sprintf("%s:%s", image.Name, image.Version)
 			buildpackageID, err = internal.GetBuildpackageID(dependency.URI)
 			if err != nil {
 				return fmt.Errorf("failed to get buildpackage ID for %s: %w", dependency.URI, err)
 			}
-		} else {
-			uri := dependency.URI
-			if !strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
-				uri, err = internal.GetBuildpackageID(dependency.URI)
-				if err != nil {
-					return fmt.Errorf("failed to get buildpackage ID for %s: %w", dependency.URI, err)
-				}
-			}
-
-			// If --patch-only is set, retrieve new version in the same version line as previous version, if it exists
-			oldVersion := ""
-			if flags.patchOnly {
-				if strings.Contains(dependency.URI, "@") {
-					oldVersion = strings.Split(dependency.URI, "@")[1]
-				} else {
-					oldVersionSlice := strings.Split(dependency.URI, ":")
-					oldVersion = oldVersionSlice[len(oldVersionSlice)-1]
-				}
-			}
-			image, err = internal.FindLatestImageOnCNBRegistry(uri, flags.api, oldVersion)
-			if err != nil {
-				return err
-			}
-
-			pkg.Dependencies[i].URI = fmt.Sprintf("%s@%s", image.Name, image.Version)
-			buildpackageID = image.Path
 		}
+
 		for j, order := range bp.Order {
 			for k, group := range order.Group {
 				if group.ID == buildpackageID {
