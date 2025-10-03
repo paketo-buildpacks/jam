@@ -9,7 +9,7 @@ require (
 	github.com/buildpacks/pack v0.38.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v28.4.0+incompatible
+	github.com/docker/cli v28.5.0+incompatible
 	github.com/docker/docker v28.5.0+incompatible
 	github.com/google/go-containerregistry v0.20.6
 	github.com/moby/buildkit v0.25.0
