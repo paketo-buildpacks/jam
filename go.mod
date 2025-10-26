@@ -16,7 +16,7 @@ require (
 	github.com/moby/go-archive v0.1.0
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/paketo-buildpacks/occam v0.30.1
+	github.com/paketo-buildpacks/occam v0.30.2
 	github.com/paketo-buildpacks/packit/v2 v2.25.2
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
