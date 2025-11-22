@@ -1,43 +1,34 @@
 package internal
 
 import (
-	"net/url"
-	"os"
 	"strings"
 )
 
+// IsStaticURI returns true if the dependency URI is a static reference
+// (local file path, HTTP/HTTPS URL, or file:// URI) that should not be updated.
 // https://buildpacks.io/docs/reference/config/package-config/#dependencies-list-optional
-func IsArchive(dependency PackageConfigDependency) bool {
-	if IsCnbRegistry(dependency) {
-		return false
+func IsStaticURI(dependency PackageConfigDependency) bool {
+	uri := dependency.URI
+
+	// Check for local paths (relative or absolute)
+	if strings.HasPrefix(uri, "/") ||
+		strings.HasPrefix(uri, "./") ||
+		strings.HasPrefix(uri, "../") {
+		return true
 	}
 
-	if IsDocker(dependency) {
-		return false
+	// Check for URL schemes (http, https, file)
+	if strings.HasPrefix(uri, "http://") ||
+		strings.HasPrefix(uri, "https://") ||
+		strings.HasPrefix(uri, "file://") {
+		return true
 	}
 
-	return IsCnbFile(dependency)
-}
-
-func IsCnbFile(dependency PackageConfigDependency) bool {
-	if uri, err := url.Parse(dependency.URI); err != nil {
-		// fallback to the default: URI is likely malformed
-		return false
-	} else {
-		return strings.HasSuffix(uri.Path, ".cnb")
-	}
+	return false
 }
 
 func IsCnbRegistry(dependency PackageConfigDependency) bool {
 	return strings.HasPrefix(dependency.URI, "urn:cnb:registry")
-}
-
-func IsDirectory(dependency PackageConfigDependency) bool {
-	info, err := os.Stat(dependency.URI)
-	if err != nil {
-		return false
-	}
-	return info.IsDir()
 }
 
 func IsDocker(dependency PackageConfigDependency) bool {

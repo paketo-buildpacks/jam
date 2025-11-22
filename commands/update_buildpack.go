@@ -72,16 +72,12 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			err            error
 		)
 
-		// Skip .cnb archive dependencies
-		if internal.IsArchive(dependency) {
+		// Skip static URIs (local paths, HTTP URLs, etc.) - only update dynamic refs
+		if internal.IsStaticURI(dependency) {
 			continue
 		}
 
-		// Skip directories
-		if internal.IsDirectory(dependency) {
-			continue
-		}
-
+		// Now we have either CNB registry URIs or Docker image references (bare)
 		if internal.IsCnbRegistry(dependency) {
 			oldVersion := ""
 			if flags.patchOnly {
