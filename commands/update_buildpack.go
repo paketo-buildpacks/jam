@@ -70,10 +70,16 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			buildpackageID string
 			image          internal.Image
 			err            error
-			oldVersion     string
 		)
 
-		if strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
+		// Skip static URIs (local paths, HTTP URLs, etc.) - only update dynamic refs
+		if internal.IsStaticURI(dependency) {
+			continue
+		}
+
+		// Now we have either CNB registry URIs or Docker image references (bare)
+		if internal.IsCnbRegistry(dependency) {
+			oldVersion := ""
 			if flags.patchOnly {
 				oldVersion = strings.Split(dependency.URI, "@")[1]
 			}
@@ -87,6 +93,7 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 			buildpackageID = image.Path
 
 		} else {
+			oldVersion := ""
 			if flags.patchOnly {
 				oldVersionSlice := strings.Split(dependency.URI, ":")
 				oldVersion = oldVersionSlice[len(oldVersionSlice)-1]
@@ -119,13 +126,11 @@ func updateBuildpackRun(flags updateBuildpackFlags) error {
 		}
 	}
 
-	err = internal.OverwriteBuildpackConfig(flags.buildpackFile, bp)
-	if err != nil {
+	if err := internal.OverwriteBuildpackConfig(flags.buildpackFile, bp); err != nil {
 		return err
 	}
 
-	err = internal.OverwritePackageConfig(flags.packageFile, pkg)
-	if err != nil {
+	if err := internal.OverwritePackageConfig(flags.packageFile, pkg); err != nil {
 		return err
 	}
 

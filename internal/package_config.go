@@ -37,16 +37,25 @@ func (d *PackageConfigDependency) UnmarshalTOML(v interface{}) error {
 	}
 
 	if d.URI != "" {
-		if !strings.HasPrefix(d.URI, "urn:cnb:registry") {
-			uri, err := url.Parse(d.URI)
-			if err != nil {
-				return err
-			}
-
-			uri.Scheme = ""
-
-			d.URI = strings.TrimPrefix(uri.String(), "//")
+		// CNB registry URIs are left unchanged
+		if IsCnbRegistry(*d) {
+			return nil
 		}
+
+		// Parse the URI to check its scheme
+		uri, err := url.Parse(d.URI)
+		if err != nil {
+			return err
+		}
+
+		// Static URIs with http/https scheme are left unchanged
+		if uri.Scheme == "http" || uri.Scheme == "https" {
+			return nil
+		}
+
+		// Everything else (docker://, file://, or no scheme): strip the scheme
+		uri.Scheme = ""
+		d.URI = strings.TrimPrefix(uri.String(), "//")
 	}
 
 	return nil
@@ -74,7 +83,14 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 
 func OverwritePackageConfig(path string, config PackageConfig) error {
 	for i, dependency := range config.Dependencies {
-		if !strings.HasPrefix(dependency.URI, "docker://") && !strings.HasPrefix(dependency.URI, "urn:cnb:registry") {
+		// Skip static URIs (local paths, HTTP URLs, etc.) - leave them unchanged
+		if IsStaticURI(dependency) {
+			continue
+		}
+
+		// Add docker:// prefix to Docker image references that don't already have it
+		// CNB registry URIs are left unchanged
+		if !IsDocker(dependency) && !IsCnbRegistry(dependency) {
 			config.Dependencies[i].URI = fmt.Sprintf("docker://%s", dependency.URI)
 		}
 	}
