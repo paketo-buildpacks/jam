@@ -1,4 +1,4 @@
-* @paketo-buildpacks/tooling-maintainers
+* @paketo-buildpacks/tooling-maintainers @paketo-buildpacks/steering-committee
 
 /internal/ihop @paketo-buildpacks/stacks-maintainers
 /commands/create_stack.go @paketo-buildpacks/stacks-maintainers
