@@ -63,7 +63,11 @@ function build::jam(){
 
   pushd "${ROOT_DIR}" > /dev/null || return
     for os in darwin linux windows; do
-      for arch in amd64 arm64; do
+      for arch in amd64 arm64 s390x; do
+        if [[ "${arch}" == "s390x" ]] && [[ "${os}" != "linux" ]] ; then
+            continue
+        fi
+        
         util::print::info "Building jam on ${os} for ${arch}"
 
         local output
