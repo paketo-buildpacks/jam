@@ -121,7 +121,7 @@ func testSBOM(t *testing.T, context spec.G, it spec.S) {
 			outputReplaced1 := schemaVersionPattern.ReplaceAllString(string(output), `schema-x.x.x`)
 			matches := schemaVersionPattern.FindStringSubmatch(string(output))
 			Expect(matches).To(HaveLen(2))
-			outputReplaced2 := strings.Replace(outputReplaced1, matches[1], "x.x.x", -1)
+			outputReplaced2 := strings.ReplaceAll(outputReplaced1, matches[1], "x.x.x")
 			Expect(outputReplaced2).To(MatchJSON(`{
 				"artifacts": [
 					{
