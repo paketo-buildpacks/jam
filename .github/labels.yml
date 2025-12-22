@@ -16,6 +16,9 @@
 - name: documentation
   description: This issue relates to writing documentation
   color: D4C5F9
+- name: help wanted
+  description: Extra attention is needed
+  color: 008672
 - name: semver:major
   description: A change requiring a major version bump
   color: 6b230e
@@ -31,6 +34,9 @@
 - name: "failure:release"
   description: An issue filed automatically when a release workflow run fails
   color: f00a0a
-- name: "failure:push"
-  description: An issue filed automatically when a push buildpackage workflow run fails
+- name: "failure:update-github-config"
+  description: An issue filed automatically when a github config update workflow run fails
+  color: f00a0a
+- name: "failure:approve-bot-pr"
+  description: An issue filed automatically when a PR auto-approve workflow run fails
   color: f00a0a
