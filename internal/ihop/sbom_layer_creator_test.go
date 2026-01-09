@@ -54,7 +54,9 @@ func testSBOMLayerCreator(t *testing.T, context spec.G, it spec.S) {
 		}
 
 		Expect(files).To(SatisfyAll(
-			HaveLen(2),
+			HaveLen(4),
+			HaveKey("cnb/"),
+			HaveKey("cnb/sbom/"),
 			HaveKeyWithValue("cnb/sbom/abcdef12.syft.json", MatchRegexp(`https://raw\.githubusercontent\.com/anchore/syft/main/schema/json/schema-\d+\.\d+\.\d+\.json`)),
 			HaveKeyWithValue("cnb/sbom/abcdef12.cdx.json", ContainSubstring(`"bomFormat": "CycloneDX"`)),
 			HaveKeyWithValue("cnb/sbom/abcdef12.cdx.json", ContainSubstring(`"specVersion": "1.3"`)),

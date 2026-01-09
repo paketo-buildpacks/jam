@@ -25,8 +25,27 @@ func (c SBOMLayerCreator) Create(image Image, def DefinitionImage, sbom SBOM) (L
 		}
 	}()
 
-	tw := tar.NewWriter(buffer)
 	syftSBOM, err := sbom.SyftFormat()
+	if err != nil {
+		return Layer{}, err
+	}
+
+	tw := tar.NewWriter(buffer)
+
+	err = tw.WriteHeader(&tar.Header{
+		Typeflag: tar.TypeDir,
+		Name:     "cnb/",
+		Mode:     0755,
+	})
+	if err != nil {
+		return Layer{}, err
+	}
+
+	err = tw.WriteHeader(&tar.Header{
+		Typeflag: tar.TypeDir,
+		Name:     "cnb/sbom/",
+		Mode:     0755,
+	})
 	if err != nil {
 		return Layer{}, err
 	}
