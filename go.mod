@@ -17,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/paketo-buildpacks/occam v0.31.1
-	github.com/paketo-buildpacks/packit/v2 v2.25.3
+	github.com/paketo-buildpacks/packit/v2 v2.25.4
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.10.2
@@ -245,7 +245,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/nix-community/go-nix v0.0.0-20250101154619-4bdde671e0a1 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
@@ -357,8 +357,8 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.66.10 // indirect
+	modernc.org/libc v1.67.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.43.0 // indirect
+	modernc.org/sqlite v1.44.0 // indirect
 )
