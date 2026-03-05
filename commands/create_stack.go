@@ -82,7 +82,12 @@ func createStackRun(flags createStackFlags) error {
 
 	definition.Labels = flags.labels
 
-	scratch, err := os.MkdirTemp("", "")
+	tempDir := os.Getenv("GITHUB_WORKSPACE")
+	if tempDir == "" {
+		tempDir = "" // Fallback to system default (/tmp) if not in GH Actions
+	}
+
+	scratch, err := os.MkdirTemp(tempDir, "")
 	if err != nil {
 		return err
 	}
