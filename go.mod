@@ -17,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/paketo-buildpacks/occam v0.31.1
-	github.com/paketo-buildpacks/packit/v2 v2.25.3
+	github.com/paketo-buildpacks/packit/v2 v2.25.4
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.10.2
