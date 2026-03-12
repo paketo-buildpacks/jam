@@ -39,6 +39,7 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 							Dependencies: []cargo.ConfigMetadataDependency{
 								{
 									ID:           "some-dependency",
+									Arch:         "amd64",
 									Stacks:       []string{"some-stack"},
 									Version:      "1.2.3",
 									SHA256:       "one-more-sha",
@@ -47,12 +48,14 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 								},
 								{
 									ID:      "some-dependency",
+									Arch:    "arm64",
 									Stacks:  []string{"other-stack"},
 									Version: "1.2.3",
 									SHA256:  "other-sha",
 								},
 								{
 									ID:      "other-dependency",
+									Arch:    "amd64",
 									Stacks:  []string{"some-stack", "other-stack"},
 									Version: "2.3.4",
 									SHA256:  "another-sha",
@@ -98,12 +101,12 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 				"",
 				"### Dependencies",
 				"",
-				"| Name | Version | Stacks | Checksum |",
-				"|---|---|---|---|",
-				"| other-dependency | 2.3.5 | other-stack | sha512:some-sha |",
-				"| other-dependency | 2.3.4 | other-stack some-stack | sha256:another-sha |",
-				"| some-dependency | 1.2.3 | other-stack | sha256:other-sha |",
-				"| some-dependency | 1.2.3 | some-stack | sha256:one-more-sha |",
+				"| Name | Version | Arch | Stacks | Checksum |",
+				"|---|---|---|---|---|",
+				"| other-dependency | 2.3.5 | - | other-stack | sha512:some-sha |",
+				"| other-dependency | 2.3.4 | amd64 | other-stack some-stack | sha256:another-sha |",
+				"| some-dependency | 1.2.3 | amd64 | some-stack | sha256:one-more-sha |",
+				"| some-dependency | 1.2.3 | arm64 | other-stack | sha256:other-sha |",
 			))
 		})
 
@@ -197,12 +200,12 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 					"",
 					"### Dependencies",
 					"",
-					"| Name | Version | Stacks | Checksum |",
-					"|---|---|---|---|",
-					"| other-dependency | 2.3.5 | other-stack | sha512:some-sha |",
-					"| other-dependency | 2.3.4 | other-stack some-stack | sha256:another-sha |",
-					"| some-dependency | 1.2.3 | other-stack | sha256:other-sha |",
-					"| some-dependency | 1.2.3 | some-stack | sha256:one-more-sha |",
+					"| Name | Version | Arch | Stacks | Checksum |",
+					"|---|---|---|---|---|",
+					"| other-dependency | 2.3.5 | - | other-stack | sha512:some-sha |",
+					"| other-dependency | 2.3.4 | - | other-stack some-stack | sha256:another-sha |",
+					"| some-dependency | 1.2.3 | - | other-stack | sha256:other-sha |",
+					"| some-dependency | 1.2.3 | - | some-stack | sha256:one-more-sha |",
 				))
 			})
 		})
