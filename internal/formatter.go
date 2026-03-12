@@ -21,7 +21,7 @@ func NewFormatter(writer io.Writer) Formatter {
 	}
 }
 
-type depKey [3]string
+type depKey [4]string
 
 func printImplementation(writer io.Writer, config cargo.Config) {
 	if len(config.Stacks) > 0 {
@@ -60,7 +60,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 				checksum = fmt.Sprintf("sha256:%s", d.SHA256)
 			}
 
-			key := depKey{d.ID, d.Version, checksum}
+			key := depKey{d.ID, d.Version, checksum, d.Arch}
 			_, ok := infoMap[key]
 			if !ok {
 				sort.Strings(d.Stacks)
@@ -80,6 +80,7 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 				Version: key[1],
 				Stacks:  stacks,
 				SHA256:  key[2],
+				Arch:    key[3],
 			})
 		}
 
@@ -92,6 +93,10 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 				jVersion := semver.MustParse(jVal.Version)
 
 				if iVersion.Equal(jVersion) {
+					if iVal.Arch != jVal.Arch {
+						return iVal.Arch < jVal.Arch
+					}
+
 					iStacks := strings.Join(iVal.Stacks, " ")
 					jStacks := strings.Join(jVal.Stacks, " ")
 
@@ -104,9 +109,14 @@ func printImplementation(writer io.Writer, config cargo.Config) {
 			return iVal.ID < jVal.ID
 		})
 
-		_, _ = fmt.Fprintf(writer, "### Dependencies\n\n| Name | Version | Stacks | Checksum |\n|---|---|---|---|\n")
+		_, _ = fmt.Fprintf(writer, "### Dependencies\n\n| Name | Version | Arch | Stacks | Checksum |\n|---|---|---|---|---|\n")
 		for _, d := range sorted {
-			_, _ = fmt.Fprintf(writer, "| %s | %s | %s | %s |\n", d.ID, d.Version, strings.Join(d.Stacks, " "), d.SHA256)
+			arch := d.Arch
+			if arch == "" {
+				arch = "-"
+			}
+
+			_, _ = fmt.Fprintf(writer, "| %s | %s | %s | %s | %s |\n", d.ID, d.Version, arch, strings.Join(d.Stacks, " "), d.SHA256)
 		}
 		_, _ = fmt.Fprintln(writer)
 	}

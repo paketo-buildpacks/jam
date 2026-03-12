@@ -47,6 +47,7 @@ other-dependency = "2.3.x"
 
 [[metadata.dependencies]]
 	id = "some-dependency"
+	arch = "amd64"
 	stacks = ["some-stack"]
 	version = "1.2.3"
 	sha256 = "some-sha"
@@ -102,12 +103,14 @@ second-dependency = "5.6.x"
 
 [[metadata.dependencies]]
 	id = "first-dependency"
+	arch = "amd64"
 	stacks = ["first-stack"]
 	version = "4.5.6"
 	sha256 = "first-sha"
 
 [[metadata.dependencies]]
 	id = "second-dependency"
+	arch = "arm64"
 	stacks = ["second-stack"]
 	version = "5.6.7"
 	checksum = "sha256:second-sha"
@@ -290,10 +293,10 @@ version = "3.4.5"
 				"",
 				"### Dependencies",
 				"",
-				"| Name | Version | Stacks | Checksum |",
-				"|---|---|---|---|",
-				"| other-dependency | 2.3.4 | other-stack | sha256:other-sha |",
-				"| some-dependency | 1.2.3 | some-stack | sha256:some-sha |",
+				"| Name | Version | Arch | Stacks | Checksum |",
+				"|---|---|---|---|---|",
+				"| other-dependency | 2.3.4 | - | other-stack | sha256:other-sha |",
+				"| some-dependency | 1.2.3 | amd64 | some-stack | sha256:some-sha |",
 				"",
 				"---",
 				"",
@@ -318,10 +321,10 @@ version = "3.4.5"
 				"",
 				"### Dependencies",
 				"",
-				"| Name | Version | Stacks | Checksum |",
-				"|---|---|---|---|",
-				"| first-dependency | 4.5.6 | first-stack | sha256:first-sha |",
-				"| second-dependency | 5.6.7 | second-stack | sha256:second-sha |",
+				"| Name | Version | Arch | Stacks | Checksum |",
+				"|---|---|---|---|---|",
+				"| first-dependency | 4.5.6 | amd64 | first-stack | sha256:first-sha |",
+				"| second-dependency | 5.6.7 | arm64 | second-stack | sha256:second-sha |",
 				"",
 				"---",
 				"",
@@ -373,6 +376,7 @@ version = "3.4.5"
 								"other-dependency": "2.3.x"
 							},
 							"dependencies": [{
+									"arch": "amd64",
 									"id": "some-dependency",
 									"stacks": [
 										"some-stack"
@@ -410,6 +414,7 @@ version = "3.4.5"
 								"second-dependency": "5.6.x"
 							},
 							"dependencies": [{
+									"arch": "amd64",
 									"id": "first-dependency",
 									"stacks": [
 										"first-stack"
@@ -418,6 +423,7 @@ version = "3.4.5"
 									"sha256": "first-sha"
 								},
 								{
+									"arch": "arm64",
 									"id": "second-dependency",
 									"stacks": [
 										"second-stack"
