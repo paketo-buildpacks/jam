@@ -222,12 +222,10 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
-    arch = "some-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
-    os = "some-os"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
@@ -237,12 +235,10 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
       version = "some-distro-version"
 
   [[metadata.dependencies]]
-    arch = "some-other-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2022-04-01T00:00:00Z"
     id = "other-dependency"
     name = "Other Dependency"
-    os = "some-other-os"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
