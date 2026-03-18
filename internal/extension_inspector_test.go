@@ -181,7 +181,7 @@ func testExtensionInspector(t *testing.T, context spec.G, it spec.S) {
 							Homepage:    "https://example.com/extension",
 							Description: "This extension installs the appropriate nodejs runtime via dnf",
 							Keywords:    []string{"keyword1", "keyword2"},
-							Licenses: []cargo.ConfigExtensionLicense{
+							Licenses: []cargo.ConfigBuildpackLicense{
 								{
 									Type: "type-1.0",
 									URI:  "https://example.com/license",
