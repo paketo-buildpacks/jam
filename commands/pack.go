@@ -118,6 +118,16 @@ func packRun(flags packFlags) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
+	bundleFiles := []string{}
+	if len(config.Targets) > 0 {
+		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
+		if err != nil {
+			return fmt.Errorf("failed to fix include files directory structure: %w", err)
+		}
+	} else {
+		bundleFiles = config.Metadata.IncludeFiles
+	}
+
 	if flags.offline {
 		transport := cargo.NewTransport()
 		dependencyCacher := internal.NewDependencyCacher(transport, logger)
@@ -153,7 +163,7 @@ func packRun(flags packFlags) error {
 				hasTargetExecutableIncludeFiles := false
 				requiredFileNames := []string{"build", "detect"}
 				requiredFilesFound := 0
-				for _, file := range config.Metadata.IncludeFiles {
+				for _, file := range bundleFiles {
 					if hasTargetExecutableIncludeFiles {
 						break
 					}
@@ -197,15 +207,15 @@ func packRun(flags packFlags) error {
 					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
 
-				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
+				bundleFiles = append(bundleFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
 			} else {
-				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 			}
 		}
 	}
 
 	fileBundler := internal.NewFileBundler()
-	files, err := fileBundler.Bundle(tmpDir, config.Metadata.IncludeFiles, config)
+	files, err := fileBundler.Bundle(tmpDir, bundleFiles, config)
 	if err != nil {
 		return fmt.Errorf("failed to bundle files: %s", err)
 	}
@@ -217,6 +227,45 @@ func packRun(flags packFlags) error {
 	}
 
 	return err // err should be nil here, but return err to catch deferred error
+}
+
+func stringHasAnyPrefix(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
+	osArchDirs := []string{}
+	for _, target := range targets {
+		osArchDirs = append(osArchDirs, target.OS+"/"+target.Arch)
+	}
+
+	filesWithOsArchPrefix := []string{}
+	for _, file := range includeFiles {
+		if file == "buildpack.toml" {
+			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			continue
+		}
+		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
+
+		if hasOsArchPrefix {
+			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+		} else {
+			for _, dir := range osArchDirs {
+				filesWithOsArchPrefix = append(filesWithOsArchPrefix, filepath.Join(dir, file))
+				_, err := copyFile(filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file))
+				if err != nil {
+					return nil, fmt.Errorf("failed to copy file %s to %s: %w", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
+				}
+			}
+		}
+	}
+
+	return filesWithOsArchPrefix, nil
 }
 
 func packRunExtension(flags packFlags, tmpDir string) error {
@@ -258,6 +307,16 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
+	bundleFiles := []string{}
+	if len(config.Targets) > 0 {
+		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
+		if err != nil {
+			return fmt.Errorf("failed to fix include files directory structure: %w", err)
+		}
+	} else {
+		bundleFiles = config.Metadata.IncludeFiles
+	}
+
 	if flags.offline {
 		transport := cargo.NewTransport()
 		dependencyCacher := internal.NewDependencyCacher(transport, logger)
@@ -267,12 +326,12 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 		}
 
 		for _, dependency := range config.Metadata.Dependencies {
-			config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+			bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 		}
 	}
 
 	fileBundler := internal.NewFileBundler()
-	files, err := fileBundler.BundleExtension(tmpDir, config.Metadata.IncludeFiles, config)
+	files, err := fileBundler.BundleExtension(tmpDir, bundleFiles, config)
 	if err != nil {
 		return fmt.Errorf("failed to bundle files: %s", err)
 	}
