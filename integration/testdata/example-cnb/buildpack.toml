@@ -51,11 +51,3 @@ api = "0.6"
 [[stacks]]
   id = "some-stack-id"
   mixins = ["some-mixin-id"]
-
-[[targets]]
-  os = "some-os"
-  arch = "some-arch"
-
-[[targets]]
-  os = "some-other-os"
-  arch = "some-other-arch"
