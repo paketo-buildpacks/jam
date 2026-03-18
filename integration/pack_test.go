@@ -364,9 +364,9 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("that is multi architecture with os and arch and matching directory layout", func() {
+		context("that is multi architecture with at least two targets and matching directory layout", func() {
 			it.Before(func() {
-				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch-with-os-arch"), buildpackDir)
+				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch"), buildpackDir)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
