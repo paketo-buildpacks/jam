@@ -47,9 +47,79 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(buildpackDir)).To(Succeed())
 	})
 
-	context("when packaging a language family buildpack", func() {
+	context("when packaging a language family buildpack single architecture", func() {
 		it.Before(func() {
 			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-language-family-cnb"), buildpackDir)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("creates a language family archive", func() {
+			command := exec.Command(
+				path, "pack",
+				"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
+				"--output", filepath.Join(tmpDir, "output.tgz"),
+				"--version", "some-version",
+			)
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, "5s").Should(gexec.Exit(0), func() string { return buffer.String() })
+
+			Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+			Expect(session.Out).To(gbytes.Say("    buildpack.toml"))
+
+			file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+			Expect(err).NotTo(HaveOccurred())
+
+			contents, _, err := ExtractFile(file, "buildpack.toml")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(MatchTOML(`api = "0.2"
+
+[buildpack]
+  id = "some-buildpack-id"
+  name = "some-buildpack-name"
+  version = "some-version"
+
+[metadata]
+  include-files = ["buildpack.toml"]
+
+  [[metadata.dependencies]]
+    arch = "some-arch"
+    deprecation_date = "2019-04-01T00:00:00Z"
+    id = "some-dependency"
+    name = "Some Dependency"
+    os = "some-os"
+    sha256 = "shasum"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://some-url"
+    version = "1.2.3"
+
+  [[metadata.dependencies]]
+    arch = "some-other-arch"
+    deprecation_date = "2022-04-01T00:00:00Z"
+    id = "other-dependency"
+    name = "Other Dependency"
+    os = "some-other-os"
+    sha256 = "shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://other-url"
+    version = "4.5.6"
+
+[[order]]
+  [[order.group]]
+    id = "some-dependency"
+    version = "1.2.3"
+
+  [[order.group]]
+    id = "other-dependency"
+    version = "4.5.6"
+`))
+		})
+	})
+
+	context("when packaging a language family buildpack multi architecture", func() {
+		it.Before(func() {
+			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-language-family-cnb-multi-arch"), buildpackDir)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
