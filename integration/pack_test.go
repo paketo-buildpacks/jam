@@ -194,6 +194,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   os = "some-other-os"`
 
 			it("creates a packaged buildpack", func() {
+
 				command := exec.Command(
 					path, "pack",
 					"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
@@ -614,9 +615,9 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("that is multi architecture without os and arch but with default linux/amd64 directory layout", func() {
+		context("that is single architecture with targets specified", func() {
 			it.Before(func() {
-				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch-without-os-arch"), buildpackDir)
+				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-with-target"), buildpackDir)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
