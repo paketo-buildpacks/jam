@@ -254,14 +254,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 [[stacks]]
   id = "some-stack-id"
   mixins = ["some-mixin-id"]
-
-[[targets]]
-  arch = "some-arch"
-  os = "some-os"
-
-[[targets]]
-  arch = "some-other-arch"
-  os = "some-other-os"`
+`
 
 			it("creates a packaged buildpack", func() {
 
