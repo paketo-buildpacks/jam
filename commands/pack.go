@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -121,7 +122,7 @@ func packRun(flags packFlags) error {
 	if len(config.Targets) > 1 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
-			return fmt.Errorf("failed to fix include files directory structure: %w", err)
+			return fmt.Errorf("failed to fix include files directory structure: %s", err)
 		}
 	} else {
 		bundleFiles = config.Metadata.IncludeFiles
@@ -137,44 +138,45 @@ func packRun(flags packFlags) error {
 
 		dependenciesDir := "dependencies"
 
-		info, err := os.Stat(filepath.Join(tmpDir, dependenciesDir))
-		if err != nil || os.IsNotExist(err) || !info.IsDir() {
-			return fmt.Errorf("expected dependencies directory does not exist: %s", err)
+		depsDir := filepath.Join(tmpDir, dependenciesDir)
+		info, err := os.Stat(depsDir)
+		if err != nil {
+			return fmt.Errorf("expected dependencies directory: %s", err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("expected dependencies path is not a directory: %s", depsDir)
 		}
 
-		isSingleArchBuildpack := len(config.Targets) <= 1
-		if isSingleArchBuildpack {
-			for _, dependency := range config.Metadata.Dependencies {
-				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
-			}
-		}
+		isMultiArch := len(config.Targets) > 1
 
 		// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
 		// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
-		if !isSingleArchBuildpack {
-			for dependencyIndex, dependency := range config.Metadata.Dependencies {
+		for dependencyIndex, dependency := range config.Metadata.Dependencies {
+			if isMultiArch {
 				if dependency.OS == "" || dependency.Arch == "" {
 					return fmt.Errorf("dependency %s has no OS or Arch", dependency.ID)
 				}
 
-				targetPlatformDir := dependency.OS + "/" + dependency.Arch
+				dependencyPlatformDir := filepath.Join(dependency.OS, dependency.Arch, dependenciesDir)
 
 				offlinePath := strings.TrimPrefix(dependency.URI, "file:///")
 				offlineFilename := filepath.Base(offlinePath)
 
-				err = os.MkdirAll(filepath.Join(tmpDir, targetPlatformDir, dependenciesDir), os.ModePerm)
+				err = os.MkdirAll(filepath.Join(tmpDir, dependencyPlatformDir), os.ModePerm)
 				if err != nil {
 					return fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
 				}
 
-				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, targetPlatformDir, dependenciesDir, offlineFilename))
+				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, dependencyPlatformDir, offlineFilename))
 				if err != nil {
 					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
 
-				relativePath := filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename)
+				relativePath := path.Join(dependencyPlatformDir, offlineFilename)
 				bundleFiles = append(bundleFiles, relativePath)
 				config.Metadata.Dependencies[dependencyIndex].URI = "file:///" + relativePath
+			} else {
+				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 			}
 		}
 	}
@@ -225,7 +227,7 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 				filesWithOsArchPrefix = append(filesWithOsArchPrefix, filepath.Join(dir, file))
 				_, err := copyFile(filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file))
 				if err != nil {
-					return nil, fmt.Errorf("failed to copy file %s to %s: %w", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
+					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
 				}
 			}
 		}
@@ -277,7 +279,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	if len(config.Targets) > 0 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
-			return fmt.Errorf("failed to fix include files directory structure: %w", err)
+			return fmt.Errorf("failed to fix include files directory structure: %s", err)
 		}
 	} else {
 		bundleFiles = config.Metadata.IncludeFiles
