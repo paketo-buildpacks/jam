@@ -236,7 +236,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	}
 
 	bundleFiles := []string{}
-	if len(config.Targets) > 0 {
+	if len(config.Targets) > 1 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
 			return fmt.Errorf("failed to fix include files directory structure: %s", err)
@@ -246,16 +246,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	}
 
 	if flags.offline {
-		transport := cargo.NewTransport()
-		dependencyCacher := internal.NewDependencyCacher(transport, logger)
-		config.Metadata.Dependencies, err = dependencyCacher.CacheExtension(tmpDir, config.Metadata.Dependencies)
-		if err != nil {
-			return fmt.Errorf("failed to cache dependencies: %s", err)
-		}
-
-		for _, dependency := range config.Metadata.Dependencies {
-			bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
-		}
+		return fmt.Errorf("offline mode is not supported for extensions")
 	}
 
 	fileBundler := internal.NewFileBundler()
