@@ -13,7 +13,7 @@ api = "0.6"
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = [ "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml" ]
+  include-files = [ "README.md", "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml" ]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
