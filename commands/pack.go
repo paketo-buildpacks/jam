@@ -59,7 +59,13 @@ func init() {
 
 func packRun(flags packFlags) error {
 
-	if flags.buildpackTOMLPath == "" && flags.extensionTOMLPath == "" {
+	buildpackOrExtensionTOMLPath := ""
+
+	if flags.buildpackTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.buildpackTOMLPath
+	} else if flags.extensionTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.extensionTOMLPath
+	} else {
 		return fmt.Errorf(`"buildpack" or "extension" flag is required`)
 	}
 
@@ -73,6 +79,12 @@ func packRun(flags packFlags) error {
 		}
 	}()
 
+	directoryDuplicator := cargo.NewDirectoryDuplicator()
+	err = directoryDuplicator.Duplicate(filepath.Dir(buildpackOrExtensionTOMLPath), tmpDir)
+	if err != nil {
+		return fmt.Errorf("failed to duplicate directory: %s", err)
+	}
+
 	if flags.extensionTOMLPath != "" {
 		err := packRunExtension(flags, tmpDir)
 		if err != nil {
@@ -81,13 +93,7 @@ func packRun(flags packFlags) error {
 		return nil
 	}
 
-	directoryDuplicator := cargo.NewDirectoryDuplicator()
-	err = directoryDuplicator.Duplicate(filepath.Dir(flags.buildpackTOMLPath), tmpDir)
-	if err != nil {
-		return fmt.Errorf("failed to duplicate directory: %s", err)
-	}
-
-	buildpackTOMLPath := filepath.Join(tmpDir, filepath.Base(flags.buildpackTOMLPath))
+	buildpackTOMLPath := filepath.Join(tmpDir, filepath.Base(buildpackOrExtensionTOMLPath))
 
 	configParser := cargo.NewBuildpackParser()
 	config, err := configParser.Parse(buildpackTOMLPath)
@@ -196,53 +202,7 @@ func packRun(flags packFlags) error {
 	return err // err should be nil here, but return err to catch deferred error
 }
 
-func stringHasAnyPrefix(s string, prefixes []string) bool {
-	for _, prefix := range prefixes {
-		if strings.HasPrefix(s, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
-func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
-	osArchDirs := []string{}
-	for _, target := range targets {
-		osArchDirs = append(osArchDirs, target.OS+"/"+target.Arch)
-	}
-
-	filesWithOsArchPrefix := []string{}
-	for _, file := range includeFiles {
-		if file == "buildpack.toml" {
-			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
-			continue
-		}
-
-		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
-
-		if hasOsArchPrefix {
-			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
-		} else {
-			for _, dir := range osArchDirs {
-				filesWithOsArchPrefix = append(filesWithOsArchPrefix, filepath.Join(dir, file))
-				_, err := copyFile(filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file))
-				if err != nil {
-					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
-				}
-			}
-		}
-	}
-
-	return filesWithOsArchPrefix, nil
-}
-
 func packRunExtension(flags packFlags, tmpDir string) error {
-
-	directoryDuplicator := cargo.NewDirectoryDuplicator()
-	err := directoryDuplicator.Duplicate(filepath.Dir(flags.extensionTOMLPath), tmpDir)
-	if err != nil {
-		return fmt.Errorf("failed to duplicate directory: %s", err)
-	}
 
 	extensionTOMLPath := filepath.Join(tmpDir, filepath.Base(flags.extensionTOMLPath))
 
@@ -344,4 +304,44 @@ func copyFile(src string, dst string) (int64, error) {
 
 	nBytes, err := io.Copy(destination, source)
 	return nBytes, err
+}
+
+func stringHasAnyPrefix(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
+	osArchDirs := []string{}
+	for _, target := range targets {
+		osArchDirs = append(osArchDirs, target.OS+"/"+target.Arch)
+	}
+
+	filesWithOsArchPrefix := []string{}
+	for _, file := range includeFiles {
+		if file == "buildpack.toml" {
+			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			continue
+		}
+
+		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
+
+		if hasOsArchPrefix {
+			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+		} else {
+			for _, dir := range osArchDirs {
+				filesWithOsArchPrefix = append(filesWithOsArchPrefix, filepath.Join(dir, file))
+				_, err := copyFile(filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file))
+				if err != nil {
+					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
+				}
+			}
+		}
+	}
+
+	return filesWithOsArchPrefix, nil
 }
