@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal"
@@ -119,7 +118,7 @@ func packRun(flags packFlags) error {
 	}
 
 	bundleFiles := []string{}
-	if len(config.Targets) > 0 {
+	if len(config.Targets) > 1 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
 			return fmt.Errorf("failed to fix include files directory structure: %w", err)
@@ -136,66 +135,32 @@ func packRun(flags packFlags) error {
 			return fmt.Errorf("failed to cache dependencies: %s", err)
 		}
 
-		systemOS := osFromSystem()
-		systemArch := archFromSystem()
+		dependenciesDir := "dependencies"
 
-		// linux/amd64 will be the default target dir when dependencies don't specify os and arch
-		defaultTargetDir := "linux/amd64"
-		systemTargetDir := filepath.Join(systemOS, systemArch)
+		info, err := os.Stat(filepath.Join(tmpDir, dependenciesDir))
+		if err != nil || os.IsNotExist(err) || !info.IsDir() {
+			return fmt.Errorf("expected dependencies directory does not exist: %s", err)
+		}
 
-		for _, dependency := range config.Metadata.Dependencies {
-			var targetPlatformDir string
-			shouldMoveToPlatformDir := false
-			checkTargetDirPaths := []string{}
-			if dependency.OS != "" && dependency.Arch != "" {
-				checkTargetDirPaths = append(checkTargetDirPaths, filepath.Join(dependency.OS, dependency.Arch))
+		isSingleArchBuildpack := len(config.Targets) <= 1
+		if isSingleArchBuildpack {
+			for _, dependency := range config.Metadata.Dependencies {
+				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 			}
-			checkTargetDirPaths = append(checkTargetDirPaths, systemTargetDir, defaultTargetDir)
+		}
 
-			for _, dir := range checkTargetDirPaths {
-				hasTargetDir := false
-				info, err := os.Stat(filepath.Join(tmpDir, dir))
-				if err == nil && info.IsDir() && !os.IsNotExist(err) {
-					hasTargetDir = true
+		// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
+		// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
+		if !isSingleArchBuildpack {
+			for dependencyIndex, dependency := range config.Metadata.Dependencies {
+				if dependency.OS == "" || dependency.Arch == "" {
+					return fmt.Errorf("dependency %s has no OS or Arch", dependency.ID)
 				}
 
-				// Don't move to platform-specific directory unless include-files has required executables in the platform-specific bin directory.
-				hasTargetExecutableIncludeFiles := false
-				requiredFileNames := []string{"build", "detect"}
-				requiredFilesFound := 0
-				for _, file := range bundleFiles {
-					if hasTargetExecutableIncludeFiles {
-						break
-					}
-					for _, name := range requiredFileNames {
-						if file == fmt.Sprintf("%s/bin/%s", dir, name) {
-							requiredFilesFound++
-						}
-						if requiredFilesFound == len(requiredFileNames) {
-							hasTargetExecutableIncludeFiles = true
-							break
-						}
-					}
-				}
+				targetPlatformDir := dependency.OS + "/" + dependency.Arch
 
-				if hasTargetDir && hasTargetExecutableIncludeFiles {
-					shouldMoveToPlatformDir = true
-					targetPlatformDir = dir
-					break
-				}
-			}
-
-			if shouldMoveToPlatformDir {
-				// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
-				// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
 				offlinePath := strings.TrimPrefix(dependency.URI, "file:///")
-				dependenciesDir := filepath.Dir(offlinePath)
 				offlineFilename := filepath.Base(offlinePath)
-
-				info, err := os.Stat(filepath.Join(tmpDir, dependenciesDir))
-				if err != nil || os.IsNotExist(err) || !info.IsDir() {
-					return fmt.Errorf("expected dependencies directory does not exist: %s", err)
-				}
 
 				err = os.MkdirAll(filepath.Join(tmpDir, targetPlatformDir, dependenciesDir), os.ModePerm)
 				if err != nil {
@@ -207,9 +172,9 @@ func packRun(flags packFlags) error {
 					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
 
-				bundleFiles = append(bundleFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
-			} else {
-				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+				relativePath := filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename)
+				bundleFiles = append(bundleFiles, relativePath)
+				config.Metadata.Dependencies[dependencyIndex].URI = "file:///" + relativePath
 			}
 		}
 	}
@@ -250,6 +215,7 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
 			continue
 		}
+
 		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
 
 		if hasOsArchPrefix {
@@ -343,24 +309,6 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	}
 
 	return nil
-}
-
-func osFromSystem() string {
-	osFromEnv, ok := os.LookupEnv("BP_OS")
-	if ok {
-		return osFromEnv
-	}
-
-	return runtime.GOOS
-}
-
-func archFromSystem() string {
-	archFromEnv, ok := os.LookupEnv("BP_ARCH")
-	if ok {
-		return archFromEnv
-	}
-
-	return runtime.GOARCH
 }
 
 func copyFile(src string, dst string) (int64, error) {
