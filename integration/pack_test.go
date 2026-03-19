@@ -216,7 +216,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = ["bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file"]
+  include-files = ["README.md", "bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
@@ -268,6 +268,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
 				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+				Expect(session.Out).To(gbytes.Say("    README.md"))
 				Expect(session.Out).To(gbytes.Say("    bin/build"))
 				Expect(session.Out).To(gbytes.Say("    bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    bin/link"))
@@ -288,6 +289,13 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				contents, hdr, err := ExtractFile(file, "buildpack.toml")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contents).To(MatchTOML(expectedBuildpackToml))
+				Expect(hdr.Mode).To(Equal(int64(0644)))
+
+				expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+				Expect(readErr).NotTo(HaveOccurred())
+				contents, hdr, err = ExtractFile(file, "README.md")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(Equal(expectedReadme))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
 
 				contents, hdr, err = ExtractFile(file, "bin/build")
@@ -372,6 +380,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(session.Out).To(gbytes.Say(`    some-dependency \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath0)))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+					Expect(session.Out).To(gbytes.Say("    README.md"))
 					Expect(session.Out).To(gbytes.Say("    bin"))
 					Expect(session.Out).To(gbytes.Say("    bin/build"))
 					Expect(session.Out).To(gbytes.Say("    bin/detect"))
@@ -398,6 +407,13 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(extractedBuildpackConfig.Metadata.IncludeFiles).To(Equal(updatedIncludeFiles))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath0)))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
 
 					contents, hdr, err = ExtractFile(file, "bin/build")
 					Expect(err).NotTo(HaveOccurred())
@@ -443,7 +459,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = ["some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml"]
+  include-files = ["README.md", "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
@@ -527,10 +543,12 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
 				Expect(session.Out).To(gbytes.Say("    buildpack.toml"))
+				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/README.md"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/build"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/link"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/generated-file"))
+				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/README.md"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/build"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/link"))
@@ -552,9 +570,18 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(contents).To(MatchTOML(expectedBuildpackToml))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
 
+				expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+				Expect(readErr).NotTo(HaveOccurred())
+
 				for _, platform := range platforms {
 					targetOs := platform.os
 					targetArch := platform.arch
+
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/README.md", targetOs, targetArch))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
 					contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/bin/build", targetOs, targetArch))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/build-contents", targetOs, targetArch)))
@@ -705,6 +732,18 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal("dep-2-contents-some-other-os-some-other-arch"))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "some-os/some-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, "some-other-os/some-other-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
 				})
 			})
 		})
@@ -791,6 +830,13 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath0)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal("no-platform-dependency-contents"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
 				})
 			})
