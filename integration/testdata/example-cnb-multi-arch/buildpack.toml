@@ -20,33 +20,47 @@ api = "0.6"
 
   [[metadata.dependencies]]
     deprecation_date = 2019-04-01T00:00:00Z
-    id = "some-dependency"
-    name = "Some Dependency"
+    id = "dep-1"
+    name = "Dependency 1"
     checksum = "sha256:shasum"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
-    uri = "http://some-url"
+    uri = "http://dep-1-url-some-os-some-arch"
     version = "1.2.3"
     os = "some-os"
     arch = "some-arch"
 
-    [[metadata.dependencies.distros]]
-    name = "some-distro-name"
-    version = "some-distro-version"
-
   [[metadata.dependencies]]
-    deprecation_date = 2022-04-01T00:00:00Z
-    id = "other-dependency"
-    name = "Other Dependency"
+    deprecation_date = 2019-04-01T00:00:00Z
+    id = "dep-1"
+    name = "Dependency 1"
     checksum = "sha256:shasum"
-    stacks = ["org.cloudfoundry.stacks.tiny"]
-    uri = "http://other-url"
-    version = "4.5.6"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-1-url-some-other-os-some-other-arch"
+    version = "1.2.3"
     os = "some-other-os"
     arch = "some-other-arch"
 
-    [[metadata.dependencies.distros]]
-    name = "some-other-distro-name"
-    version = "some-other-distro-version"
+  [[metadata.dependencies]]
+    deprecation_date = 2022-04-01T00:00:00Z
+    id = "dep-2"
+    name = "Dependency 2"
+    checksum = "sha256:shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-2-url-some-os-some-arch"
+    version = "4.5.6"
+    os = "some-os"
+    arch = "some-arch"
+
+  [[metadata.dependencies]]
+    deprecation_date = 2022-04-01T00:00:00Z
+    id = "dep-2"
+    name = "Dependency 2"
+    checksum = "sha256:shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-2-url-some-other-os-some-other-arch"
+    version = "4.5.6"
+    os = "some-other-os"
+    arch = "some-other-arch"
 
 [[stacks]]
   id = "some-stack-id"
