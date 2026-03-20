@@ -299,7 +299,7 @@ func copyFile(src string, dst string) (int64, error) {
 	return nBytes, err
 }
 
-func stringHasAnyPrefix(s string, prefixes []string) bool {
+func stringStartsWith(s string, prefixes []string) bool {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(s, prefix) {
 			return true
@@ -314,32 +314,41 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 		osArchDirs = append(osArchDirs, target.OS+"/"+target.Arch)
 	}
 
-	filesWithOsArchPrefix := []string{}
+	fixedIncludeFiles := []string{}
 	for _, file := range includeFiles {
 		if file == "buildpack.toml" {
-			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
 			continue
 		}
 
 		if file == "extension.toml" {
-			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
 			continue
 		}
 
-		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
+		hasOsArchPrefix := stringStartsWith(file, osArchDirs)
 
 		if hasOsArchPrefix {
-			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
 		} else {
 			for _, dir := range osArchDirs {
-				filesWithOsArchPrefix = append(filesWithOsArchPrefix, filepath.Join(dir, file))
-				_, err := copyFile(filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file))
+
+				destRelativePath := filepath.Join(dir, file)
+				destAbsolutePath := filepath.Join(tmpDir, destRelativePath)
+
+				err := os.MkdirAll(filepath.Dir(destAbsolutePath), os.ModePerm)
 				if err != nil {
-					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), filepath.Join(tmpDir, dir, file), err)
+					return nil, fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
 				}
+
+				_, err = copyFile(filepath.Join(tmpDir, file), destAbsolutePath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), destAbsolutePath, err)
+				}
+				fixedIncludeFiles = append(fixedIncludeFiles, destRelativePath)
 			}
 		}
 	}
 
-	return filesWithOsArchPrefix, nil
+	return fixedIncludeFiles, nil
 }
