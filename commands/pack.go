@@ -321,6 +321,11 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 			continue
 		}
 
+		if file == "extension.toml" {
+			filesWithOsArchPrefix = append(filesWithOsArchPrefix, file)
+			continue
+		}
+
 		hasOsArchPrefix := stringHasAnyPrefix(file, osArchDirs)
 
 		if hasOsArchPrefix {

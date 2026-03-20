@@ -1,0 +1,46 @@
+api = "0.7"
+
+[extension]
+  id = "some-extension-id"
+  name = "some-extension-name"
+  version = "version-string"
+  description = "some-extension-description"
+  homepage = "some-extension-homepage"
+  keywords = [ "some-extension-keyword" ]
+
+  [[extension.licenses]]
+    type = "some-extension-license-type"
+    uri = "some-extension-license-uri"
+
+[metadata]
+  include-files = [
+    "README.md",
+    "extension.toml",
+    "some-os/some-arch/bin/generate",
+    "some-os/some-arch/bin/detect",
+    "some-os/some-arch/bin/run",
+    "some-os/some-arch/generated-file",
+    "some-other-os/some-other-arch/bin/generate",
+    "some-other-os/some-other-arch/bin/detect",
+    "some-other-os/some-other-arch/bin/run",
+    "some-other-os/some-other-arch/generated-file"
+  ]
+
+  pre-package = "./scripts/build.sh"
+
+  [metadata.default-versions]
+    node = "18.*.*"
+
+  [[metadata.configurations]]
+    build = true
+    default = "16"
+    description = "the Node.js version"
+    name = "BP_NODE_VERSION"
+
+[[targets]]
+  os = "some-os"
+  arch = "some-arch"
+
+[[targets]]
+  os = "some-other-os"
+  arch = "some-other-arch"
