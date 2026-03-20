@@ -1,0 +1,74 @@
+api = "0.6"
+
+[buildpack]
+  id = "some-buildpack-id"
+  name = "some-buildpack-name"
+  version = "version-string"
+  homepage = "some-homepage-link"
+  description = "some-buildpack-description"
+  keywords = [ "some-buildpack-keyword" ]
+
+[[buildpack.licenses]]
+  type = "some-buildpack-license-type"
+  uri = "some-buildpack-license-uri"
+
+[metadata]
+  include-files = [ "README.md", "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml" ]
+  pre-package = "./scripts/build.sh"
+  [metadata.default-versions]
+    some-dependency = "some-default-version"
+
+  [[metadata.dependencies]]
+    deprecation_date = 2019-04-01T00:00:00Z
+    id = "dep-1"
+    name = "Dependency 1"
+    checksum = "sha256:shasum"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-1-url-some-os-some-arch"
+    version = "1.2.3"
+    os = "some-os"
+    arch = "some-arch"
+
+  [[metadata.dependencies]]
+    deprecation_date = 2019-04-01T00:00:00Z
+    id = "dep-1"
+    name = "Dependency 1"
+    checksum = "sha256:shasum"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-1-url-some-other-os-some-other-arch"
+    version = "1.2.3"
+    os = "some-other-os"
+    arch = "some-other-arch"
+
+  [[metadata.dependencies]]
+    deprecation_date = 2022-04-01T00:00:00Z
+    id = "dep-2"
+    name = "Dependency 2"
+    checksum = "sha256:shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-2-url-some-os-some-arch"
+    version = "4.5.6"
+    os = "some-os"
+    arch = "some-arch"
+
+  [[metadata.dependencies]]
+    deprecation_date = 2022-04-01T00:00:00Z
+    id = "dep-2"
+    name = "Dependency 2"
+    checksum = "sha256:shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-2-url-some-other-os-some-other-arch"
+    version = "4.5.6"
+    os = "some-other-os"
+    arch = "some-other-arch"
+
+[[stacks]]
+  id = "some-stack-id"
+
+[[targets]]
+  os = "some-os"
+  arch = "some-arch"
+
+[[targets]]
+  os = "some-other-os"
+  arch = "some-other-arch"

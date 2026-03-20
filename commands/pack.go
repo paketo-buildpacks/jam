@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal"
@@ -41,6 +41,7 @@ func pack() *cobra.Command {
 	cmd.Flags().StringVar(&flags.stack, "stack", "", "restricts dependencies to given stack")
 
 	cmd.MarkFlagsMutuallyExclusive("buildpack", "extension")
+	cmd.MarkFlagsOneRequired("buildpack", "extension")
 
 	err := cmd.MarkFlagRequired("output")
 	if err != nil {
@@ -50,6 +51,7 @@ func pack() *cobra.Command {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark version flag as required")
 	}
+
 	return cmd
 }
 
@@ -59,8 +61,18 @@ func init() {
 
 func packRun(flags packFlags) error {
 
-	if flags.buildpackTOMLPath == "" && flags.extensionTOMLPath == "" {
-		return fmt.Errorf(`"buildpack" or "extension" flag is required`)
+	buildpackOrExtensionTOMLPath := ""
+
+	if flags.buildpackTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.buildpackTOMLPath
+	} else if flags.extensionTOMLPath != "" {
+		buildpackOrExtensionTOMLPath = flags.extensionTOMLPath
+	} else {
+		return fmt.Errorf(`--buildpack or --extension path must not be empty`)
+	}
+
+	if flags.offline && buildpackOrExtensionTOMLPath == flags.extensionTOMLPath {
+		return fmt.Errorf("offline mode is not supported for extensions")
 	}
 
 	tmpDir, err := os.MkdirTemp("", "dup-dest")
@@ -73,6 +85,12 @@ func packRun(flags packFlags) error {
 		}
 	}()
 
+	directoryDuplicator := cargo.NewDirectoryDuplicator()
+	err = directoryDuplicator.Duplicate(filepath.Dir(buildpackOrExtensionTOMLPath), tmpDir)
+	if err != nil {
+		return fmt.Errorf("failed to duplicate directory: %s", err)
+	}
+
 	if flags.extensionTOMLPath != "" {
 		err := packRunExtension(flags, tmpDir)
 		if err != nil {
@@ -81,13 +99,7 @@ func packRun(flags packFlags) error {
 		return nil
 	}
 
-	directoryDuplicator := cargo.NewDirectoryDuplicator()
-	err = directoryDuplicator.Duplicate(filepath.Dir(flags.buildpackTOMLPath), tmpDir)
-	if err != nil {
-		return fmt.Errorf("failed to duplicate directory: %s", err)
-	}
-
-	buildpackTOMLPath := filepath.Join(tmpDir, filepath.Base(flags.buildpackTOMLPath))
+	buildpackTOMLPath := filepath.Join(tmpDir, filepath.Base(buildpackOrExtensionTOMLPath))
 
 	configParser := cargo.NewBuildpackParser()
 	config, err := configParser.Parse(buildpackTOMLPath)
@@ -118,6 +130,16 @@ func packRun(flags packFlags) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
+	var bundleFiles []string
+	if len(config.Targets) > 1 {
+		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
+		if err != nil {
+			return fmt.Errorf("failed to fix include files directory structure: %s", err)
+		}
+	} else {
+		bundleFiles = config.Metadata.IncludeFiles
+	}
+
 	if flags.offline {
 		transport := cargo.NewTransport()
 		dependencyCacher := internal.NewDependencyCacher(transport, logger)
@@ -126,86 +148,53 @@ func packRun(flags packFlags) error {
 			return fmt.Errorf("failed to cache dependencies: %s", err)
 		}
 
-		systemOS := osFromSystem()
-		systemArch := archFromSystem()
+		dependenciesDir := "dependencies"
 
-		// linux/amd64 will be the default target dir when dependencies don't specify os and arch
-		defaultTargetDir := "linux/amd64"
-		systemTargetDir := filepath.Join(systemOS, systemArch)
+		depsDir := filepath.Join(tmpDir, dependenciesDir)
+		info, err := os.Stat(depsDir)
+		if err != nil {
+			return fmt.Errorf("expected dependencies directory: %s", err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("expected dependencies path is not a directory: %s", depsDir)
+		}
 
-		for _, dependency := range config.Metadata.Dependencies {
-			var targetPlatformDir string
-			shouldMoveToPlatformDir := false
-			checkTargetDirPaths := []string{}
-			if dependency.OS != "" && dependency.Arch != "" {
-				checkTargetDirPaths = append(checkTargetDirPaths, filepath.Join(dependency.OS, dependency.Arch))
-			}
-			checkTargetDirPaths = append(checkTargetDirPaths, systemTargetDir, defaultTargetDir)
+		isMultiArch := len(config.Targets) > 1
 
-			for _, dir := range checkTargetDirPaths {
-				hasTargetDir := false
-				info, err := os.Stat(filepath.Join(tmpDir, dir))
-				if err == nil && info.IsDir() && !os.IsNotExist(err) {
-					hasTargetDir = true
+		// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
+		// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
+		for dependencyIndex, dependency := range config.Metadata.Dependencies {
+			if isMultiArch {
+				if dependency.OS == "" || dependency.Arch == "" {
+					return fmt.Errorf("dependency %s has no OS or Arch", dependency.ID)
 				}
 
-				// Don't move to platform-specific directory unless include-files has required executables in the platform-specific bin directory.
-				hasTargetExecutableIncludeFiles := false
-				requiredFileNames := []string{"build", "detect"}
-				requiredFilesFound := 0
-				for _, file := range config.Metadata.IncludeFiles {
-					if hasTargetExecutableIncludeFiles {
-						break
-					}
-					for _, name := range requiredFileNames {
-						if file == fmt.Sprintf("%s/bin/%s", dir, name) {
-							requiredFilesFound++
-						}
-						if requiredFilesFound == len(requiredFileNames) {
-							hasTargetExecutableIncludeFiles = true
-							break
-						}
-					}
-				}
+				dependencyPlatformDir := filepath.Join(dependency.OS, dependency.Arch, dependenciesDir)
 
-				if hasTargetDir && hasTargetExecutableIncludeFiles {
-					shouldMoveToPlatformDir = true
-					targetPlatformDir = dir
-					break
-				}
-			}
-
-			if shouldMoveToPlatformDir {
-				// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
-				// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
 				offlinePath := strings.TrimPrefix(dependency.URI, "file:///")
-				dependenciesDir := filepath.Dir(offlinePath)
 				offlineFilename := filepath.Base(offlinePath)
 
-				info, err := os.Stat(filepath.Join(tmpDir, dependenciesDir))
-				if err != nil || os.IsNotExist(err) || !info.IsDir() {
-					return fmt.Errorf("expected dependencies directory does not exist: %s", err)
-				}
-
-				err = os.MkdirAll(filepath.Join(tmpDir, targetPlatformDir, dependenciesDir), os.ModePerm)
+				err = os.MkdirAll(filepath.Join(tmpDir, dependencyPlatformDir), os.ModePerm)
 				if err != nil {
 					return fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
 				}
 
-				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, targetPlatformDir, dependenciesDir, offlineFilename))
+				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, dependencyPlatformDir, offlineFilename))
 				if err != nil {
 					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
 
-				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, filepath.Join(targetPlatformDir, dependenciesDir, offlineFilename))
+				relativePath := path.Join(dependencyPlatformDir, offlineFilename)
+				bundleFiles = append(bundleFiles, relativePath)
+				config.Metadata.Dependencies[dependencyIndex].URI = "file:///" + relativePath
 			} else {
-				config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
+				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 			}
 		}
 	}
 
 	fileBundler := internal.NewFileBundler()
-	files, err := fileBundler.Bundle(tmpDir, config.Metadata.IncludeFiles, config)
+	files, err := fileBundler.Bundle(tmpDir, bundleFiles, config)
 	if err != nil {
 		return fmt.Errorf("failed to bundle files: %s", err)
 	}
@@ -220,12 +209,6 @@ func packRun(flags packFlags) error {
 }
 
 func packRunExtension(flags packFlags, tmpDir string) error {
-
-	directoryDuplicator := cargo.NewDirectoryDuplicator()
-	err := directoryDuplicator.Duplicate(filepath.Dir(flags.extensionTOMLPath), tmpDir)
-	if err != nil {
-		return fmt.Errorf("failed to duplicate directory: %s", err)
-	}
 
 	extensionTOMLPath := filepath.Join(tmpDir, filepath.Base(flags.extensionTOMLPath))
 
@@ -258,21 +241,18 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
-	if flags.offline {
-		transport := cargo.NewTransport()
-		dependencyCacher := internal.NewDependencyCacher(transport, logger)
-		config.Metadata.Dependencies, err = dependencyCacher.CacheExtension(tmpDir, config.Metadata.Dependencies)
+	var bundleFiles []string
+	if len(config.Targets) > 1 {
+		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
-			return fmt.Errorf("failed to cache dependencies: %s", err)
+			return fmt.Errorf("failed to fix include files directory structure: %s", err)
 		}
-
-		for _, dependency := range config.Metadata.Dependencies {
-			config.Metadata.IncludeFiles = append(config.Metadata.IncludeFiles, strings.TrimPrefix(dependency.URI, "file:///"))
-		}
+	} else {
+		bundleFiles = config.Metadata.IncludeFiles
 	}
 
 	fileBundler := internal.NewFileBundler()
-	files, err := fileBundler.BundleExtension(tmpDir, config.Metadata.IncludeFiles, config)
+	files, err := fileBundler.BundleExtension(tmpDir, bundleFiles, config)
 	if err != nil {
 		return fmt.Errorf("failed to bundle files: %s", err)
 	}
@@ -284,24 +264,6 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	}
 
 	return nil
-}
-
-func osFromSystem() string {
-	osFromEnv, ok := os.LookupEnv("BP_OS")
-	if ok {
-		return osFromEnv
-	}
-
-	return runtime.GOOS
-}
-
-func archFromSystem() string {
-	archFromEnv, ok := os.LookupEnv("BP_ARCH")
-	if ok {
-		return archFromEnv
-	}
-
-	return runtime.GOARCH
 }
 
 func copyFile(src string, dst string) (int64, error) {
@@ -335,4 +297,58 @@ func copyFile(src string, dst string) (int64, error) {
 
 	nBytes, err := io.Copy(destination, source)
 	return nBytes, err
+}
+
+func stringStartsWith(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
+	osArchDirs := []string{}
+	for _, target := range targets {
+		osArchDirs = append(osArchDirs, target.OS+"/"+target.Arch)
+	}
+
+	fixedIncludeFiles := []string{}
+	for _, file := range includeFiles {
+		if file == "buildpack.toml" {
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
+			continue
+		}
+
+		if file == "extension.toml" {
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
+			continue
+		}
+
+		hasOsArchPrefix := stringStartsWith(file, osArchDirs)
+
+		if hasOsArchPrefix {
+			fixedIncludeFiles = append(fixedIncludeFiles, file)
+		} else {
+			for _, dir := range osArchDirs {
+
+				destRelativePath := filepath.Join(dir, file)
+				destAbsolutePath := filepath.Join(tmpDir, destRelativePath)
+
+				err := os.MkdirAll(filepath.Dir(destAbsolutePath), os.ModePerm)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
+				}
+
+				_, err = copyFile(filepath.Join(tmpDir, file), destAbsolutePath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), destAbsolutePath, err)
+				}
+				fixedIncludeFiles = append(fixedIncludeFiles, destRelativePath)
+			}
+		}
+	}
+
+	return fixedIncludeFiles, nil
 }

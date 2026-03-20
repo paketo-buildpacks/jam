@@ -13,7 +13,7 @@ api = "0.6"
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = [ "linux/amd64/bin/build", "linux/amd64/bin/detect", "linux/amd64/bin/link", "linux/amd64/generated-file", "buildpack.toml" ]
+  include-files = [ "README.md", "bin/build", "bin/detect", "bin/link", "generated-file", "buildpack.toml" ]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
@@ -21,7 +21,7 @@ api = "0.6"
   [[metadata.dependencies]]
     deprecation_date = 2019-04-01T00:00:00Z
     id = "no-platform-dependency"
-    name = "Some Dependency without os and arch that should save offline dependencies to linux/amd64 path"
+    name = "Some Dependency without os and arch that should save offline dependencies to / path"
     checksum = "sha256:shasum"
     stacks = ["some-stack-id"]
     uri = "http://another-url"
