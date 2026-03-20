@@ -798,7 +798,6 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
 
 					relativeDependencyPath0 := "dependencies/1f384c990b7aba4b80f2b12d85dc4a2d8ffaf9097ca542818a504a592d041642"
-					platformSpecificDependencyPath0 := fmt.Sprintf("%s", relativeDependencyPath0)
 
 					Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
 					Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
@@ -808,7 +807,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath0)))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
 					Expect(session.Out).To(gbytes.Say("    dependencies"))
-					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", platformSpecificDependencyPath0)))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", relativeDependencyPath0)))
 
 					file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
 					Expect(err).NotTo(HaveOccurred())
@@ -827,7 +826,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath0)))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
 
-					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath0)
+					contents, hdr, err = ExtractFile(file, relativeDependencyPath0)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal("no-platform-dependency-contents"))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
@@ -868,7 +867,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring(`Error: "buildpack" or "extension" flag is required`))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: at least one of the flags in the group [buildpack extension] is required"))
 			})
 		})
 

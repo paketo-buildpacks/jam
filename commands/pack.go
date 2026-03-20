@@ -41,6 +41,7 @@ func pack() *cobra.Command {
 	cmd.Flags().StringVar(&flags.stack, "stack", "", "restricts dependencies to given stack")
 
 	cmd.MarkFlagsMutuallyExclusive("buildpack", "extension")
+	cmd.MarkFlagsOneRequired("buildpack", "extension")
 
 	err := cmd.MarkFlagRequired("output")
 	if err != nil {
@@ -50,6 +51,7 @@ func pack() *cobra.Command {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to mark version flag as required")
 	}
+
 	return cmd
 }
 
@@ -66,7 +68,11 @@ func packRun(flags packFlags) error {
 	} else if flags.extensionTOMLPath != "" {
 		buildpackOrExtensionTOMLPath = flags.extensionTOMLPath
 	} else {
-		return fmt.Errorf(`"buildpack" or "extension" flag is required`)
+		return fmt.Errorf(`--buildpack or --extension path must not be empty`)
+	}
+
+	if flags.offline && buildpackOrExtensionTOMLPath == flags.extensionTOMLPath {
+		return fmt.Errorf("offline mode is not supported for extensions")
 	}
 
 	tmpDir, err := os.MkdirTemp("", "dup-dest")
@@ -124,7 +130,7 @@ func packRun(flags packFlags) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
-	bundleFiles := []string{}
+	var bundleFiles []string
 	if len(config.Targets) > 1 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
@@ -235,7 +241,7 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 		return fmt.Errorf("failed to execute pre-packaging script %q: %s", config.Metadata.PrePackage, err)
 	}
 
-	bundleFiles := []string{}
+	var bundleFiles []string
 	if len(config.Targets) > 1 {
 		bundleFiles, err = fixIncludeFilesDirectoryStructure(config.Metadata.IncludeFiles, config.Targets, tmpDir)
 		if err != nil {
@@ -243,10 +249,6 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 		}
 	} else {
 		bundleFiles = config.Metadata.IncludeFiles
-	}
-
-	if flags.offline {
-		return fmt.Errorf("offline mode is not supported for extensions")
 	}
 
 	fileBundler := internal.NewFileBundler()
