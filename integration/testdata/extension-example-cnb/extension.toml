@@ -13,7 +13,7 @@ api = "0.7"
     uri = "some-extension-license-uri"
 
 [metadata]
-  include-files = ["bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
+  include-files = ["README.md", "bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
   pre-package = "./scripts/build.sh"
 
   [metadata.default-versions]
