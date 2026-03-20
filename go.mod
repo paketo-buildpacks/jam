@@ -16,7 +16,7 @@ require (
 	github.com/moby/go-archive v0.2.0
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/paketo-buildpacks/occam v0.31.1
+	github.com/paketo-buildpacks/occam v0.31.2
 	github.com/paketo-buildpacks/packit/v2 v2.25.4
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
@@ -300,7 +300,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/sylabs/sif/v2 v2.22.0 // indirect
 	github.com/sylabs/squashfs v1.0.6 // indirect
-	github.com/testcontainers/testcontainers-go v0.39.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.40.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect

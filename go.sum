@@ -908,8 +908,8 @@ github.com/opencontainers/selinux v1.13.1/go.mod h1:S10WXZ/osk2kWOYKy1x2f/eXF5ZH
 github.com/orisano/pixelmatch v0.0.0-20220722002657-fb0b55479cde/go.mod h1:nZgzbfBr3hhjoZnS66nKrHmduYNpc34ny7RK4z5/HM0=
 github.com/paketo-buildpacks/freezer v0.2.2 h1:p0qcGMQ54uGMzDFNkfpDpxddNl8+OTqt3teAWIkmCu4=
 github.com/paketo-buildpacks/freezer v0.2.2/go.mod h1:8dkcCqZKYFKxDV4MuooIR/Fr/LmpXqpr8R9mFvkGerE=
-github.com/paketo-buildpacks/occam v0.31.1 h1:emYbDaZh7DlIIQJ7kyoUSriC+jCZ+0oLqAmlFjISJlU=
-github.com/paketo-buildpacks/occam v0.31.1/go.mod h1:uIU2bUTiNPAP1XjxC/qD8baTjSLAL6rULfXQRLs8KfQ=
+github.com/paketo-buildpacks/occam v0.31.2 h1:9T8p3o47vaRxt/tQub4Ztg2kjGuqs1q7yfXW1cp3U64=
+github.com/paketo-buildpacks/occam v0.31.2/go.mod h1:BsFZhRvOTLvUHKLveWy1TcLLz+rha9YYHdmQ0WxPQJ4=
 github.com/paketo-buildpacks/packit/v2 v2.25.4 h1:KogJaNkv0aFbtLxDGfx1PsLSUsCVoetprx3kEGgTB+A=
 github.com/paketo-buildpacks/packit/v2 v2.25.4/go.mod h1:RzApxPvAr7M06ZAwt2WxL2VHibw3HzU42X4qFXhLSFs=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
@@ -1084,8 +1084,8 @@ github.com/sylabs/squashfs v1.0.6 h1:PvJcDzxr+vIm2kH56mEMbaOzvGu79gK7P7IX+R7BDZI
 github.com/sylabs/squashfs v1.0.6/go.mod h1:DlDeUawVXLWAsSRa085Eo0ZenGzAB32JdAUFaB0LZfE=
 github.com/terminalstatic/go-xsd-validate v0.1.6 h1:TenYeQ3eY631qNi1/cTmLH/s2slHPRKTTHT+XSHkepo=
 github.com/terminalstatic/go-xsd-validate v0.1.6/go.mod h1:18lsvYFofBflqCrvo1umpABZ99+GneNTw2kEEc8UPJw=
-github.com/testcontainers/testcontainers-go v0.39.0 h1:uCUJ5tA+fcxbFAB0uP3pIK3EJ2IjjDUHFSZ1H1UxAts=
-github.com/testcontainers/testcontainers-go v0.39.0/go.mod h1:qmHpkG7H5uPf/EvOORKvS6EuDkBUPE3zpVGaH9NL7f8=
+github.com/testcontainers/testcontainers-go v0.40.0 h1:pSdJYLOVgLE8YdUY2FHQ1Fxu+aMnb6JfVz1mxk7OeMU=
+github.com/testcontainers/testcontainers-go v0.40.0/go.mod h1:FSXV5KQtX2HAMlm7U3APNyLkkap35zNLxukw9oBi/MY=
 github.com/therootcompany/xz v1.0.1 h1:CmOtsn1CbtmyYiusbfmhmkpAAETj0wBIH6kCYaX+xzw=
 github.com/therootcompany/xz v1.0.1/go.mod h1:3K3UH1yCKgBneZYhuQUvJ9HPD19UEXEI0BWbMn8qNMY=
 github.com/tj/assert v0.0.0-20171129193455-018094318fb0/go.mod h1:mZ9/Rh9oLWpLLDRpvE+3b7gP/C2YyLFYxNmcLnPTMe0=
