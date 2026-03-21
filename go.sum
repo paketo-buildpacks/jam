@@ -281,8 +281,8 @@ github.com/buildpacks/imgutil v0.0.0-20251202182233-51c1c8c186ea h1:91PTHjeL3uzj
 github.com/buildpacks/imgutil v0.0.0-20251202182233-51c1c8c186ea/go.mod h1:yw2U9Ec8KUk7jWY97K0+e6GqrUAr05uTK6LwOEZyupw=
 github.com/buildpacks/lifecycle v0.21.0 h1:s2okNv1I4rETBC4CRm4ly7DRr5eTqx1bpKXyf+ywVms=
 github.com/buildpacks/lifecycle v0.21.0/go.mod h1:5Rb9kld2v1XYQC14fJrIGESqmuJvSYHVlUxAW5MAxNU=
-github.com/buildpacks/pack v0.40.1 h1:6WiG38YRjd+q12wNJMMuSt9bBVaLRCcCe6MQeNGt/5k=
-github.com/buildpacks/pack v0.40.1/go.mod h1:tntRVOeJjm/Slz5fOljgDGrbvo+v+3Q2L9B4Lfg31Wc=
+github.com/buildpacks/pack v0.40.2 h1:qq39Jw3YdzqP5TvymSjUzjAjjLxpW/ibtJu8ocaILf4=
+github.com/buildpacks/pack v0.40.2/go.mod h1:7TPZBKs43F2/p1RzlONL8VS3OUet5c2DWknHa3PETkM=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cenkalti/backoff/v5 v5.0.3 h1:ZN+IMa753KfX5hd8vVaMixjnqRZ3y8CuJKRKj1xcsSM=
@@ -294,8 +294,8 @@ github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/chainguard-dev/kaniko v1.25.10 h1:UL0iYRf5Ka21ZsVwj6i+QTDEwQa3lX2ByP0cmJmmHNo=
-github.com/chainguard-dev/kaniko v1.25.10/go.mod h1:AlFDyk8Rlzu7nyd6rRaT1Amp4Lbz2N+Ek7hrkWIBC1U=
+github.com/chainguard-dev/kaniko v1.25.11 h1:Ez3s1kkx9CgyyLk+oUIN6PY0/Ibtyz/Undhd2GriExY=
+github.com/chainguard-dev/kaniko v1.25.11/go.mod h1:e6cCB2XHOmzY+dl90OhfTmynhnYf/lclGGWmxhlT0vE=
 github.com/charmbracelet/bubbles v1.0.0 h1:12J8/ak/uCZEMQ6KU7pcfwceyjLlWsDLAxB5fXonfvc=
 github.com/charmbracelet/bubbles v1.0.0/go.mod h1:9d/Zd5GdnauMI5ivUIVisuEm3ave1XwXtD1ckyV6r3E=
 github.com/charmbracelet/bubbletea v1.3.10 h1:otUDHWMMzQSB0Pkc87rm691KZ3SWa4KUlvF9nRvCICw=
