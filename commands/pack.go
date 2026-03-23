@@ -159,16 +159,36 @@ func packRun(flags packFlags) error {
 			return fmt.Errorf("expected dependencies path is not a directory: %s", depsDir)
 		}
 
+		// We want to ensure that in case at least one target is specified
+		// each dependency has an OS and Arch attribute.
+		// Also, we ensure that if there are multiple targets, the same dependency
+		// will be used for each target.
+		var metadataDeps []cargo.ConfigMetadataDependency
+		if len(config.Targets) > 0 {
+			for _, dependency := range config.Metadata.Dependencies {
+				if dependency.OS == "" || dependency.Arch == "" {
+					for _, target := range config.Targets {
+						d := dependency
+						d.OS = target.OS
+						d.Arch = target.Arch
+						metadataDeps = append(metadataDeps, d)
+					}
+				} else {
+					metadataDeps = append(metadataDeps, dependency)
+				}
+			}
+		} else {
+			metadataDeps = config.Metadata.Dependencies
+		}
+
+		config.Metadata.Dependencies = metadataDeps
+
 		isMultiArch := len(config.Targets) > 1
 
 		// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
 		// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
 		for dependencyIndex, dependency := range config.Metadata.Dependencies {
 			if isMultiArch {
-				if dependency.OS == "" || dependency.Arch == "" {
-					return fmt.Errorf("dependency %s has no OS or Arch", dependency.ID)
-				}
-
 				dependencyPlatformDir := filepath.Join(dependency.OS, dependency.Arch, dependenciesDir)
 
 				offlinePath := strings.TrimPrefix(dependency.URI, "file:///")
