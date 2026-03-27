@@ -2,8 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"os/user"
@@ -47,13 +45,13 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(extensionDir)).To(Succeed())
 	})
 
-	context("when packaging a language family extension", func() {
+	context("when packaging an implementation extension", func() {
 		it.Before(func() {
-			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "extension-example-language-family-cnb"), extensionDir)
+			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "extension-example-cnb"), extensionDir)
 			Expect(err).NotTo(HaveOccurred())
 		})
+		it("creates a packaged extension", func() {
 
-		it("creates a language family archive", func() {
 			command := exec.Command(
 				path, "pack",
 				"--extension", filepath.Join(extensionDir, "extension.toml"),
@@ -65,21 +63,35 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 			Eventually(session, "5s").Should(gexec.Exit(0), func() string { return buffer.String() })
 
 			Expect(session.Out).To(gbytes.Say("Packing some-extension-name some-version..."))
+			Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
+			Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+			Expect(session.Out).To(gbytes.Say("    bin/detect"))
+			Expect(session.Out).To(gbytes.Say("    bin/generate"))
+			Expect(session.Out).To(gbytes.Say("    bin/run"))
 			Expect(session.Out).To(gbytes.Say("    extension.toml"))
+			Expect(session.Out).To(gbytes.Say("    generated-file"))
 
 			file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
 			Expect(err).NotTo(HaveOccurred())
 
-			contents, _, err := ExtractFile(file, "extension.toml")
+			u, err := user.Current()
+			Expect(err).NotTo(HaveOccurred())
+			userName := u.Username
+
+			group, err := user.LookupGroupId(u.Gid)
+			Expect(err).NotTo(HaveOccurred())
+			groupName := group.Name
+
+			contents, hdr, err := ExtractFile(file, "extension.toml")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(MatchTOML(`api = "0.7"
 
 [extension]
-  description = "some-extensin-description"
+  description = "some-extension-description"
   homepage = "some-extension-homepage"
   id = "some-extension-id"
-  keywords = [ "some-extension-keyword" ]
+  keywords = ["some-extension-keyword"]
   name = "some-extension-name"
   version = "some-version"
 
@@ -88,43 +100,56 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
     uri = "some-extension-license-uri"
 
 [metadata]
-  include-files = ["extension.toml"]
+  include-files = ["README.md", "bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
+  pre-package = "./scripts/build.sh"
 
   [[metadata.configurations]]
     build = true
     default = "16"
     description = "the Node.js version"
     name = "BP_NODE_VERSION"
-
   [metadata.default-versions]
-    node = "18.*.*"
+    node = "18.*.*"`))
+			Expect(hdr.Mode).To(Equal(int64(0644)))
 
-  [[metadata.dependencies]]
-    id = "some-dependency"
-    name = "Some Dependency"
-    sha256 = "shasum"
-    source = "http://some-source-url"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny", "*"]
-    uri = "http://some-url"
-    version = "1.2.3"
+			contents, hdr, err = ExtractFile(file, "bin/detect")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("detect-contents"))
+			Expect(hdr.Mode).To(Equal(int64(0755)))
+			Expect(hdr.Uname).To(Equal(userName))
+			Expect(hdr.Gname).To(Equal(groupName))
 
-  [[metadata.dependencies]]
-    id = "other-dependency"
-    name = "Other Dependency"
-    sha256 = "shasum"
-    source = "http://some-source-url"
-    stacks = ["org.cloudfoundry.stacks.tiny"]
-    uri = "http://other-url"
-    version = "4.5.6"`))
+			contents, hdr, err = ExtractFile(file, "bin/generate")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("generate-contents"))
+			Expect(hdr.Mode).To(Equal(int64(0755)))
+			Expect(hdr.Uname).To(Equal(userName))
+			Expect(hdr.Gname).To(Equal(groupName))
+
+			contents, hdr, err = ExtractFile(file, "bin/run")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("run-contents"))
+			Expect(hdr.Mode).To(Equal(int64(0755)))
+			Expect(hdr.Uname).To(Equal(userName))
+			Expect(hdr.Gname).To(Equal(groupName))
+
+			contents, hdr, err = ExtractFile(file, "generated-file")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal("hello\n"))
+			Expect(hdr.Mode).To(Equal(int64(0644)))
+			Expect(hdr.Uname).To(Equal(userName))
+			Expect(hdr.Gname).To(Equal(groupName))
+
+			Expect(filepath.Join(extensionDir, "generated-file")).NotTo(BeARegularFile())
 		})
+
 	})
 
-	context("when packaging an implementation extension", func() {
+	context("when packaging a signle architecture implementation extension with a target specified", func() {
 		it.Before(func() {
-			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "extension-example-cnb"), extensionDir)
+			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "extension-example-cnb-with-target"), extensionDir)
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		it("creates a packaged extension", func() {
 			command := exec.Command(
 				path, "pack",
@@ -162,7 +187,7 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 			Expect(contents).To(MatchTOML(`api = "0.7"
 
 [extension]
-  description = "some-extensin-description"
+  description = "some-extension-description"
   homepage = "some-extension-homepage"
   id = "some-extension-id"
   keywords = ["some-extension-keyword"]
@@ -174,7 +199,7 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
     uri = "some-extension-license-uri"
 
 [metadata]
-  include-files = ["bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
+  include-files = ["README.md", "bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
   pre-package = "./scripts/build.sh"
 
   [[metadata.configurations]]
@@ -185,23 +210,9 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
   [metadata.default-versions]
     node = "18.*.*"
 
-  [[metadata.dependencies]]
-    id = "some-dependency"
-    name = "Some Dependency"
-    sha256 = "shasum"
-    source = "http://some-source-url"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny", "*"]
-    uri = "http://some-url"
-    version = "1.2.3"
-
-  [[metadata.dependencies]]
-    id = "other-dependency"
-    name = "Other Dependency"
-    sha256 = "shasum"
-    source = "http://some-source-url"
-    stacks = ["org.cloudfoundry.stacks.tiny"]
-    uri = "http://other-url"
-    version = "4.5.6"`))
+[[targets]]
+  arch = "amd64"
+  os = "linux"`))
 			Expect(hdr.Mode).To(Equal(int64(0644)))
 
 			contents, hdr, err = ExtractFile(file, "bin/detect")
@@ -233,135 +244,157 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 			Expect(hdr.Gname).To(Equal(groupName))
 
 			Expect(filepath.Join(extensionDir, "generated-file")).NotTo(BeARegularFile())
+
+			expectedReadme, readErr := os.ReadFile(filepath.Join(extensionDir, "README.md"))
+			Expect(readErr).NotTo(HaveOccurred())
+
+			contents, hdr, err = ExtractFile(file, "README.md")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(Equal(string(expectedReadme)))
+			Expect(hdr.Mode).To(Equal(int64(0644)))
+			Expect(hdr.Uname).To(Equal(userName))
+			Expect(hdr.Gname).To(Equal(groupName))
 		})
+	})
 
-		context("when the extension is built to run offline", func() {
-			var server *httptest.Server
-			it.Before(func() {
-				server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-					if req.URL.Path != "/some-dependency.tgz" {
-						http.NotFound(w, req)
-					}
+	context("when packaging a multi-architecture implementation extension", func() {
+		it.Before(func() {
+			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "extension-example-cnb-multi-arch"), extensionDir)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		it("creates a packaged extension with the correct files for each target", func() {
+			command := exec.Command(
+				path, "pack",
+				"--extension", filepath.Join(extensionDir, "extension.toml"),
+				"--output", filepath.Join(tmpDir, "output.tgz"),
+				"--version", "some-version",
+			)
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, "5s").Should(gexec.Exit(0), func() string { return buffer.String() })
 
-					_, _ = fmt.Fprint(w, "dependency-contents")
-				}))
+			Expect(session.Out).To(gbytes.Say("Packing some-extension-name some-version..."))
+			Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
+			Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+			Expect(session.Out).To(gbytes.Say("    extension.toml"))
+			Expect(session.Out).To(gbytes.Say("    some-os"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/README.md"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/detect"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/generate"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/run"))
+			Expect(session.Out).To(gbytes.Say("    some-os/some-arch/generated-file"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/README.md"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/detect"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/generate"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/run"))
+			Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/generated-file"))
 
-				config, err := cargo.NewExtensionParser().Parse(filepath.Join(extensionDir, "extension.toml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.Metadata.Dependencies).To(HaveLen(2))
+			file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+			Expect(err).NotTo(HaveOccurred())
 
-				config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
-				config.Metadata.Dependencies[0].Checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+			u, err := user.Current()
+			Expect(err).NotTo(HaveOccurred())
+			userName := u.Username
 
-				config.Metadata.Dependencies[1].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
-				config.Metadata.Dependencies[1].Checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
+			group, err := user.LookupGroupId(u.Gid)
+			Expect(err).NotTo(HaveOccurred())
+			groupName := group.Name
 
-				bpTomlWriter, err := os.Create(filepath.Join(extensionDir, "extension.toml"))
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cargo.EncodeExtensionConfig(bpTomlWriter, config)).To(Succeed())
-			})
-
-			it.After(func() {
-				server.Close()
-			})
-
-			it("creates an offline packaged extension", func() {
-				command := exec.Command(
-					path, "pack",
-					"--extension", filepath.Join(extensionDir, "extension.toml"),
-					"--output", filepath.Join(tmpDir, "output.tgz"),
-					"--version", "some-version",
-					"--offline",
-					"--stack",
-					"io.buildpacks.stacks.bionic",
-				)
-				session, err := gexec.Start(command, buffer, buffer)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
-
-				Expect(session.Out).To(gbytes.Say("Packing some-extension-name some-version..."))
-				Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
-				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
-				Expect(session.Out).To(gbytes.Say("  Downloading dependencies..."))
-				Expect(session.Out).To(gbytes.Say(`    some-dependency \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\, \*]`))
-				Expect(session.Out).To(gbytes.Say("      ↳  dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"))
-				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
-				Expect(session.Out).To(gbytes.Say("    bin/detect"))
-				Expect(session.Out).To(gbytes.Say("    bin/generate"))
-				Expect(session.Out).To(gbytes.Say("    bin/run"))
-				Expect(session.Out).To(gbytes.Say("    dependencies"))
-				Expect(session.Out).To(gbytes.Say("    dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"))
-				Expect(session.Out).To(gbytes.Say("    extension.toml"))
-				Expect(session.Out).To(gbytes.Say("    generated-file"))
-
-				file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
-				Expect(err).NotTo(HaveOccurred())
-
-				contents, hdr, err := ExtractFile(file, "extension.toml")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(contents).To(MatchTOML(`api = "0.7"
+			contents, hdr, err := ExtractFile(file, "extension.toml")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(MatchTOML(`api = "0.7"
 
 [extension]
-  description = "some-extensin-description"
-  homepage = "some-extension-homepage"
-  id = "some-extension-id"
-  keywords = ["some-extension-keyword"]
-  name = "some-extension-name"
-  version = "some-version"
+	description = "some-extension-description"
+	homepage = "some-extension-homepage"
+	id = "some-extension-id"
+	keywords = ["some-extension-keyword"]
+	name = "some-extension-name"
+	version = "some-version"
 
-  [[extension.licenses]]
-    type = "some-extension-license-type"
-    uri = "some-extension-license-uri"
+	[[extension.licenses]]
+	type = "some-extension-license-type"
+	uri = "some-extension-license-uri"
 
 [metadata]
-  include-files = ["bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file",  "dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"]
-  pre-package = "./scripts/build.sh"
+	include-files = ["README.md", "extension.toml", "some-os/some-arch/bin/generate", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/run", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/generate", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/run", "some-other-os/some-other-arch/generated-file"]
+	pre-package = "./scripts/build.sh"
 
-  [[metadata.configurations]]
-    build = true
-    default = "16"
-    description = "the Node.js version"
-    name = "BP_NODE_VERSION"
-  [metadata.default-versions]
-    node = "18.*.*"
+	[[metadata.configurations]]
+	build = true
+	default = "16"
+	description = "the Node.js version"
+	name = "BP_NODE_VERSION"
+	[metadata.default-versions]
+	node = "18.*.*"
 
-  [[metadata.dependencies]]
-    checksum = "sha256:f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
-    id = "some-dependency"
-    name = "Some Dependency"
-    sha256 = "shasum"
-    source = "http://some-source-url"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny", "*"]
-	uri = "file:///dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a"
-    version = "1.2.3"`))
-				Expect(hdr.Mode).To(Equal(int64(0644)))
+[[targets]]
+	arch = "some-arch"
+	os = "some-os"
 
-				contents, hdr, err = ExtractFile(file, "bin/detect")
+[[targets]]
+	arch = "some-other-arch"
+	os = "some-other-os"`))
+
+			Expect(hdr.Mode).To(Equal(int64(0644)))
+
+			platforms := []struct {
+				os   string
+				arch string
+			}{
+				{"some-os", "some-arch"},
+				{"some-other-os", "some-other-arch"},
+			}
+			for _, platform := range platforms {
+				targetOs := platform.os
+				targetArch := platform.arch
+
+				contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/bin/detect", targetOs, targetArch))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("detect-contents"))
+				Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/detect-contents", targetOs, targetArch)))
 				Expect(hdr.Mode).To(Equal(int64(0755)))
+				Expect(hdr.Uname).To(Equal(userName))
+				Expect(hdr.Gname).To(Equal(groupName))
 
-				contents, hdr, err = ExtractFile(file, "bin/generate")
+				contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/bin/generate", targetOs, targetArch))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("generate-contents"))
+				Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/generate-contents", targetOs, targetArch)))
 				Expect(hdr.Mode).To(Equal(int64(0755)))
+				Expect(hdr.Uname).To(Equal(userName))
+				Expect(hdr.Gname).To(Equal(groupName))
 
-				contents, hdr, err = ExtractFile(file, "bin/run")
+				contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/bin/run", targetOs, targetArch))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("run-contents"))
+				Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/run-contents", targetOs, targetArch)))
 				Expect(hdr.Mode).To(Equal(int64(0755)))
+				Expect(hdr.Uname).To(Equal(userName))
+				Expect(hdr.Gname).To(Equal(groupName))
 
-				contents, hdr, err = ExtractFile(file, "generated-file")
+				contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/generated-file", targetOs, targetArch))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("hello\n"))
+				Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/hello\n", targetOs, targetArch)))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
+				Expect(hdr.Uname).To(Equal(userName))
+				Expect(hdr.Gname).To(Equal(groupName))
 
-				contents, hdr, err = ExtractFile(file, "dependencies/f058c8bf6b65b829e200ef5c2d22fde0ee65b96c1fbd1b88869be133aafab64a")
+				Expect(filepath.Join(extensionDir, fmt.Sprintf("%s/%s/generated-file", targetOs, targetArch))).NotTo(BeARegularFile())
+
+				expectedReadme, readErr := os.ReadFile(filepath.Join(extensionDir, "README.md"))
+				Expect(readErr).NotTo(HaveOccurred())
+
+				contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/README.md", targetOs, targetArch))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("dependency-contents"))
+				Expect(string(contents)).To(Equal(string(expectedReadme)))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
-			})
+				Expect(hdr.Uname).To(Equal(userName))
+				Expect(hdr.Gname).To(Equal(groupName))
+			}
 		})
 	})
 
@@ -390,7 +423,25 @@ func testPackExtension(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring("Error: \"buildpack\" or \"extension\" flag is required"))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: at least one of the flags in the group [buildpack extension] is required"))
+			})
+		})
+
+		context("when the extension is built to run offline", func() {
+			it("prints an error message", func() {
+				command := exec.Command(
+					path, "pack",
+					"--extension", filepath.Join(extensionDir, "extension.toml"),
+					"--output", filepath.Join(tmpDir, "output.tgz"),
+					"--version", "some-version",
+					"--offline",
+					"--stack", "io.buildpacks.stacks.bionic",
+				)
+				session, err := gexec.Start(command, buffer, buffer)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
+
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: offline mode is not supported for extensions"))
 			})
 		})
 

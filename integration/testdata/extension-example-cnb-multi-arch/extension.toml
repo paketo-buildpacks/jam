@@ -13,7 +13,19 @@ api = "0.7"
     uri = "some-extension-license-uri"
 
 [metadata]
-  include-files = ["README.md", "bin/generate", "bin/detect", "bin/run", "extension.toml", "generated-file"]
+  include-files = [
+    "README.md",
+    "extension.toml",
+    "some-os/some-arch/bin/generate",
+    "some-os/some-arch/bin/detect",
+    "some-os/some-arch/bin/run",
+    "some-os/some-arch/generated-file",
+    "some-other-os/some-other-arch/bin/generate",
+    "some-other-os/some-other-arch/bin/detect",
+    "some-other-os/some-other-arch/bin/run",
+    "some-other-os/some-other-arch/generated-file"
+  ]
+
   pre-package = "./scripts/build.sh"
 
   [metadata.default-versions]
@@ -25,5 +37,10 @@ api = "0.7"
     description = "the Node.js version"
     name = "BP_NODE_VERSION"
 
+[[targets]]
+  os = "some-os"
+  arch = "some-arch"
 
-
+[[targets]]
+  os = "some-other-os"
+  arch = "some-other-arch"

@@ -13,7 +13,7 @@ api = "0.6"
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = [ "bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file" ]
+  include-files = [ "README.md", "bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file" ]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
@@ -26,8 +26,6 @@ api = "0.6"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
-    os = "some-os"
-    arch = "some-arch"
 
     [[metadata.dependencies.distros]]
     name = "some-distro-name"
@@ -41,8 +39,6 @@ api = "0.6"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
-    os = "some-other-os"
-    arch = "some-other-arch"
 
     [[metadata.dependencies.distros]]
     name = "some-other-distro-name"
@@ -51,11 +47,3 @@ api = "0.6"
 [[stacks]]
   id = "some-stack-id"
   mixins = ["some-mixin-id"]
-
-[[targets]]
-  os = "some-os"
-  arch = "some-arch"
-
-[[targets]]
-  os = "some-other-os"
-  arch = "some-other-arch"
