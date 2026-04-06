@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/onsi/gomega/gbytes"
@@ -47,9 +48,79 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(buildpackDir)).To(Succeed())
 	})
 
-	context("when packaging a language family buildpack", func() {
+	context("when packaging a language family buildpack single architecture", func() {
 		it.Before(func() {
 			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-language-family-cnb"), buildpackDir)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("creates a language family archive", func() {
+			command := exec.Command(
+				path, "pack",
+				"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
+				"--output", filepath.Join(tmpDir, "output.tgz"),
+				"--version", "some-version",
+			)
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, "5s").Should(gexec.Exit(0), func() string { return buffer.String() })
+
+			Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+			Expect(session.Out).To(gbytes.Say("    buildpack.toml"))
+
+			file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+			Expect(err).NotTo(HaveOccurred())
+
+			contents, _, err := ExtractFile(file, "buildpack.toml")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(MatchTOML(`api = "0.2"
+
+[buildpack]
+  id = "some-buildpack-id"
+  name = "some-buildpack-name"
+  version = "some-version"
+
+[metadata]
+  include-files = ["buildpack.toml"]
+
+  [[metadata.dependencies]]
+    arch = "some-arch"
+    deprecation_date = "2019-04-01T00:00:00Z"
+    id = "some-dependency"
+    name = "Some Dependency"
+    os = "some-os"
+    sha256 = "shasum"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://some-url"
+    version = "1.2.3"
+
+  [[metadata.dependencies]]
+    arch = "some-other-arch"
+    deprecation_date = "2022-04-01T00:00:00Z"
+    id = "other-dependency"
+    name = "Other Dependency"
+    os = "some-other-os"
+    sha256 = "shasum"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://other-url"
+    version = "4.5.6"
+
+[[order]]
+  [[order.group]]
+    id = "some-dependency"
+    version = "1.2.3"
+
+  [[order.group]]
+    id = "other-dependency"
+    version = "4.5.6"
+`))
+		})
+	})
+
+	context("when packaging a language family buildpack multi architecture", func() {
+		it.Before(func() {
+			err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-language-family-cnb-multi-arch"), buildpackDir)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -146,18 +217,16 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = ["bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file"]
+  include-files = ["README.md", "bin/build", "bin/detect", "bin/link", "buildpack.toml", "generated-file"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
 
   [[metadata.dependencies]]
-    arch = "some-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2019-04-01T00:00:00Z"
     id = "some-dependency"
     name = "Some Dependency"
-    os = "some-os"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
     uri = "http://some-url"
     version = "1.2.3"
@@ -167,12 +236,10 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
       version = "some-distro-version"
 
   [[metadata.dependencies]]
-    arch = "some-other-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2022-04-01T00:00:00Z"
     id = "other-dependency"
     name = "Other Dependency"
-    os = "some-other-os"
     stacks = ["org.cloudfoundry.stacks.tiny"]
     uri = "http://other-url"
     version = "4.5.6"
@@ -184,16 +251,10 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 [[stacks]]
   id = "some-stack-id"
   mixins = ["some-mixin-id"]
-
-[[targets]]
-  arch = "some-arch"
-  os = "some-os"
-
-[[targets]]
-  arch = "some-other-arch"
-  os = "some-other-os"`
+`
 
 			it("creates a packaged buildpack", func() {
+
 				command := exec.Command(
 					path, "pack",
 					"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
@@ -208,6 +269,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
 				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+				Expect(session.Out).To(gbytes.Say("    README.md"))
 				Expect(session.Out).To(gbytes.Say("    bin/build"))
 				Expect(session.Out).To(gbytes.Say("    bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    bin/link"))
@@ -228,6 +290,13 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				contents, hdr, err := ExtractFile(file, "buildpack.toml")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contents).To(MatchTOML(expectedBuildpackToml))
+				Expect(hdr.Mode).To(Equal(int64(0644)))
+
+				expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+				Expect(readErr).NotTo(HaveOccurred())
+				contents, hdr, err = ExtractFile(file, "README.md")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(Equal(expectedReadme))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
 
 				contents, hdr, err = ExtractFile(file, "bin/build")
@@ -312,6 +381,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(session.Out).To(gbytes.Say(`    some-dependency \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath0)))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
+					Expect(session.Out).To(gbytes.Say("    README.md"))
 					Expect(session.Out).To(gbytes.Say("    bin"))
 					Expect(session.Out).To(gbytes.Say("    bin/build"))
 					Expect(session.Out).To(gbytes.Say("    bin/detect"))
@@ -334,11 +404,17 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 
 					updatedIncludeFiles := config.Metadata.IncludeFiles
-					updatedIncludeFiles = append(updatedIncludeFiles, relativeDependencyPath0)
 
 					Expect(extractedBuildpackConfig.Metadata.IncludeFiles).To(Equal(updatedIncludeFiles))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath0)))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
 
 					contents, hdr, err = ExtractFile(file, "bin/build")
 					Expect(err).NotTo(HaveOccurred())
@@ -363,9 +439,9 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("that is multi architecture with os and arch and matching directory layout", func() {
+		context("that is multi architecture with at least two targets and matching directory layout", func() {
 			it.Before(func() {
-				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch-with-os-arch"), buildpackDir)
+				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch"), buildpackDir)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -384,7 +460,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
   uri = "some-buildpack-license-uri"
 
 [metadata]
-  include-files = [ "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml" ]
+  include-files = ["README.md", "some-os/some-arch/bin/build", "some-os/some-arch/bin/detect", "some-os/some-arch/bin/link", "some-os/some-arch/generated-file", "some-other-os/some-other-arch/bin/build", "some-other-os/some-other-arch/bin/detect", "some-other-os/some-other-arch/bin/link", "some-other-os/some-other-arch/generated-file", "buildpack.toml"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     some-dependency = "some-default-version"
@@ -393,42 +469,56 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
     arch = "some-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2019-04-01T00:00:00Z"
-    id = "some-dependency"
-    name = "Some Dependency"
+    id = "dep-1"
+    name = "Dependency 1"
     os = "some-os"
     stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
-    uri = "http://some-url"
+    uri = "http://dep-1-url-some-os-some-arch"
     version = "1.2.3"
 
-    [[metadata.dependencies.distros]]
-      name = "some-distro-name"
-      version = "some-distro-version"
+  [[metadata.dependencies]]
+    arch = "some-other-arch"
+    checksum = "sha256:shasum"
+    deprecation_date = "2019-04-01T00:00:00Z"
+    id = "dep-1"
+    name = "Dependency 1"
+    os = "some-other-os"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-1-url-some-other-os-some-other-arch"
+    version = "1.2.3"
+
+  [[metadata.dependencies]]
+    arch = "some-arch"
+    checksum = "sha256:shasum"
+    deprecation_date = "2022-04-01T00:00:00Z"
+    id = "dep-2"
+    name = "Dependency 2"
+    os = "some-os"
+    stacks = ["org.cloudfoundry.stacks.tiny"]
+    uri = "http://dep-2-url-some-os-some-arch"
+    version = "4.5.6"
 
   [[metadata.dependencies]]
     arch = "some-other-arch"
     checksum = "sha256:shasum"
     deprecation_date = "2022-04-01T00:00:00Z"
-    id = "other-dependency"
-    name = "Other Dependency"
+    id = "dep-2"
+    name = "Dependency 2"
     os = "some-other-os"
     stacks = ["org.cloudfoundry.stacks.tiny"]
-    uri = "http://other-url"
+    uri = "http://dep-2-url-some-other-os-some-other-arch"
     version = "4.5.6"
-
-    [[metadata.dependencies.distros]]
-      name = "some-other-distro-name"
-      version = "some-other-distro-version"
 
 [[stacks]]
   id = "some-stack-id"
 
 [[targets]]
-  os = "some-os"
   arch = "some-arch"
+  os = "some-os"
 
 [[targets]]
-  os = "some-other-os"
-  arch = "some-other-arch"`
+  arch = "some-other-arch"
+  os = "some-other-os"`
 
 			platforms := []struct {
 				os   string
@@ -454,10 +544,12 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 				Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
 				Expect(session.Out).To(gbytes.Say("    buildpack.toml"))
+				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/README.md"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/build"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/link"))
 				Expect(session.Out).To(gbytes.Say("    some-os/some-arch/generated-file"))
+				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/README.md"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/build"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/detect"))
 				Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/link"))
@@ -479,9 +571,18 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(contents).To(MatchTOML(expectedBuildpackToml))
 				Expect(hdr.Mode).To(Equal(int64(0644)))
 
+				expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+				Expect(readErr).NotTo(HaveOccurred())
+
 				for _, platform := range platforms {
 					targetOs := platform.os
 					targetArch := platform.arch
+
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/README.md", targetOs, targetArch))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
 					contents, hdr, err = ExtractFile(file, fmt.Sprintf("%s/%s/bin/build", targetOs, targetArch))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal(fmt.Sprintf("%s/%s/build-contents", targetOs, targetArch)))
@@ -520,10 +621,14 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					var err error
 					server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 						switch req.URL.Path {
-						case "/some-dependency.tgz":
-							_, _ = fmt.Fprint(w, "some-dependency-contents")
-						case "/other-dependency.tgz":
-							_, _ = fmt.Fprint(w, "other-dependency-contents")
+						case "/dep-1-url-some-os-some-arch.tgz":
+							_, _ = fmt.Fprint(w, "dep-1-contents-some-os-some-arch")
+						case "/dep-1-url-some-other-os-some-other-arch.tgz":
+							_, _ = fmt.Fprint(w, "dep-1-contents-some-other-os-some-other-arch")
+						case "/dep-2-url-some-os-some-arch.tgz":
+							_, _ = fmt.Fprint(w, "dep-2-contents-some-os-some-arch")
+						case "/dep-2-url-some-other-os-some-other-arch.tgz":
+							_, _ = fmt.Fprint(w, "dep-2-contents-some-other-os-some-other-arch")
 						default:
 							http.NotFound(w, req)
 						}
@@ -531,12 +636,16 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 
 					config, err = cargo.NewBuildpackParser().Parse(filepath.Join(buildpackDir, "buildpack.toml"))
 					Expect(err).NotTo(HaveOccurred())
-					Expect(config.Metadata.Dependencies).To(HaveLen(2))
+					Expect(config.Metadata.Dependencies).To(HaveLen(4))
 
-					config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/some-dependency.tgz", server.URL)
-					config.Metadata.Dependencies[0].Checksum = "sha256:1e49f27b5eaafc6c50ebe66d7a2b1d17ced63c2862b5d54ccbcdac816260ecbb"
-					config.Metadata.Dependencies[1].URI = fmt.Sprintf("%s/other-dependency.tgz", server.URL)
-					config.Metadata.Dependencies[1].Checksum = "sha256:be06b2ecb65c937562db18c106ff4c15f32a914aa3c6bf7002b6d82390a9bb13"
+					config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/dep-1-url-some-os-some-arch.tgz", server.URL)
+					config.Metadata.Dependencies[0].Checksum = "sha256:169284b251dfd64b5c3811bf66871c51b9dc15540d023d48609eb7c5c700883e"
+					config.Metadata.Dependencies[1].URI = fmt.Sprintf("%s/dep-1-url-some-other-os-some-other-arch.tgz", server.URL)
+					config.Metadata.Dependencies[1].Checksum = "sha256:aeb2d45e12b3ba42319aa148543ff4b06581c99c5fbc24ad1759e3265bd543ae"
+					config.Metadata.Dependencies[2].URI = fmt.Sprintf("%s/dep-2-url-some-os-some-arch.tgz", server.URL)
+					config.Metadata.Dependencies[2].Checksum = "sha256:6836be4394f237bfb5337d08aad03f650d50dadf9aa6f08ac2bff78e5e8c9190"
+					config.Metadata.Dependencies[3].URI = fmt.Sprintf("%s/dep-2-url-some-other-os-some-other-arch.tgz", server.URL)
+					config.Metadata.Dependencies[3].Checksum = "sha256:3a2b33e2bdf464ff11a1a0ceec7a1f3902a841d50a4e1e04034998dea52d9a06"
 
 					bpTomlWriter, err := os.Create(filepath.Join(buildpackDir, "buildpack.toml"))
 					Expect(err).NotTo(HaveOccurred())
@@ -560,22 +669,164 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
 
-					relativeDependencyPath0 := "dependencies/1e49f27b5eaafc6c50ebe66d7a2b1d17ced63c2862b5d54ccbcdac816260ecbb"
+					relativeDependencyPath0 := "dependencies/169284b251dfd64b5c3811bf66871c51b9dc15540d023d48609eb7c5c700883e"
 					platformSpecificDependencyPath0 := fmt.Sprintf("some-os/some-arch/%s", relativeDependencyPath0)
-					relativeDependencyPath1 := "dependencies/be06b2ecb65c937562db18c106ff4c15f32a914aa3c6bf7002b6d82390a9bb13"
+					relativeDependencyPath1 := "dependencies/aeb2d45e12b3ba42319aa148543ff4b06581c99c5fbc24ad1759e3265bd543ae"
 					platformSpecificDependencyPath1 := fmt.Sprintf("some-other-os/some-other-arch/%s", relativeDependencyPath1)
+					relativeDependencyPath2 := "dependencies/6836be4394f237bfb5337d08aad03f650d50dadf9aa6f08ac2bff78e5e8c9190"
+					platformSpecificDependencyPath2 := fmt.Sprintf("some-os/some-arch/%s", relativeDependencyPath2)
+					relativeDependencyPath3 := "dependencies/3a2b33e2bdf464ff11a1a0ceec7a1f3902a841d50a4e1e04034998dea52d9a06"
+					platformSpecificDependencyPath3 := fmt.Sprintf("some-other-os/some-other-arch/%s", relativeDependencyPath3)
 
 					Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
 					Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
 					Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
 					Expect(session.Out).To(gbytes.Say("  Downloading dependencies..."))
-					Expect(session.Out).To(gbytes.Say(`    some-dependency \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
+					Expect(session.Out).To(gbytes.Say(`    dep-1 \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath0)))
+					Expect(session.Out).To(gbytes.Say(`    dep-1 \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath1)))
+					Expect(session.Out).To(gbytes.Say(`    dep-2 \(4.5.6\) \[org.cloudfoundry.stacks.tiny\]`))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath2)))
+					Expect(session.Out).To(gbytes.Say(`    dep-2 \(4.5.6\) \[org.cloudfoundry.stacks.tiny\]`))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath3)))
+
+					file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+					Expect(err).NotTo(HaveOccurred())
+
+					var extractedBuildpackConfig cargo.Config
+					contents, hdr, err := ExtractFile(file, "buildpack.toml")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+					buff := bytes.NewBuffer(contents)
+					err = cargo.DecodeConfig(buff, &extractedBuildpackConfig)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(config.Metadata.Dependencies).To(HaveLen(4))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies).To(HaveLen(4))
+
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, platformSpecificDependencyPath0)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].URI).To(Equal(fmt.Sprintf(`file:///%s`, platformSpecificDependencyPath1)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].Checksum).To(Equal(config.Metadata.Dependencies[1].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[2].URI).To(Equal(fmt.Sprintf(`file:///%s`, platformSpecificDependencyPath2)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[2].Checksum).To(Equal(config.Metadata.Dependencies[2].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[3].URI).To(Equal(fmt.Sprintf(`file:///%s`, platformSpecificDependencyPath3)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[3].Checksum).To(Equal(config.Metadata.Dependencies[3].Checksum))
+
+					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath0)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-1-contents-some-os-some-arch"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath1)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-1-contents-some-other-os-some-other-arch"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath2)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-2-contents-some-os-some-arch"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath3)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-2-contents-some-other-os-some-other-arch"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "some-os/some-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, "some-other-os/some-other-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+				})
+			})
+		})
+
+		context("that is multi architecture with one arch per dependency", func() {
+			it.Before(func() {
+				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch-one-arch-per-dep"), buildpackDir)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			context("when the buildpack is built to run offline", func() {
+				var server *httptest.Server
+				var config cargo.Config
+				it.Before(func() {
+					var err error
+					server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+						switch req.URL.Path {
+						case "/dep-1-url-for-all-archs":
+							_, _ = fmt.Fprint(w, "dep-1-contents-for-all-archs")
+						case "/dep-2-url-for-all-archs":
+							_, _ = fmt.Fprint(w, "dep-2-contents-for-all-archs")
+						default:
+							http.NotFound(w, req)
+						}
+					}))
+
+					buildpackTomlPath := filepath.Join(buildpackDir, "buildpack.toml")
+					config, err = cargo.NewBuildpackParser().Parse(buildpackTomlPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					config.Metadata.Dependencies[0].URI = fmt.Sprintf("%s/dep-1-url-for-all-archs", server.URL)
+					config.Metadata.Dependencies[1].URI = fmt.Sprintf("%s/dep-2-url-for-all-archs", server.URL)
+					config.Metadata.Dependencies[0].Checksum = "sha256:3558e5a165c1af2af99d75eaaa3a10ba63f8d0e9f87e14cb2b30ca9128aaf9ea"
+					config.Metadata.Dependencies[1].Checksum = "sha256:eb49e92fd1e902706b42abf4eb82113e0b1fafe5496d28b216bd319ba5f512b1"
+
+					bpTomlWriter, err := os.Create(buildpackTomlPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cargo.EncodeConfig(bpTomlWriter, config)).To(Succeed())
+
+				})
+
+				it.After(func() {
+					server.Close()
+				})
+
+				it("creates an offline packaged buildpack", func() {
+
+					command := exec.Command(
+						path, "pack",
+						"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
+						"--output", filepath.Join(tmpDir, "output.tgz"),
+						"--version", "some-version",
+						"--offline",
+					)
+
+					session, err := gexec.Start(command, buffer, buffer)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
+
+					dep1Checksum := strings.TrimPrefix(config.Metadata.Dependencies[0].Checksum, "sha256:")
+					dep2Checksum := strings.TrimPrefix(config.Metadata.Dependencies[1].Checksum, "sha256:")
+
+					Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
+					Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
+					Expect(session.Out).To(gbytes.Say("    hello from the pre-packaging script"))
+					Expect(session.Out).To(gbytes.Say("  Downloading dependencies..."))
+					Expect(session.Out).To(gbytes.Say(`    dep-1 \(1.2.3\) \[io.buildpacks.stacks.bionic, org.cloudfoundry.stacks.tiny\]`))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  dependencies/%s", dep1Checksum)))
+					Expect(session.Out).To(gbytes.Say(`    dep-2 \(4.5.6\) \[org.cloudfoundry.stacks.tiny\]`))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  dependencies/%s", dep2Checksum)))
+
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
-					Expect(session.Out).To(gbytes.Say("    some-os/some-arch/dependencies"))
-					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", platformSpecificDependencyPath0)))
-					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", platformSpecificDependencyPath1)))
+					Expect(session.Out).To(gbytes.Say("    buildpack.toml"))
+					Expect(session.Out).To(gbytes.Say("    some-os/some-arch/README.md"))
+					Expect(session.Out).To(gbytes.Say("    some-os/some-arch/bin/build"))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    some-os/some-arch/dependencies/%s", dep1Checksum)))
+					Expect(session.Out).To(gbytes.Say("    some-os/some-arch/generated-file"))
+					Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/README.md"))
+					Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/bin/build"))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    some-other-os/some-other-arch/dependencies/%s", dep2Checksum)))
+					Expect(session.Out).To(gbytes.Say("    some-other-os/some-other-arch/generated-file"))
 
 					file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
 					Expect(err).NotTo(HaveOccurred())
@@ -589,34 +840,56 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(config.Metadata.Dependencies).To(HaveLen(2))
-					Expect(extractedBuildpackConfig.Metadata.Dependencies).To(HaveLen(2))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies).To(HaveLen(4))
 
-					updatedIncludeFiles := config.Metadata.IncludeFiles
-					updatedIncludeFiles = append(updatedIncludeFiles, platformSpecificDependencyPath0, platformSpecificDependencyPath1)
-
-					Expect(extractedBuildpackConfig.Metadata.IncludeFiles).To(Equal(updatedIncludeFiles))
-
-					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath0)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///some-os/some-arch/dependencies/%s`, dep1Checksum)))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
-					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath1)))
-					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].Checksum).To(Equal(config.Metadata.Dependencies[1].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].URI).To(Equal(fmt.Sprintf(`file:///some-other-os/some-other-arch/dependencies/%s`, dep1Checksum)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[1].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[2].URI).To(Equal(fmt.Sprintf(`file:///some-os/some-arch/dependencies/%s`, dep2Checksum)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[2].Checksum).To(Equal(config.Metadata.Dependencies[1].Checksum))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[3].URI).To(Equal(fmt.Sprintf(`file:///some-other-os/some-other-arch/dependencies/%s`, dep2Checksum)))
+					Expect(extractedBuildpackConfig.Metadata.Dependencies[3].Checksum).To(Equal(config.Metadata.Dependencies[1].Checksum))
 
-					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath0)
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf(`some-os/some-arch/dependencies/%s`, dep1Checksum))
 					Expect(err).NotTo(HaveOccurred())
-					Expect(string(contents)).To(Equal("some-dependency-contents"))
+					Expect(string(contents)).To(Equal("dep-1-contents-for-all-archs"))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
 
-					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath1)
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf(`some-other-os/some-other-arch/dependencies/%s`, dep1Checksum))
 					Expect(err).NotTo(HaveOccurred())
-					Expect(string(contents)).To(Equal("other-dependency-contents"))
+					Expect(string(contents)).To(Equal("dep-1-contents-for-all-archs"))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf(`some-os/some-arch/dependencies/%s`, dep2Checksum))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-2-contents-for-all-archs"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, fmt.Sprintf(`some-other-os/some-other-arch/dependencies/%s`, dep2Checksum))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("dep-2-contents-for-all-archs"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "some-os/some-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					contents, hdr, err = ExtractFile(file, "some-other-os/some-other-arch/README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
 				})
 			})
 		})
 
-		context("that is multi architecture without os and arch but with default linux/amd64 directory layout", func() {
+		context("that is single architecture with targets specified", func() {
 			it.Before(func() {
-				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-multi-arch-without-os-arch"), buildpackDir)
+				err := cargo.NewDirectoryDuplicator().Duplicate(filepath.Join("testdata", "example-cnb-with-target"), buildpackDir)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -645,9 +918,6 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(cargo.EncodeConfig(bpTomlWriter, config)).To(Succeed())
-
-					t.Setenv("BP_OS", "linux")
-					t.Setenv("BP_ARCH", "amd64")
 				})
 
 				it.After(func() {
@@ -667,7 +937,6 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Eventually(session).Should(gexec.Exit(0), func() string { return buffer.String() })
 
 					relativeDependencyPath0 := "dependencies/1f384c990b7aba4b80f2b12d85dc4a2d8ffaf9097ca542818a504a592d041642"
-					platformSpecificDependencyPath0 := fmt.Sprintf("linux/amd64/%s", relativeDependencyPath0)
 
 					Expect(session.Out).To(gbytes.Say("Packing some-buildpack-name some-version..."))
 					Expect(session.Out).To(gbytes.Say("  Executing pre-packaging script: ./scripts/build.sh"))
@@ -676,8 +945,8 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(session.Out).To(gbytes.Say(`    no-platform-dependency \(7.8.9\) \[some-stack-id\]`))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("      ↳  %s", relativeDependencyPath0)))
 					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("  Building tarball: %s", filepath.Join(tmpDir, "output.tgz"))))
-					Expect(session.Out).To(gbytes.Say("    linux/amd64/dependencies"))
-					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", platformSpecificDependencyPath0)))
+					Expect(session.Out).To(gbytes.Say("    dependencies"))
+					Expect(session.Out).To(gbytes.Say(fmt.Sprintf("    %s", relativeDependencyPath0)))
 
 					file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
 					Expect(err).NotTo(HaveOccurred())
@@ -693,16 +962,19 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 					Expect(config.Metadata.Dependencies).To(HaveLen(1))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies).To(HaveLen(1))
 
-					updatedIncludeFiles := config.Metadata.IncludeFiles
-					updatedIncludeFiles = append(updatedIncludeFiles, platformSpecificDependencyPath0)
-
-					Expect(extractedBuildpackConfig.Metadata.IncludeFiles).To(Equal(updatedIncludeFiles))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].URI).To(Equal(fmt.Sprintf(`file:///%s`, relativeDependencyPath0)))
 					Expect(extractedBuildpackConfig.Metadata.Dependencies[0].Checksum).To(Equal(config.Metadata.Dependencies[0].Checksum))
 
-					contents, hdr, err = ExtractFile(file, platformSpecificDependencyPath0)
+					contents, hdr, err = ExtractFile(file, relativeDependencyPath0)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(contents)).To(Equal("no-platform-dependency-contents"))
+					Expect(hdr.Mode).To(Equal(int64(0644)))
+
+					expectedReadme, readErr := os.ReadFile(filepath.Join(buildpackDir, "README.md"))
+					Expect(readErr).NotTo(HaveOccurred())
+					contents, hdr, err = ExtractFile(file, "README.md")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(contents).To(Equal(expectedReadme))
 					Expect(hdr.Mode).To(Equal(int64(0644)))
 				})
 			})
@@ -734,7 +1006,7 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1), func() string { return buffer.String() })
 
-				Expect(session.Err.Contents()).To(ContainSubstring(`Error: "buildpack" or "extension" flag is required`))
+				Expect(session.Err.Contents()).To(ContainSubstring("Error: at least one of the flags in the group [buildpack extension] is required"))
 			})
 		})
 

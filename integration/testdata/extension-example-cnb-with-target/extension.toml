@@ -25,5 +25,7 @@ api = "0.7"
     description = "the Node.js version"
     name = "BP_NODE_VERSION"
 
-
+[[targets]]
+  os = "linux"
+  arch = "amd64"
 
