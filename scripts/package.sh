@@ -49,7 +49,7 @@ function main {
   fi
 
   if [[ ${#platforms[@]} -eq 0 ]]; then
-    platforms=("darwin/amd64" "linux/amd64" "windows/amd64" "darwin/arm64" "linux/arm64" "windows/arm64")
+    platforms=("darwin/amd64" "linux/amd64" "linux/s390x" "windows/amd64" "darwin/arm64" "linux/arm64" "windows/arm64")
   fi
 
   validate::platforms "${platforms[@]}"
@@ -64,7 +64,10 @@ OPTIONS
   --help               -h             prints the command usage
   --version <version>  -v <version>   specifies the version number to use when packaging jam
   --platform <os>/<arch>  -p <os>/<arch>  build only this GOOS/GOARCH (e.g. linux/amd64). May be repeated.
-                      If omitted, builds all supported combinations (darwin, linux, windows) * (amd64, arm64).
+                      If omitted, builds all supported combinations
+                      linux:  amd64, arm64, s390x,
+                      darwin: amd64, arm64,
+                      windows: amd64, arm64.
 USAGE
 }
 
@@ -126,7 +129,7 @@ function validate::platforms() {
     esac
 
     case "${arch}" in
-      amd64|arm64) ;;
+      amd64|arm64|s390x) ;;
       *)
         util::print::error "invalid ARCH \"${arch}\" in \"${platform}\" (supported: amd64, arm64)"
         ;;
