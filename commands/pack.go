@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal"
@@ -319,15 +320,6 @@ func copyFile(src string, dst string) (int64, error) {
 	return nBytes, err
 }
 
-func stringStartsWith(s string, prefixes []string) bool {
-	for _, prefix := range prefixes {
-		if strings.HasPrefix(s, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
 func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
 	osArchDirs := []string{}
 	for _, target := range targets {
@@ -346,7 +338,9 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 			continue
 		}
 
-		hasOsArchPrefix := stringStartsWith(file, osArchDirs)
+		hasOsArchPrefix := slices.ContainsFunc(osArchDirs, func(dir string) bool {
+			return strings.HasPrefix(file, dir)
+		})
 
 		if hasOsArchPrefix {
 			fixedIncludeFiles = append(fixedIncludeFiles, file)
@@ -358,7 +352,7 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 
 				err := os.MkdirAll(filepath.Dir(destAbsolutePath), os.ModePerm)
 				if err != nil {
-					return nil, fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
+					return nil, fmt.Errorf("failed to create platform specific directory for include file or dependencies - attempted directory: %s", err)
 				}
 
 				_, err = copyFile(filepath.Join(tmpDir, file), destAbsolutePath)
