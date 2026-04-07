@@ -95,6 +95,11 @@ jobs:
               "content_type": "application/octet-stream"
             },
             {
+              "path": "build/jam-linux-s390x",
+              "name": "jam-linux-s390x",
+              "content_type": "application/octet-stream"
+            },
+            {
               "path": "build/jam-darwin-arm64",
               "name": "jam-darwin-arm64",
               "content_type": "application/octet-stream"
