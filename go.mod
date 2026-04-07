@@ -11,7 +11,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v29.3.1+incompatible
 	github.com/docker/docker v28.5.2+incompatible
-	github.com/google/go-containerregistry v0.21.3
+	github.com/google/go-containerregistry v0.21.4
 	github.com/moby/buildkit v0.26.3
 	github.com/moby/go-archive v0.2.0
 	github.com/onsi/gomega v1.39.1
@@ -209,7 +209,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kastenhq/goversion v0.0.0-20230811215019-93b2f8823953 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.18.4 // indirect
+	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20250317134145-8bc96cf8fc35 // indirect
