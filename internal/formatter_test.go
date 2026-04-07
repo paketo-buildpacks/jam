@@ -287,9 +287,9 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 
 | Name | ID | Version |
 |---|---|---|
-| Some Buildpack | some-buildpack | 1.2.3 |
 | Optional Buildpack | optional-buildpack | 2.3.4 |
 | Other Buildpack | other-buildpack | 3.4.5 |
+| Some Buildpack | some-buildpack | 1.2.3 |
 
 <details>
 <summary>Order Groupings</summary>
@@ -309,13 +309,6 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 ---
 
 <details>
-<summary>Some Buildpack 1.2.3</summary>` +
-					"\n\n**ID:** `some-buildpack`\n\n" +
-					`---
-
-</details>
-
-<details>
 <summary>Optional Buildpack 2.3.4</summary>` +
 					"\n\n**ID:** `optional-buildpack`\n\n" +
 					`---
@@ -325,6 +318,13 @@ func testFormatter(t *testing.T, context spec.G, it spec.S) {
 <details>
 <summary>Other Buildpack 3.4.5</summary>` +
 					"\n\n**ID:** `other-buildpack`\n\n" +
+					`---
+
+</details>
+
+<details>
+<summary>Some Buildpack 1.2.3</summary>` +
+					"\n\n**ID:** `some-buildpack`\n\n" +
 					`---
 
 </details>

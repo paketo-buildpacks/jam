@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 
@@ -134,6 +135,11 @@ func (f Formatter) Markdown(entries []BuildpackMetadata) {
 				break
 			}
 		}
+
+		// Sort entries by ID
+		slices.SortFunc(entries, func(a, b BuildpackMetadata) int {
+			return strings.Compare(a.Config.Buildpack.ID, b.Config.Buildpack.ID)
+		})
 
 		//Header section
 		_, _ = fmt.Fprintf(f.writer, "## %s %s\n\n**ID:** `%s`\n\n", familyMetadata.Config.Buildpack.Name, familyMetadata.Config.Buildpack.Version, familyMetadata.Config.Buildpack.ID)
