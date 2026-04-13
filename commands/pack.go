@@ -188,7 +188,7 @@ func packRun(flags packFlags) error {
 
 		// This is a multi-arch buildpack and dependencies need to be moved into the platform-specific directory because
 		// `pack buildpack package` will be called with `--target <os>/<arch>` and files outside the path will not be included
-		for dependencyIndex, dependency := range config.Metadata.Dependencies {
+		for _, dependency := range config.Metadata.Dependencies {
 			if isMultiArch {
 				dependencyPlatformDir := filepath.Join(dependency.OS, dependency.Arch, dependenciesDir)
 
@@ -207,7 +207,6 @@ func packRun(flags packFlags) error {
 
 				relativePath := path.Join(dependencyPlatformDir, offlineFilename)
 				bundleFiles = append(bundleFiles, relativePath)
-				config.Metadata.Dependencies[dependencyIndex].URI = "file:///" + relativePath
 			} else {
 				bundleFiles = append(bundleFiles, strings.TrimPrefix(dependency.URI, "file:///"))
 			}
