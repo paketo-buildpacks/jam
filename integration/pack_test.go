@@ -981,6 +981,66 @@ func testPack(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when packaging a multi-arch buildpack with shared top-level bin files", func() {
+		it.Before(func() {
+			Expect(os.MkdirAll(filepath.Join(buildpackDir, "bin"), 0755)).To(Succeed())
+			Expect(os.MkdirAll(filepath.Join(buildpackDir, "assets"), 0755)).To(Succeed())
+
+			Expect(os.WriteFile(filepath.Join(buildpackDir, "bin", "build"), []byte("build-contents"), 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(buildpackDir, "bin", "detect"), []byte("detect-contents"), 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(buildpackDir, "assets", "custom-mode"), []byte("custom-mode-contents"), 0640)).To(Succeed())
+
+			buildpackTOML := `api = "0.6"
+
+[buildpack]
+  id = "some-buildpack-id"
+  name = "some-buildpack-name"
+  version = "version-string"
+
+[metadata]
+	include-files = ["bin/build", "bin/detect", "assets/custom-mode", "buildpack.toml"]
+
+[[targets]]
+  os = "linux"
+  arch = "amd64"
+
+[[targets]]
+  os = "linux"
+  arch = "arm64"
+`
+			Expect(os.WriteFile(filepath.Join(buildpackDir, "buildpack.toml"), []byte(buildpackTOML), 0644)).To(Succeed())
+		})
+
+		it("preserves file modes on copied files for each target directory", func() {
+			command := exec.Command(
+				path, "pack",
+				"--buildpack", filepath.Join(buildpackDir, "buildpack.toml"),
+				"--output", filepath.Join(tmpDir, "output.tgz"),
+				"--version", "some-version",
+			)
+			session, err := gexec.Start(command, buffer, buffer)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session, "5s").Should(gexec.Exit(0), func() string { return buffer.String() })
+
+			file, err := os.Open(filepath.Join(tmpDir, "output.tgz"))
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, platform := range []string{"linux/amd64", "linux/arm64"} {
+				_, hdr, err := ExtractFile(file, fmt.Sprintf("%s/bin/build", platform))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hdr.Mode).To(Equal(int64(0755)), fmt.Sprintf("expected %s/bin/build to have mode 0755", platform))
+
+				_, hdr, err = ExtractFile(file, fmt.Sprintf("%s/bin/detect", platform))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hdr.Mode).To(Equal(int64(0755)), fmt.Sprintf("expected %s/bin/detect to have mode 0755", platform))
+
+				_, hdr, err = ExtractFile(file, fmt.Sprintf("%s/assets/custom-mode", platform))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hdr.Mode).To(Equal(int64(0640)), fmt.Sprintf("expected %s/assets/custom-mode to have mode 0640", platform))
+			}
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the all the required flags are not set", func() {
 			it("prints an error message", func() {

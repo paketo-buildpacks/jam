@@ -229,7 +229,6 @@ func packRun(flags packFlags) error {
 }
 
 func packRunExtension(flags packFlags, tmpDir string) error {
-
 	extensionTOMLPath := filepath.Join(tmpDir, filepath.Base(flags.extensionTOMLPath))
 
 	configParser := cargo.NewExtensionParser()
@@ -305,7 +304,7 @@ func copyFile(src string, dst string) (int64, error) {
 		}
 	}()
 
-	destination, err := os.Create(dst)
+	destination, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, sourceFileStat.Mode())
 	if err != nil {
 		return 0, err
 	}
