@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/paketo-buildpacks/jam/v2/internal"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/spf13/cobra"
@@ -200,7 +200,7 @@ func packRun(flags packFlags) error {
 					return fmt.Errorf("failed to create platform specific dependencies directory: %s", err)
 				}
 
-				_, err = copyFile(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, dependencyPlatformDir, offlineFilename))
+				err = fs.Copy(filepath.Join(tmpDir, offlinePath), filepath.Join(tmpDir, dependencyPlatformDir, offlineFilename))
 				if err != nil {
 					return fmt.Errorf("failed to copy offline dependency to platform specific directory: %s", err)
 				}
@@ -285,39 +285,6 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	return nil
 }
 
-func copyFile(src string, dst string) (int64, error) {
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
-		return 0, err
-	}
-	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", src)
-	}
-
-	source, err := os.Open(src)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err2 := source.Close(); err2 != nil && err == nil {
-			err = err2
-		}
-	}()
-
-	destination, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, sourceFileStat.Mode())
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err2 := destination.Close(); err2 != nil && err == nil {
-			err = err2
-		}
-	}()
-
-	nBytes, err := io.Copy(destination, source)
-	return nBytes, err
-}
-
 func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.ConfigTarget, tmpDir string) ([]string, error) {
 	osArchDirs := []string{}
 	for _, target := range targets {
@@ -353,7 +320,7 @@ func fixIncludeFilesDirectoryStructure(includeFiles []string, targets []cargo.Co
 					return nil, fmt.Errorf("failed to create platform specific directory for include file or dependencies - attempted directory: %s", err)
 				}
 
-				_, err = copyFile(filepath.Join(tmpDir, file), destAbsolutePath)
+				err = fs.Copy(filepath.Join(tmpDir, file), destAbsolutePath)
 				if err != nil {
 					return nil, fmt.Errorf("failed to copy file %s to %s: %s", filepath.Join(tmpDir, file), destAbsolutePath, err)
 				}
