@@ -21,7 +21,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
 )
 
 require (
