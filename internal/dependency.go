@@ -1,11 +1,10 @@
 package internal
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
