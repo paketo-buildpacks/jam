@@ -56,14 +56,14 @@ func NewCreator(docker ImageClient, builder ImageBuilder, userLayerCreator, sbom
 }
 
 // Execute builds a Stack using the given Definition.
-func (c Creator) Execute(def Definition) (Stack, error) {
+func (c Creator) Execute(def Definition, noStackId bool) (Stack, error) {
 	c.logger.Title("Building %s", def.ID)
 
 	var stack Stack
 	for _, platform := range def.Platforms {
 		c.logger.Process("Building on %s", platform)
 
-		build, run, err := c.create(def, platform)
+		build, run, err := c.create(def, platform, noStackId)
 		if err != nil {
 			return Stack{}, err
 		}
@@ -75,7 +75,7 @@ func (c Creator) Execute(def Definition) (Stack, error) {
 	return stack, nil
 }
 
-func (c Creator) create(def Definition, platform string) (Image, Image, error) {
+func (c Creator) create(def Definition, platform string, noStackId bool) (Image, Image, error) {
 	c.logger.Subprocess("Building base images")
 
 	// invoke the builder to start the build process for the build and run images
@@ -105,17 +105,19 @@ func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 	c.logger.Action("Adding CNB_* environment variables")
 	build.Env = append(build.Env, fmt.Sprintf("CNB_USER_ID=%d", def.Build.UID))
 	build.Env = append(build.Env, fmt.Sprintf("CNB_GROUP_ID=%d", def.Build.GID))
-	build.Env = append(build.Env, fmt.Sprintf("CNB_STACK_ID=%s", def.ID))
+	if !noStackId {
+		build.Env = append(build.Env, fmt.Sprintf("CNB_STACK_ID=%s", def.ID))
+	}
 
 	// update the base build image with common configuration metadata
-	build, err = c.mutate(build, def, def.Build, buildSBOM, packages.Intersection, packages.BuildComplement, timestamp)
+	build, err = c.mutate(build, def, def.Build, buildSBOM, packages.Intersection, packages.BuildComplement, timestamp, noStackId)
 	if err != nil {
 		return Image{}, Image{}, err
 	}
 
 	c.logger.Subprocess("run: Decorating base image")
 	// update the base run image with common configuration metadata
-	run, err = c.mutate(run, def, def.Run, runSBOM, packages.Intersection, packages.RunComplement, timestamp)
+	run, err = c.mutate(run, def, def.Run, runSBOM, packages.Intersection, packages.RunComplement, timestamp, noStackId)
 	if err != nil {
 		return Image{}, Image{}, err
 	}
@@ -162,10 +164,12 @@ func (c Creator) create(def Definition, platform string) (Image, Image, error) {
 	return build, run, nil
 }
 
-func (c Creator) mutate(image Image, def Definition, imageDef DefinitionImage, sbom SBOM, intersection, complement []string, now time.Time) (Image, error) {
+func (c Creator) mutate(image Image, def Definition, imageDef DefinitionImage, sbom SBOM, intersection, complement []string, now time.Time, noStackId bool) (Image, error) {
 	// add the common CNB labels to the given image
 	c.logger.Action("Adding io.buildpacks.stack.* labels")
-	image.Labels["io.buildpacks.stack.id"] = def.ID
+	if !noStackId {
+		image.Labels["io.buildpacks.stack.id"] = def.ID
+	}
 	image.Labels["io.buildpacks.stack.description"] = imageDef.Description
 	image.Labels["io.buildpacks.stack.distro.name"] = sbom.Distro.Name
 	image.Labels["io.buildpacks.stack.distro.version"] = sbom.Distro.Version

@@ -154,7 +154,7 @@ func (d DefinitionImage) mergeArgs(platform string) map[string]any {
 }
 
 // NewDefinitionFromFile parses the stack descriptor from a file location.
-func NewDefinitionFromFile(path string, secrets ...string) (Definition, error) {
+func NewDefinitionFromFile(path string, noStackId bool, secrets ...string) (Definition, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
 		return Definition{}, err
@@ -176,16 +176,23 @@ func NewDefinitionFromFile(path string, secrets ...string) (Definition, error) {
 		return Definition{}, err
 	}
 
+	if noStackId && definition.ID != "" {
+		return Definition{}, fmt.Errorf("failed to parse stack descriptor: %w", NewDefinitionConflictingStackIdError())
+	}
+
 	// check that all required fields are set
-	for field, v := range map[string]any{
-		"id":               definition.ID,
+	requiredFields := map[string]any{
 		"build.dockerfile": definition.Build.Dockerfile,
 		"build.uid":        definition.Build.UID,
 		"build.gid":        definition.Build.GID,
 		"run.dockerfile":   definition.Run.Dockerfile,
 		"run.uid":          definition.Run.UID,
 		"run.gid":          definition.Run.GID,
-	} {
+	}
+	if !noStackId {
+		requiredFields["id"] = definition.ID
+	}
+	for field, v := range requiredFields {
 		var err error
 		switch value := v.(type) {
 		case string:
@@ -271,4 +278,19 @@ func NewDefinitionRequiredFieldError(field string) DefinitionRequiredFieldError 
 // from the stack descriptor.
 func (e DefinitionRequiredFieldError) Error() string {
 	return fmt.Sprintf("'%s' is a required field", string(e))
+}
+
+// DefinitionConflictingStackIdError defines the error message when a stack id is
+// set in the descriptor while omitting stack id metadata.
+type DefinitionConflictingStackIdError struct{}
+
+// NewDefinitionConflictingStackIdError returns a DefinitionConflictingStackIdError.
+func NewDefinitionConflictingStackIdError() DefinitionConflictingStackIdError {
+	return DefinitionConflictingStackIdError{}
+}
+
+// Error returns an error message indicating that id must not be set when using
+// --no-stack-id.
+func (e DefinitionConflictingStackIdError) Error() string {
+	return "'id' must not be set when using --no-stack-id"
 }

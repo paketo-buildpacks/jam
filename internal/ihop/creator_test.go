@@ -262,7 +262,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				UID: 3456,
 				GID: 4567,
 			},
-		})
+		}, false)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(stack).To(Equal(ihop.Stack{
 			Build: []ihop.Image{
@@ -434,7 +434,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					UID:        3456,
 					GID:        4567,
 				},
-			})
+			}, false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stack).To(Equal(ihop.Stack{
 				Build: []ihop.Image{
@@ -587,7 +587,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 						"packages": "test-run-packages",
 					},
 				},
-			})
+			}, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
@@ -666,7 +666,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 						"packages": "test-run-packages",
 					},
 				},
-			})
+			}, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
@@ -711,7 +711,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					UID: 3456,
 					GID: 4567,
 				},
-			})
+			}, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(imageBuilder.ExecuteCall.CallCount).To(Equal(2))
@@ -781,7 +781,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 					GID: 4567,
 				},
 				Labels: []string{"additional.label=label-value"},
-			})
+			}, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(imageClient.UpdateCall.CallCount).To(Equal(2))
@@ -805,7 +805,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to build image: build"))
 			})
 		})
@@ -822,7 +822,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to build image: run"))
 			})
 		})
@@ -834,7 +834,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to create build user layer"))
 			})
 		})
@@ -850,7 +850,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to create run user layer"))
 			})
 		})
@@ -862,7 +862,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to update build image"))
 			})
 		})
@@ -878,7 +878,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns an error", func() {
-				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}})
+				_, err := creator.Execute(ihop.Definition{Platforms: []string{"some-platform"}}, false)
 				Expect(err).To(MatchError("failed to update run image"))
 			})
 		})
@@ -893,7 +893,7 @@ func testCreator(t *testing.T, context spec.G, it spec.S) {
 				_, err := creator.Execute(ihop.Definition{
 					Platforms:               []string{"some-platform"},
 					IncludeExperimentalSBOM: true,
-				})
+				}, false)
 				Expect(err).To(MatchError("failed to create sbom layer"))
 			})
 		})
