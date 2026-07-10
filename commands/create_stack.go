@@ -25,6 +25,7 @@ type createStackFlags struct {
 	buildReference string
 	runReference   string
 	labels         []string
+	noStackId      bool
 }
 
 func createStack() *cobra.Command {
@@ -45,6 +46,7 @@ func createStack() *cobra.Command {
 	cmd.Flags().StringVar(&flags.buildReference, "build-ref", "", "reference that specifies where to publish the build image (required)")
 	cmd.Flags().StringVar(&flags.runReference, "run-ref", "", "reference that specifies where to publish the run image (required)")
 	cmd.Flags().StringSliceVar(&flags.labels, "label", nil, "additional image label to be added to build and run image")
+	cmd.Flags().BoolVar(&flags.noStackId, "no-stack-id", false, "do not include a stack ID in the build and run image")
 
 	err := cmd.MarkFlagRequired("config")
 	if err != nil {
@@ -73,7 +75,7 @@ func createStackRun(flags createStackFlags) error {
 		logger.Process("WARNING: The --unbuffered flag is deprecated. You can safely remove it.")
 	}
 
-	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.secrets...)
+	definition, err := ihop.NewDefinitionFromFile(flags.config, flags.noStackId, flags.secrets...)
 	if err != nil {
 		return err
 	}
@@ -105,7 +107,7 @@ func createStackRun(flags createStackFlags) error {
 	builder := ihop.NewBuilder(client, ihop.Cataloger{}, runtime.NumCPU())
 	creator := ihop.NewCreator(client, builder, ihop.UserLayerCreator{}, ihop.SBOMLayerCreator{}, ihop.OsReleaseLayerCreator{Def: definition}, time.Now, logger)
 
-	stack, err := creator.Execute(definition)
+	stack, err := creator.Execute(definition, flags.noStackId)
 	if err != nil {
 		return err
 	}
