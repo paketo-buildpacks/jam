@@ -620,7 +620,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
-					Expect(string(buffer.Contents())).To(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint: improper constraint: ~bad-version"))
+					Expect(string(buffer.Contents())).To(ContainSubstring(`version constraint ~bad-version is not a valid semantic version constraint: improper constraint: "~bad-version"`))
 				})
 			})
 		})
@@ -1088,7 +1088,7 @@ func testUpdateBuildpack(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(session).Should(gexec.Exit(1), func() string { return string(buffer.Contents()) })
-					Expect(string(buffer.Contents())).To(ContainSubstring("version constraint ~bad-version is not a valid semantic version constraint: improper constraint: ~bad-version"))
+					Expect(string(buffer.Contents())).To(ContainSubstring(`version constraint ~bad-version is not a valid semantic version constraint: improper constraint: "~bad-version"`))
 				})
 			})
 		})
