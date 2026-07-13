@@ -73,7 +73,7 @@ platforms = ["some-stack-platform"]
 		})
 
 		it("creates a definition from a config file", func() {
-			definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+			definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(definition).To(Equal(ihop.Definition{
 				ID:           "some-stack-id",
@@ -146,7 +146,7 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("sets the defaults", func() {
-					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(definition).To(Equal(ihop.Definition{
 						ID:           "some-stack-id",
@@ -193,8 +193,68 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'id' is a required field"))
+				})
+
+				it("succeeds when no stack id is allowed", func() {
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), true)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(definition.ID).To(BeEmpty())
+				})
+			})
+
+			context("when no stack id is requested", func() {
+				context("when id is missing", func() {
+					it.Before(func() {
+						err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+name = "some-stack-name"
+homepage = "some-stack-homepage"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+`), 0600)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					it("succeeds", func() {
+						definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), true)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(definition.ID).To(BeEmpty())
+					})
+				})
+
+				context("when id is set", func() {
+					it.Before(func() {
+						err := os.WriteFile(filepath.Join(dir, "stack.toml"), []byte(`
+id = "some-stack-id"
+name = "some-stack-name"
+homepage = "some-stack-homepage"
+
+[build]
+	dockerfile = "some-build-dockerfile"
+	uid = 1234
+	gid = 2345
+
+[run]
+	dockerfile = "some-run-dockerfile"
+	uid = 1234
+	gid = 2345
+`), 0600)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					it("returns an error", func() {
+						_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), true)
+						Expect(err).To(MatchError("failed to parse stack descriptor: 'id' must not be set when using --no-stack-id"))
+					})
 				})
 			})
 
@@ -218,7 +278,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'build.dockerfile' is a required field"))
 				})
 			})
@@ -243,7 +303,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'build.uid' is a required field"))
 				})
 			})
@@ -269,7 +329,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'build.gid' is a required field"))
 				})
 			})
@@ -294,7 +354,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'run.dockerfile' is a required field"))
 				})
 			})
@@ -319,7 +379,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'run.uid' is a required field"))
 				})
 			})
@@ -344,7 +404,7 @@ homepage = "some-stack-homepage"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError("failed to parse stack descriptor: 'run.gid' is a required field"))
 				})
 			})
@@ -352,7 +412,7 @@ homepage = "some-stack-homepage"
 
 		context("when secrets are given", func() {
 			it("includes them in the build/run image definitions", func() {
-				definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), "first-secret=first-value", "second-secret=second-value")
+				definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false, "first-secret=first-value", "second-secret=second-value")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(definition.Build.Secrets).To(Equal(map[string]string{
 					"first-secret":  "first-value",
@@ -395,7 +455,7 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("transforms args to string", func() {
-					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).NotTo(HaveOccurred())
 					buildArgs, err := definition.Build.Arguments("linux/amd64")
 					Expect(err).NotTo(HaveOccurred())
@@ -448,7 +508,7 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("returns platform-specific variant", func() {
-					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).NotTo(HaveOccurred())
 
 					buildArgs, err := definition.Build.Arguments("linux/amd64")
@@ -489,7 +549,7 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("returns an error", func() {
-					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).ToNot(HaveOccurred())
 
 					_, err = definition.Build.Arguments("linux/amd64")
@@ -526,7 +586,7 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("returns an error", func() {
-					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					definition, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).ToNot(HaveOccurred())
 
 					buildArgs, err := definition.Build.Arguments("linux/amd64")
@@ -542,7 +602,7 @@ homepage = "https://github.com/some-stack"
 		context("failure cases", func() {
 			context("when the file cannot be opened", func() {
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile("this file does not exist")
+					_, err := ihop.NewDefinitionFromFile("this file does not exist", false)
 					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 				})
 			})
@@ -554,14 +614,14 @@ homepage = "https://github.com/some-stack"
 				})
 
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"))
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false)
 					Expect(err).To(MatchError(ContainSubstring("but got '%' instead")))
 				})
 			})
 
 			context("when a secret is malformed", func() {
 				it("returns an error", func() {
-					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), "this secret is malformed")
+					_, err := ihop.NewDefinitionFromFile(filepath.Join(dir, "stack.toml"), false, "this secret is malformed")
 					Expect(err).To(MatchError("malformed secret: \"this secret is malformed\" must be in the form \"key=value\""))
 				})
 			})
