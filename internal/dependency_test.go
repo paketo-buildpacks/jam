@@ -228,7 +228,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					}
 
 					_, err := internal.GetDependenciesWithinConstraint(allDependencies, constraint, "")
-					Expect(err).To(MatchError("improper constraint: abc"))
+					Expect(err).To(MatchError(`improper constraint: "abc"`))
 				})
 			})
 
@@ -615,7 +615,7 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					}
 
 					_, err := internal.GetCargoDependenciesWithinConstraint(allCargoDependencies, constraint)
-					Expect(err).To(MatchError("improper constraint: abc"))
+					Expect(err).To(MatchError(`improper constraint: "abc"`))
 				})
 			})
 
