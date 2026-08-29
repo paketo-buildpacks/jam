@@ -909,8 +909,8 @@ github.com/paketo-buildpacks/freezer v0.2.2 h1:p0qcGMQ54uGMzDFNkfpDpxddNl8+OTqt3
 github.com/paketo-buildpacks/freezer v0.2.2/go.mod h1:8dkcCqZKYFKxDV4MuooIR/Fr/LmpXqpr8R9mFvkGerE=
 github.com/paketo-buildpacks/occam v0.31.3 h1:4EhnaRVzWVHKIKC+XY3f2KQI2EaVJDUY3RmfIojiiQ8=
 github.com/paketo-buildpacks/occam v0.31.3/go.mod h1:dQuEwpCGzohjyfSmzAc0eTTLssPjfIiCXFm7ZvhtdPM=
-github.com/paketo-buildpacks/packit/v2 v2.25.5 h1:6gPBLx5leUUHzX2cNTdkpA+FWlWel+fGclUiDH4snMI=
-github.com/paketo-buildpacks/packit/v2 v2.25.5/go.mod h1:Tr7vMlkXtXvi59DtMPmgXfr6ITPfJiCe0ROvur1PCvI=
+github.com/paketo-buildpacks/packit/v2 v2.25.7 h1:29AHHkmINvl3FYYUwQur5u7SlGfSQpH8tTDqhoYNoBw=
+github.com/paketo-buildpacks/packit/v2 v2.25.7/go.mod h1:BuG9bkxNyiEsEa8O2eiRcULE9VU84A66cO3mOyZzWbc=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pborman/getopt v0.0.0-20170112200414-7148bc3a4c30/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
