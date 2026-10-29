@@ -59,19 +59,19 @@ func testDeprecations(t *testing.T, context spec.G, it spec.S) {
 			Expect(internal.WarnDeprecatedDependencyKeys(path, buffer)).To(Succeed())
 			Expect(buffer.String()).To(Equal(`WARNING: buildpack.toml: dependency "some-dependency" (metadata.dependencies[0]) uses deprecated key "cpe", use "cpes" instead
 WARNING: buildpack.toml: dependency "some-dependency" (metadata.dependencies[0]) uses deprecated key "deprecation_date", use "eol-date" instead
-WARNING: buildpack.toml: dependency "some-dependency" (metadata.dependencies[0]) uses deprecated key "licenses", use "licenses tables with type and uri" instead
 WARNING: buildpack.toml: dependency "some-dependency" (metadata.dependencies[0]) uses deprecated key "purl", use "purls" instead
 WARNING: buildpack.toml: dependency "some-dependency" (metadata.dependencies[0]) uses deprecated key "source-sha256", use "source-checksum" instead
 `))
 		})
 
-		it("does not warn about keys that are still written by tooling", func() {
+		it("does not warn about keys that are not safe to migrate yet", func() {
 			writeFile(`
 [[metadata.dependencies]]
 	id = "some-dependency"
 	version = "1.2.3"
 	sha256 = "some-sha"
 	stacks = ["some-stack"]
+	licenses = ["MIT"]
 `)
 
 			Expect(internal.WarnDeprecatedDependencyKeys(path, buffer)).To(Succeed())
