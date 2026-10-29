@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"slices"
 	"sort"
 	"strings"
@@ -176,27 +177,41 @@ func convertToCargoDependency(dependency Dependency, dependencyName string) carg
 
 	if dependency.DeprecationDate != "" {
 		deprecationDate, _ := time.Parse(time.RFC3339, dependency.DeprecationDate)
-		cargoDependency.DeprecationDate = &deprecationDate
+		cargoDependency.EOLDate = &deprecationDate
 	}
 
-	cargoDependency.CPE = dependency.CPE
-	cargoDependency.PURL = dependency.PURL
+	cargoDependency.CPEs = dependency.CPEs
+	if len(cargoDependency.CPEs) == 0 && dependency.CPE != "" {
+		cargoDependency.CPEs = []string{dependency.CPE}
+	}
+
+	if dependency.PURL != "" {
+		cargoDependency.PURLs = []string{dependency.PURL}
+	}
+
 	cargoDependency.ID = dependency.ID
 	cargoDependency.Name = dependencyName
 	cargoDependency.SHA256 = dependency.SHA256
 	cargoDependency.Source = dependency.Source
-	cargoDependency.SourceSHA256 = dependency.SourceSHA256
 	cargoDependency.URI = dependency.URI
 	cargoDependency.Version = strings.ReplaceAll(dependency.Version, "v", "")
 	cargoDependency.Checksum = dependency.Checksum
+
 	cargoDependency.SourceChecksum = dependency.SourceChecksum
+	if cargoDependency.SourceChecksum == "" && dependency.SourceSHA256 != "" {
+		// source_sha256 is a bare hash, while source-checksum expects the
+		// algorithm and hash separated by a colon.
+		cargoDependency.SourceChecksum = fmt.Sprintf("sha256:%s", dependency.SourceSHA256)
+	}
 
 	for _, stack := range dependency.Stacks {
 		cargoDependency.Stacks = append(cargoDependency.Stacks, stack.ID)
 	}
 
-	for _, l := range dependency.Licenses {
-		cargoDependency.Licenses = append(cargoDependency.Licenses, l)
+	for _, license := range dependency.Licenses {
+		cargoDependency.LicenseEntries = append(cargoDependency.LicenseEntries, cargo.ConfigDependencyLicense{
+			Type: license,
+		})
 	}
 
 	return cargoDependency
