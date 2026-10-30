@@ -72,10 +72,8 @@ func GetDependenciesWithinConstraint(dependencies []Dependency, constraint cargo
 		matchingDependencies = append(matchingDependencies, convertToCargoDependency(dependency, dependencyName))
 	}
 
-	sort.Slice(matchingDependencies, func(i, j int) bool {
-		iVersion := semver.MustParse(matchingDependencies[i].Version)
-		jVersion := semver.MustParse(matchingDependencies[j].Version)
-		return iVersion.LessThan(jVersion)
+	sort.SliceStable(matchingDependencies, func(i, j int) bool {
+		return compareVersions(matchingDependencies[i].Version, matchingDependencies[j].Version) < 0
 	})
 
 	// if there are more requested patches than matching dependencies, just
@@ -128,10 +126,8 @@ func GetCargoDependenciesWithinConstraint(dependencies []cargo.ConfigMetadataDep
 		}
 	}
 
-	sort.Slice(versions, func(i, j int) bool {
-		iVersion := semver.MustParse(versions[i])
-		jVersion := semver.MustParse(versions[j])
-		return iVersion.LessThan(jVersion)
+	sort.SliceStable(versions, func(i, j int) bool {
+		return compareVersions(versions[i], versions[j]) < 0
 	})
 
 	// Buildpack.toml dependencies are usually in order from lowest to highest
