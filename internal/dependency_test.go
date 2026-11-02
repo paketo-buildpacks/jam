@@ -167,46 +167,58 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(dependencies).To(Equal([]cargo.ConfigMetadataDependency{
 					{
-						CPE:          "cpe-notation",
-						PURL:         "some-purl",
-						ID:           "some-dep",
-						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
-						Version:      "1.0.0",
-						Stacks:       []string{"some-stack"},
-						URI:          "some-dep-uri",
-						SHA256:       "some-sha",
-						Source:       "some-source",
-						SourceSHA256: "some-source-sha",
+						CPEs:  []string{"cpe-notation"},
+						PURLs: []string{"some-purl"},
+						ID:    "some-dep",
+						LicenseEntries: []cargo.ConfigDependencyLicense{
+							{Type: "fancy-license"},
+							{Type: "fancy-license-2"},
+						},
+						Version:        "1.0.0",
+						Stacks:         []string{"some-stack"},
+						URI:            "some-dep-uri",
+						SHA256:         "some-sha",
+						Source:         "some-source",
+						SourceChecksum: "sha256:some-source-sha",
 					},
 					{
-						CPE:          "cpe-notation",
-						PURL:         "some-purl",
-						ID:           "some-dep",
-						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
-						Version:      "1.1.2",
-						Stacks:       []string{"some-stack-two"},
-						URI:          "some-dep-uri-two",
-						SHA256:       "some-sha-two",
-						Source:       "some-source-two",
-						SourceSHA256: "some-source-sha-two",
+						CPEs:  []string{"cpe-notation"},
+						PURLs: []string{"some-purl"},
+						ID:    "some-dep",
+						LicenseEntries: []cargo.ConfigDependencyLicense{
+							{Type: "fancy-license"},
+							{Type: "fancy-license-2"},
+						},
+						Version:        "1.1.2",
+						Stacks:         []string{"some-stack-two"},
+						URI:            "some-dep-uri-two",
+						SHA256:         "some-sha-two",
+						Source:         "some-source-two",
+						SourceChecksum: "sha256:some-source-sha-two",
 					},
 					{
-						CPE:          "cpe-notation",
-						PURL:         "some-purl",
-						ID:           "some-dep",
-						Licenses:     []interface{}{"fancy-license", "fancy-license-2"},
-						Version:      "1.5.6",
-						Stacks:       []string{"some-stack-three"},
-						URI:          "some-dep-uri-three",
-						SHA256:       "some-sha-three",
-						Source:       "some-source-three",
-						SourceSHA256: "some-source-sha-three",
+						CPEs:  []string{"cpe-notation"},
+						PURLs: []string{"some-purl"},
+						ID:    "some-dep",
+						LicenseEntries: []cargo.ConfigDependencyLicense{
+							{Type: "fancy-license"},
+							{Type: "fancy-license-2"},
+						},
+						Version:        "1.5.6",
+						Stacks:         []string{"some-stack-three"},
+						URI:            "some-dep-uri-three",
+						SHA256:         "some-sha-three",
+						Source:         "some-source-three",
+						SourceChecksum: "sha256:some-source-sha-three",
 					},
 					{
-						CPE:            "cpe-notation",
-						PURL:           "some-512-purl",
-						ID:             "some-dep",
-						Licenses:       []interface{}{"fancy-license", "fancy-license-2"},
+						CPEs:  []string{"cpe-notation"},
+						PURLs: []string{"some-512-purl"},
+						ID:    "some-dep",
+						LicenseEntries: []cargo.ConfigDependencyLicense{
+							{Type: "fancy-license"},
+							{Type: "fancy-license-2"},
+						},
 						Version:        "1.6.7",
 						Stacks:         []string{"some-stack"},
 						URI:            "some-512-dep-uri",
@@ -646,6 +658,71 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError("invalid semantic version"))
 				})
 			})
+		})
+	})
+
+	context("GetCargoDependenciesWithinConstraint with build metadata", func() {
+		dependency := func(version, uri string) cargo.ConfigMetadataDependency {
+			return cargo.ConfigMetadataDependency{
+				ID:      "jdk-test",
+				Version: version,
+				URI:     uri,
+				OS:      "linux",
+				Arch:    "amd64",
+				Stacks:  []string{"*"},
+				SHA256:  "sha-" + version,
+			}
+		}
+
+		it("keeps the newest build for a single patch regardless of input order", func() {
+			for _, dependencies := range [][]cargo.ConfigMetadataDependency{
+				// the order the update workflow uses: buildpack.toml first,
+				// freshly retrieved metadata last
+				{dependency("21.0.13", "old"), dependency("21.0.13+0.11", "new")},
+				{dependency("21.0.13+0.11", "new"), dependency("21.0.13", "old")},
+				{dependency("21.0.13+0.10", "older"), dependency("21.0.13+0.11", "new"), dependency("21.0.13", "old")},
+			} {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "^21",
+					ID:         "jdk-test",
+					Patches:    1,
+				}
+
+				result, err := internal.GetCargoDependenciesWithinConstraint(dependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(1))
+				Expect(result[0].Version).To(Equal("21.0.13+0.11"))
+				Expect(result[0].URI).To(Equal("new"))
+			}
+		})
+
+		it("keeps the two newest builds for two patches regardless of input order", func() {
+			for _, dependencies := range [][]cargo.ConfigMetadataDependency{
+				{
+					dependency("21.0.12", "old-patch"),
+					dependency("21.0.13+0.10", "older"),
+					dependency("21.0.13+0.11", "middle"),
+					dependency("21.0.13+0.12", "new"),
+				},
+				{
+					dependency("21.0.13+0.12", "new"),
+					dependency("21.0.13+0.11", "middle"),
+					dependency("21.0.13+0.10", "older"),
+					dependency("21.0.12", "old-patch"),
+				},
+			} {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "^21",
+					ID:         "jdk-test",
+					Patches:    2,
+				}
+
+				result, err := internal.GetCargoDependenciesWithinConstraint(dependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(2))
+				Expect(result[0].Version).To(Equal("21.0.13+0.11"))
+				Expect(result[1].Version).To(Equal("21.0.13+0.12"))
+			}
 		})
 	})
 

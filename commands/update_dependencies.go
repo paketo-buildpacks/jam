@@ -50,6 +50,10 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 		return fmt.Errorf("failed to parse buildpack.toml: %s", err)
 	}
 
+	if err := internal.WarnDeprecatedDependencyKeys(flags.buildpackFile, os.Stderr); err != nil {
+		return fmt.Errorf("failed to read deprecated keys from buildpack.toml: %s", err)
+	}
+
 	originalVersions := map[string]string{}
 	for _, d := range config.Metadata.Dependencies {
 		originalVersions[d.Version] = d.Version
