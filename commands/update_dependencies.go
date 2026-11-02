@@ -56,7 +56,7 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 
 	originalVersions := map[string]string{}
 	for _, d := range config.Metadata.Dependencies {
-		originalVersions[d.Version] = d.Version
+		originalVersions[dependencyVersionKey(d)] = d.Version
 	}
 
 	var matchingDependencies []cargo.ConfigMetadataDependency
@@ -96,7 +96,7 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 
 	newVersionsFound := map[string]string{}
 	for _, d := range config.Metadata.Dependencies {
-		if _, ok := originalVersions[d.Version]; !ok {
+		if _, ok := originalVersions[dependencyVersionKey(d)]; !ok {
 			newVersionsFound[d.Version] = ""
 		}
 	}
@@ -119,4 +119,12 @@ func updateDependenciesRun(flags updateDependenciesFlags) error {
 	fmt.Println("Updating buildpack.toml with new versions: ", reflect.ValueOf(newVersionsFound).MapKeys())
 
 	return err // err should be nil here, but return err to catch deferred error
+}
+
+// dependencyVersionKey identifies a dependency version by its ID and version.
+// Keying on the version alone hides a version that is new for one dependency
+// when another dependency already uses it, e.g. when a vendor's JRE and JDK
+// entries track the same versions.
+func dependencyVersionKey(d cargo.ConfigMetadataDependency) string {
+	return d.ID + "\x00" + d.Version
 }
