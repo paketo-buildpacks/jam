@@ -649,6 +649,71 @@ func testDependency(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("GetCargoDependenciesWithinConstraint with build metadata", func() {
+		dependency := func(version, uri string) cargo.ConfigMetadataDependency {
+			return cargo.ConfigMetadataDependency{
+				ID:      "jdk-test",
+				Version: version,
+				URI:     uri,
+				OS:      "linux",
+				Arch:    "amd64",
+				Stacks:  []string{"*"},
+				SHA256:  "sha-" + version,
+			}
+		}
+
+		it("keeps the newest build for a single patch regardless of input order", func() {
+			for _, dependencies := range [][]cargo.ConfigMetadataDependency{
+				// the order the update workflow uses: buildpack.toml first,
+				// freshly retrieved metadata last
+				{dependency("21.0.13", "old"), dependency("21.0.13+0.11", "new")},
+				{dependency("21.0.13+0.11", "new"), dependency("21.0.13", "old")},
+				{dependency("21.0.13+0.10", "older"), dependency("21.0.13+0.11", "new"), dependency("21.0.13", "old")},
+			} {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "^21",
+					ID:         "jdk-test",
+					Patches:    1,
+				}
+
+				result, err := internal.GetCargoDependenciesWithinConstraint(dependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(1))
+				Expect(result[0].Version).To(Equal("21.0.13+0.11"))
+				Expect(result[0].URI).To(Equal("new"))
+			}
+		})
+
+		it("keeps the two newest builds for two patches regardless of input order", func() {
+			for _, dependencies := range [][]cargo.ConfigMetadataDependency{
+				{
+					dependency("21.0.12", "old-patch"),
+					dependency("21.0.13+0.10", "older"),
+					dependency("21.0.13+0.11", "middle"),
+					dependency("21.0.13+0.12", "new"),
+				},
+				{
+					dependency("21.0.13+0.12", "new"),
+					dependency("21.0.13+0.11", "middle"),
+					dependency("21.0.13+0.10", "older"),
+					dependency("21.0.12", "old-patch"),
+				},
+			} {
+				constraint := cargo.ConfigMetadataDependencyConstraint{
+					Constraint: "^21",
+					ID:         "jdk-test",
+					Patches:    2,
+				}
+
+				result, err := internal.GetCargoDependenciesWithinConstraint(dependencies, constraint)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(2))
+				Expect(result[0].Version).To(Equal("21.0.13+0.11"))
+				Expect(result[1].Version).To(Equal("21.0.13+0.12"))
+			}
+		})
+	})
+
 	context("FindDependencyName", func() {
 		var cargoConfig cargo.Config
 		it.Before(func() {
