@@ -108,6 +108,10 @@ func packRun(flags packFlags) error {
 		return fmt.Errorf("failed to parse buildpack.toml: %s", err)
 	}
 
+	if err := internal.WarnDeprecatedDependencyKeys(buildpackTOMLPath, os.Stderr); err != nil {
+		return fmt.Errorf("failed to read deprecated keys from buildpack.toml: %s", err)
+	}
+
 	config.Buildpack.Version = flags.version
 
 	_, _ = fmt.Fprintf(os.Stdout, "Packing %s %s...\n", config.Buildpack.Name, flags.version)
@@ -235,6 +239,10 @@ func packRunExtension(flags packFlags, tmpDir string) error {
 	config, err := configParser.Parse(extensionTOMLPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse extension.toml: %s", err)
+	}
+
+	if err := internal.WarnDeprecatedDependencyKeys(extensionTOMLPath, os.Stderr); err != nil {
+		return fmt.Errorf("failed to read deprecated keys from extension.toml: %s", err)
 	}
 
 	config.Extension.Version = flags.version
