@@ -78,7 +78,7 @@ function build::jam(){
 
   mkdir -p "${ARTIFACTS_DIR}"
 
-  local platform os arch output
+  local platform os arch output alias_output
 
   pushd "${ROOT_DIR}" > /dev/null || return
     for platform in "${platforms[@]}"; do
@@ -103,6 +103,16 @@ function build::jam(){
           main.go
 
       chmod +x "${output}"
+
+      if [[ "${arch}" == "amd64" ]]; then
+        if [[ "${os}" == "windows" ]]; then
+          alias_output="${ARTIFACTS_DIR}/jam-${os}-amd64.exe"
+        else
+          alias_output="${ARTIFACTS_DIR}/jam-${os}-amd64"
+        fi
+        cp "${output}" "${alias_output}"
+        chmod +x "${alias_output}"
+      fi
     done
   popd > /dev/null || return
 }
