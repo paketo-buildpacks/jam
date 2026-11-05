@@ -12,16 +12,25 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Setup Go
-      uses: actions/setup-go@v5
-
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
       with:
         go-version-file: go.mod
 
+    - name: Read options
+      id: options
+      run: |
+        setup_qemu=false
+        if [[ -f scripts/options.json ]]; then
+          setup_qemu="$(jq -r '.setup_qemu // false' scripts/options.json)"
+        fi
+        echo "setup_qemu=${setup_qemu}" >> "${GITHUB_OUTPUT}"
+
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      if: steps.options.outputs.setup_qemu == 'true'
+      uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
     - name: Run Unit Tests
       run: ./scripts/unit.sh
@@ -31,7 +40,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: event-payload
         path: ${{ github.event_path }}
