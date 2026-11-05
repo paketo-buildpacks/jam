@@ -5,6 +5,7 @@ on:
     branches:
     - main
     - v*
+    - '!v*-*'
   repository_dispatch:
     types: [ version-bump ]
   workflow_dispatch:
@@ -21,15 +22,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
-
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
       with:
         go-version-file: go.mod
 
+    - name: Read options
+      id: options
+      run: |
+        setup_qemu=false
+        if [[ -f scripts/options.json ]]; then
+          setup_qemu="$(jq -r '.setup_qemu // false' scripts/options.json)"
+        fi
+        echo "setup_qemu=${setup_qemu}" >> "${GITHUB_OUTPUT}"
+
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      if: steps.options.outputs.setup_qemu == 'true'
+      uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
     - name: Run Unit Tests
       run: ./scripts/unit.sh
@@ -40,14 +50,13 @@ jobs:
     needs: unit
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
-
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-tags: true
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
       with:
         go-version-file: go.mod
-
-    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
     - name: Reset Draft Release
       id: reset
       uses: paketo-buildpacks/github-config/actions/release/reset-draft@main
@@ -70,9 +79,44 @@ jobs:
           tag="${{ steps.semver.outputs.tag }}"
         fi
         echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-
-    - name: Package Jam
-      run: ./scripts/package.sh --version ${{ steps.tag.outputs.tag }}
+    - name: Generate Release Notes
+      env:
+        GH_TOKEN: ${{ secrets.PAKETO_BOT_GITHUB_TOKEN }}
+      run: |
+        gh api \
+          --method POST \
+          -H "Accept: application/vnd.github+json" \
+          "/repos/${{ github.repository }}/releases/generate-notes" \
+          -f tag_name="v${{ steps.tag.outputs.tag }}" \
+          -f target_commitish="${{ github.sha }}" \
+          --jq .body > release_notes.md
+    - name: Check for package script
+      id: package
+      run: |
+        exists=false
+        if [[ -f scripts/package.sh ]]; then
+          exists=true
+        fi
+        echo "exists=${exists}" >> "${GITHUB_OUTPUT}"
+    - name: Package
+      if: steps.package.outputs.exists == 'true'
+      env:
+        TAG: ${{ steps.tag.outputs.tag }}
+      run: ./scripts/package.sh --version "${TAG}"
+    - name: Create Release Assets
+      id: assets
+      if: steps.package.outputs.exists == 'true'
+      run: |
+        assets="$(find build -type f -printf '%P\n' | jq -R -s -c '
+          split("\n")
+          | map(select(length > 0))
+          | map({
+              path: ("build/" + .),
+              name: .,
+              content_type: "application/octet-stream"
+            })
+        ')"
+        printf 'assets=%s\n' "${assets}" >> "${GITHUB_OUTPUT}"
     - name: Create Release
       uses: paketo-buildpacks/github-config/actions/release/create@main
       with:
@@ -81,66 +125,17 @@ jobs:
         tag_name: v${{ steps.tag.outputs.tag }}
         target_commitish: ${{ github.sha }}
         name: v${{ steps.tag.outputs.tag }}
+        body_filepath: release_notes.md
         draft: true
-        assets: |
-          [
-            {
-              "path": "build/jam-darwin",
-              "name": "jam-darwin",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-darwin",
-              "name": "jam-darwin-amd64",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-linux-s390x",
-              "name": "jam-linux-s390x",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-darwin-arm64",
-              "name": "jam-darwin-arm64",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-linux",
-              "name": "jam-linux",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-linux",
-              "name": "jam-linux-amd64",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-linux-arm64",
-              "name": "jam-linux-arm64",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-windows.exe",
-              "name": "jam-windows.exe",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-windows.exe",
-              "name": "jam-windows-amd64.exe",
-              "content_type": "application/octet-stream"
-            },
-            {
-              "path": "build/jam-windows-arm64.exe",
-              "name": "jam-windows-arm64.exe",
-              "content_type": "application/octet-stream"
-            }
-          ]
+        assets: ${{ steps.assets.outputs.assets || '[]' }}
 
   failure:
     name: Alert on Failure
     runs-on: ubuntu-24.04
     needs: [ unit, release ]
     if: ${{ always() && needs.unit.result == 'failure' || needs.release.result == 'failure' }}
+    permissions:
+      issues: write
     steps:
     - name: File Failure Alert Issue
       uses: paketo-buildpacks/github-config/actions/issue/file@main
