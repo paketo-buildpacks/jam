@@ -149,8 +149,9 @@ func (c Client) Build(def DefinitionImage, platform string) (Image, error) {
 	}
 
 	// associate an authentication provider with the session
-	// dockerAuthProvider := authprovider.NewDockerAuthProvider(config.LoadDefaultConfigFile(os.Stderr))
-	dockerAuthProvider := authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{ConfigFile: config.LoadDefaultConfigFile(os.Stderr)})
+	dockerAuthProvider := authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{
+		AuthConfigProvider: authprovider.LoadAuthConfig(config.LoadDefaultConfigFile(os.Stderr)),
+	})
 	sess.Allow(dockerAuthProvider)
 
 	// if the DefinitionImage contains secrets, add them to the session using the
