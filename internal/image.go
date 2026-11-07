@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,35 +28,28 @@ func FindLatestImageOnCNBRegistry(uri, api, patchVersion string) (Image, error) 
 	var resp *http.Response
 	var err error
 
-	retryTimeLimit, err := time.ParseDuration("3m")
-	if err != nil {
-		return Image{}, err
-	}
-	exponentialBackoff := backoff.NewExponentialBackOff()
-	exponentialBackoff.MaxElapsedTime = retryTimeLimit
-
 	// Use exponential backoff to retry failed requests when they fail with http.StatusTooManyRequests
-	err = backoff.RetryNotify(func() error {
+	_, err = backoff.Retry(context.Background(), func() (struct{}, error) {
 		resp, err = http.Get(fmt.Sprintf("%s/v1/buildpacks/%s", api, id))
 		if err != nil {
-			return &backoff.PermanentError{Err: err}
+			return struct{}{}, backoff.Permanent(err)
 		}
 
 		// only retry when the CNB registry status code is http.StatusTooManyRequests (429)
 		if resp.StatusCode != http.StatusOK {
 			err = fmt.Errorf("unexpected response status: %s", resp.Status)
 			if resp.StatusCode == http.StatusTooManyRequests {
-				return err
+				return struct{}{}, err
 			}
-			return &backoff.PermanentError{Err: err}
+			return struct{}{}, backoff.Permanent(err)
 		}
-		return nil
+		return struct{}{}, nil
 	},
-		exponentialBackoff,
-		func(err error, t time.Duration) {
+		backoff.WithMaxElapsedTime(3*time.Minute),
+		backoff.WithNotify(func(err error, t time.Duration) {
 			fmt.Println(err)
 			fmt.Printf("Retrying in %s\n", t)
-		},
+		}),
 	)
 	if err != nil {
 		return Image{}, err
