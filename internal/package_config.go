@@ -11,12 +11,14 @@ import (
 
 type PackageConfig struct {
 	Buildpack    interface{}               `toml:"buildpack"`
-	Dependencies []PackageConfigDependency `toml:"dependencies"`
+	Dependencies []PackageConfigDependency `toml:"dependencies,omitempty"`
 	Targets      []PackageConfigTarget     `toml:"targets,omitempty"`
 }
 
 type PackageConfigDependency struct {
 	URI string `toml:"uri"`
+	// Image is a deprecated alias for URI, still accepted when parsing.
+	Image string `toml:"image,omitempty"`
 }
 
 type PackageConfigTarget struct {
@@ -25,16 +27,11 @@ type PackageConfigTarget struct {
 }
 
 // Note: this is to support that buildpackages can refer to this field as `image` or `uri`.
-func (d *PackageConfigDependency) UnmarshalTOML(v interface{}) error {
-	if m, ok := v.(map[string]interface{}); ok {
-		if image, ok := m["image"].(string); ok {
-			d.URI = image
-		}
-
-		if uri, ok := m["uri"].(string); ok {
-			d.URI = uri
-		}
+func (d *PackageConfigDependency) normalize() error {
+	if d.URI == "" {
+		d.URI = d.Image
 	}
+	d.Image = ""
 
 	if d.URI != "" {
 		if !strings.HasPrefix(d.URI, "urn:cnb:registry") {
@@ -67,6 +64,12 @@ func ParsePackageConfig(path string) (PackageConfig, error) {
 	err = toml.NewDecoder(file).Decode(&config)
 	if err != nil {
 		return PackageConfig{}, fmt.Errorf("failed to parse package config: %w", err)
+	}
+
+	for i := range config.Dependencies {
+		if err := config.Dependencies[i].normalize(); err != nil {
+			return PackageConfig{}, fmt.Errorf("failed to parse package config: %w", err)
+		}
 	}
 
 	return config, err // err should be nil here, but return err to catch deferred error

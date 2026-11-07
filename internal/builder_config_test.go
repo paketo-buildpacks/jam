@@ -182,7 +182,7 @@ description = "Some description"
 			it("returns an error", func() {
 				_, err := internal.ParseBuilderConfig(path)
 				Expect(err).To(MatchError(ContainSubstring("failed to parse builder config:")))
-				Expect(err).To(MatchError(ContainSubstring("keys cannot contain % character")))
+				Expect(err).To(MatchError(ContainSubstring("invalid character at start of key")))
 			})
 		})
 

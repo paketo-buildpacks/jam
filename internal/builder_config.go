@@ -11,20 +11,22 @@ import (
 
 type BuilderConfig struct {
 	Description    string                        `toml:"description"`
-	Buildpacks     []BuilderConfigBuildpack      `toml:"buildpacks"`
+	Buildpacks     []BuilderConfigBuildpack      `toml:"buildpacks,omitempty"`
 	Lifecycle      BuilderConfigLifecycle        `toml:"lifecycle"`
-	Order          []BuilderConfigOrder          `toml:"order"`
-	Extensions     []BuilderConfigExtension      `toml:"extensions"`
-	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions"`
+	Order          []BuilderConfigOrder          `toml:"order,omitempty"`
+	Extensions     []BuilderConfigExtension      `toml:"extensions,omitempty"`
+	OrderExtension []BuilderExtensionConfigOrder `toml:"order-extensions,omitempty"`
 	Build          Build                         `toml:"build,omitempty"`
 	Run            Run                           `toml:"run,omitempty"`
 	Stack          BuilderConfigStack            `toml:"stack,omitempty"`
-	Targets        []BuilderConfigTarget         `toml:"targets"`
+	Targets        []BuilderConfigTarget         `toml:"targets,omitempty"`
 }
 
 type BuilderConfigBuildpack struct {
 	URI     string `toml:"uri"`
 	Version string `toml:"version"`
+	// Image is a deprecated alias for URI, still accepted when parsing.
+	Image string `toml:"image,omitempty"`
 }
 
 type Run struct {
@@ -43,6 +45,8 @@ type BuilderConfigExtension struct {
 	ID      string `toml:"id"`
 	URI     string `toml:"uri"`
 	Version string `toml:"version"`
+	// Image is a deprecated alias for URI, still accepted when parsing.
+	Image string `toml:"image,omitempty"`
 }
 
 type BuilderConfigLifecycle struct {
@@ -82,20 +86,11 @@ type BuilderConfigTarget struct {
 }
 
 // Note: this is to support that buildpackages can refer to this field as `image` or `uri`.
-func (b *BuilderConfigBuildpack) UnmarshalTOML(v interface{}) error {
-	if m, ok := v.(map[string]interface{}); ok {
-		if image, ok := m["image"].(string); ok {
-			b.URI = image
-		}
-
-		if uri, ok := m["uri"].(string); ok {
-			b.URI = uri
-		}
-
-		if version, ok := m["version"].(string); ok {
-			b.Version = version
-		}
+func (b *BuilderConfigBuildpack) normalize() error {
+	if b.URI == "" {
+		b.URI = b.Image
 	}
+	b.Image = ""
 
 	if b.URI != "" {
 		uri, err := url.Parse(b.URI)
@@ -111,24 +106,12 @@ func (b *BuilderConfigBuildpack) UnmarshalTOML(v interface{}) error {
 	return nil
 }
 
-func (b *BuilderConfigExtension) UnmarshalTOML(v interface{}) error {
-	if m, ok := v.(map[string]interface{}); ok {
-		if image, ok := m["image"].(string); ok {
-			b.URI = image
-		}
-
-		if uri, ok := m["uri"].(string); ok {
-			b.URI = uri
-		}
-
-		if version, ok := m["version"].(string); ok {
-			b.Version = version
-		}
-
-		if id, ok := m["id"].(string); ok {
-			b.ID = id
-		}
+// Note: this is to support that buildpackages can refer to this field as `image` or `uri`.
+func (b *BuilderConfigExtension) normalize() error {
+	if b.URI == "" {
+		b.URI = b.Image
 	}
+	b.Image = ""
 
 	if b.URI != "" {
 		uri, err := url.Parse(b.URI)
@@ -159,6 +142,18 @@ func ParseBuilderConfig(path string) (BuilderConfig, error) {
 	err = toml.NewDecoder(file).Decode(&config)
 	if err != nil {
 		return BuilderConfig{}, fmt.Errorf("failed to parse builder config: %w", err)
+	}
+
+	for i := range config.Buildpacks {
+		if err := config.Buildpacks[i].normalize(); err != nil {
+			return BuilderConfig{}, fmt.Errorf("failed to parse builder config: %w", err)
+		}
+	}
+
+	for i := range config.Extensions {
+		if err := config.Extensions[i].normalize(); err != nil {
+			return BuilderConfig{}, fmt.Errorf("failed to parse builder config: %w", err)
+		}
 	}
 
 	return config, err // err should be nil here, but return err to catch deferred error

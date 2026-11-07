@@ -11,7 +11,7 @@ type BuildpackConfig struct {
 	API       interface{}             `toml:"api"`
 	Buildpack interface{}             `toml:"buildpack"`
 	Metadata  interface{}             `toml:"metadata"`
-	Order     []BuildpackConfigOrder  `toml:"order"`
+	Order     []BuildpackConfigOrder  `toml:"order,omitempty"`
 	Stacks    []BuildpackConfigStack  `toml:"stacks,omitempty"`
 	Targets   []BuildpackConfigTarget `toml:"targets,omitempty"`
 }
