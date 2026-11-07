@@ -90,8 +90,8 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 					"homepage":    "some-buildpack-homepage",
 					"description": "some-buildpack-description",
 					"keywords":    []interface{}{"some-buildpack-keyword"},
-					"licenses": []map[string]interface{}{
-						{
+					"licenses": []interface{}{
+						map[string]interface{}{
 							"type": "some-buildpack-license-type",
 							"uri":  "some-buildpack-license-uri",
 						},
@@ -161,7 +161,7 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 				it("returns an error", func() {
 					_, err := internal.ParseBuildpackConfig(path)
 					Expect(err).To(MatchError(ContainSubstring("failed to parse buildpack config:")))
-					Expect(err).To(MatchError(ContainSubstring("keys cannot contain % character")))
+					Expect(err).To(MatchError(ContainSubstring("invalid character at start of key")))
 				})
 			})
 		})
@@ -195,8 +195,8 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 					"homepage":    "some-buildpack-homepage",
 					"description": "some-buildpack-description",
 					"keywords":    []interface{}{"some-buildpack-keyword"},
-					"licenses": []map[string]interface{}{
-						{
+					"licenses": []interface{}{
+						map[string]interface{}{
 							"type": "some-buildpack-license-type",
 							"uri":  "some-buildpack-license-uri",
 						},
@@ -287,7 +287,7 @@ func testBuildpackConfig(t *testing.T, context spec.G, it spec.S) {
 						API: func() {},
 					})
 					Expect(err).To(MatchError(ContainSubstring("failed to write buildpack config:")))
-					Expect(err).To(MatchError(ContainSubstring("Marshal can't handle func()(func)")))
+					Expect(err).To(MatchError(ContainSubstring("cannot encode value of type func()")))
 				})
 			})
 		})
