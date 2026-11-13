@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/paketo-buildpacks/jam/v2/internal/ihop"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -17,6 +18,7 @@ func init() {
 type publishImageFlags struct {
 	imageArchive   string
 	imageReference string
+	sboms          []string
 }
 
 func publishImage() *cobra.Command {
@@ -31,6 +33,7 @@ func publishImage() *cobra.Command {
 
 	cmd.Flags().StringVar(&flags.imageArchive, "image-archive", "", "path to the OCI image archive (required)")
 	cmd.Flags().StringVar(&flags.imageReference, "image-ref", "", "reference that specifies where to publish the image (required)")
+	cmd.Flags().StringArrayVar(&flags.sboms, "sbom", nil, "SBOM to attach to the image index as an attestation, as <architecture>=<path to a CycloneDX or SPDX JSON file> (can be repeated)")
 
 	err := cmd.MarkFlagRequired("image-archive")
 	if err != nil {
@@ -69,8 +72,20 @@ func publishImageRun(flags publishImageFlags) error {
 		return err
 	}
 
+	var sboms []ihop.SBOMAttestation
+	for _, sbom := range flags.sboms {
+		architecture, path, found := strings.Cut(sbom, "=")
+		if !found || architecture == "" || path == "" {
+			return fmt.Errorf("invalid --sbom %q: expected <architecture>=<path>", sbom)
+		}
+		sboms = append(sboms, ihop.SBOMAttestation{Architecture: architecture, Path: path})
+	}
+
 	logger.Process("Uploading image to %s", flags.imageReference)
-	err = client.Upload(flags.imageReference, tmpExtractedImage)
+	for _, sbom := range sboms {
+		logger.Subprocess("Attaching %s SBOM %s", sbom.Architecture, sbom.Path)
+	}
+	err = client.Upload(flags.imageReference, tmpExtractedImage, sboms...)
 	if err != nil {
 		return err
 	}
