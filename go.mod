@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/anchore/syft v1.57.1
-	github.com/buildpacks/pack v0.40.10
+	github.com/buildpacks/pack v0.40.11
 	github.com/cenkalti/backoff/v7 v7.0.3
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v29.9.3+incompatible
