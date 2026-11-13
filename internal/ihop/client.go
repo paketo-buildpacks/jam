@@ -551,7 +551,8 @@ func (c Client) UploadImages(refName string, images ...Image) error {
 	return c.Upload(refName, directory)
 }
 
-func (c Client) Upload(refName string, fromDir string) error {
+// Upload pushes the image index of an OCI layout directory, with the SBOMs attached as attestations.
+func (c Client) Upload(refName string, fromDir string, sboms ...SBOMAttestation) error {
 	path, err := layout.FromPath(fromDir)
 	if err != nil {
 		return err
@@ -563,6 +564,11 @@ func (c Client) Upload(refName string, fromDir string) error {
 	}
 
 	ref, err := name.ParseReference(refName)
+	if err != nil {
+		return err
+	}
+
+	imageIndex, err = AttachSBOMs(imageIndex, ref, sboms)
 	if err != nil {
 		return err
 	}
