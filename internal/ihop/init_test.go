@@ -36,6 +36,7 @@ func TestUnitIHOP(t *testing.T) {
 	Expect(stream.Close()).To(Succeed())
 
 	suite := spec.New("ihop", spec.Report(report.Terminal{}))
+	suite("Attestation", testAttestation)
 	suite("Builder", testBuilder)
 	suite("Cataloger", testCataloger)
 	suite("Client", testClient)
